@@ -120,6 +120,14 @@ list`. Run `quicksave init` once in the project first. If the tree hasn't change
 snapshot the save is skipped, so firing the hook on every command doesn't pile up identical
 checkpoints (use `quicksave save --force` if you want one anyway).
 
+Over a long session the hook can pile up a lot of snapshots. Set `QUICKSAVE_KEEP` to cap the
+history to the N most recent, and the hook drops older ones (and their now-unreferenced blobs)
+after each save:
+
+```
+export QUICKSAVE_KEEP=50
+```
+
 ## How it works
 
 - Files are hashed with SHA-256 and stored once under `.quicksave/objects/` (identical content is

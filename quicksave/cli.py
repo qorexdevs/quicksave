@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 
@@ -240,6 +241,17 @@ def cmd_gc(args):
     )
 
 
+def _env_keep():
+    raw = os.environ.get("QUICKSAVE_KEEP")
+    if not raw:
+        return None
+    try:
+        keep = int(raw)
+    except ValueError:
+        return None
+    return keep if keep > 0 else None
+
+
 def cmd_hook(args):
     # reads a Claude Code PreToolUse payload on stdin and snapshots before a
     # risky bash command. stays quiet and exits 0 so it never blocks the agent.
@@ -257,6 +269,11 @@ def cmd_hook(args):
     snap_id, n, created = store.save(root, message=f"pre: {short}")
     if created:
         print(f"quicksave {snap_id} ({n} files) before: {short}", file=sys.stderr)
+    # an agent fires this on every risky command, so the store grows without
+    # bound. QUICKSAVE_KEEP caps it to the N most recent snapshots if set.
+    keep = _env_keep()
+    if keep is not None:
+        store.gc(root, keep=keep)
 
 
 def cmd_hook_install(args):

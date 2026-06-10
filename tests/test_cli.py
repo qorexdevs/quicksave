@@ -196,6 +196,21 @@ def test_hook_does_not_pile_up_dups(tmp_path, monkeypatch):
     assert len(snaps) == 1
 
 
+def test_hook_caps_history_with_keep(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("QUICKSAVE_KEEP", "2")
+    main(["init"])
+    f = tmp_path / "data.txt"
+    payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": "rm -rf x"}})
+    for i in range(4):
+        f.write_text(str(i))
+        monkeypatch.setattr("sys.stdin", io.StringIO(payload))
+        main(["hook"])
+
+    snaps = list((tmp_path / ".quicksave" / "snapshots").glob("*.json"))
+    assert len(snaps) == 2
+
+
 def test_hook_skips_safe_command(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     main(["init"])

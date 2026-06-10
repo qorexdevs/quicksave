@@ -40,6 +40,8 @@ quicksave show 3 src/app.py    # print one file from a snapshot without touching
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave diff 2 3             # see what changed between two snapshots
 quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots
+quicksave diff 3 wt            # what the live tree changed since snapshot 3
+quicksave diff 3 wt src/app.py # line-by-line diff of one file against the tree
 quicksave gc --keep 10         # drop old snapshots and blobs nothing points at
 quicksave gc 4 pre-deploy      # drop specific snapshots by number, id or name
 quicksave verify               # check the store for corrupt or missing blobs
@@ -80,7 +82,9 @@ or pass an empty name to clear one.
 
 `status` compares the working tree to a snapshot (the latest one unless you name another) and shows
 what was added, removed or modified since then, so you can see what a checkpoint would pull you back
-to before you run it.
+to before you run it. `diff` does the same between two snapshots, and the ref `wt` stands in for the
+live working tree on either side, so `quicksave diff 3 wt` (add a path for a line-by-line view) tells
+you exactly what an agent touched since your last checkpoint before you decide to restore.
 
 `show` writes one file's contents from a snapshot straight to stdout, so you can grab a single old
 version without overwriting what's on disk: `quicksave show 3 config.py > config.old.py` or pipe it

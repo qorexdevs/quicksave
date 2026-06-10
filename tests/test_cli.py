@@ -463,3 +463,22 @@ def test_diff_file_identical(tmp_path, monkeypatch, capsys):
     capsys.readouterr()
     main(["diff", "0", "1", "a.txt"])
     assert "identical" in capsys.readouterr().out
+
+
+def test_diff_against_working_tree(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt"])
+    out = capsys.readouterr().out
+    assert "+ new.txt" in out
+    assert "~ a.txt" in out
+    capsys.readouterr()
+    main(["diff", "0", "wt", "a.txt"])
+    out = capsys.readouterr().out
+    assert "+two edited" in out
+    assert "-two" in out

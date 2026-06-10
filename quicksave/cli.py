@@ -162,12 +162,19 @@ def cmd_status(args):
 
 
 def _file_text(root, ref, path):
-    # returns the file as text lines, or None if it isn't in that snapshot or
-    # isn't decodable (binary). callers treat None as "no text side to show".
-    try:
-        data = store.show(root, ref, path)
-    except store.QuicksaveError:
-        return None
+    # returns the file as text lines, or None if it isn't there or isn't
+    # decodable (binary). callers treat None as "no text side to show".
+    # ref "wt" reads the live working tree instead of a snapshot.
+    if ref == "wt":
+        try:
+            data = open(os.path.join(root, path), "rb").read()
+        except OSError:
+            return None
+    else:
+        try:
+            data = store.show(root, ref, path)
+        except store.QuicksaveError:
+            return None
     try:
         return data.decode().splitlines(keepends=True)
     except UnicodeDecodeError:
@@ -200,6 +207,27 @@ def cmd_diff(args):
                 console.print(line)
         if not printed:
             console.print(f"[dim]{args.path} is identical in {args.a} and {args.b}[/]")
+        return
+    if args.a == "wt" or args.b == "wt":
+        # one side is the live working tree, reuse status (snapshot vs tree)
+        snap = args.b if args.a == "wt" else args.a
+        s = store.status(root, snap)
+        added, removed = s["added"], s["removed"]
+        if args.a == "wt":
+            added, removed = removed, added
+        if not (added or removed or s["modified"]):
+            console.print(f"[dim]working tree matches {snap}[/]")
+            return
+        for path in added:
+            console.print(f"[green]+ {path}[/]")
+        for path in removed:
+            console.print(f"[red]- {path}[/]")
+        for path in s["modified"]:
+            console.print(f"[yellow]~ {path}[/]")
+        console.print(
+            f"[dim]{len(added)} added, {len(removed)} removed, "
+            f"{len(s['modified'])} modified[/]"
+        )
         return
     d = store.diff(root, args.a, args.b)
     if not any(d.values()):
@@ -422,9 +450,9 @@ def build_parser():
     pt.add_argument("--json", action="store_true", help="print the diff as json")
     pt.set_defaults(func=cmd_status)
 
-    pd = sub.add_parser("diff", help="show what changed between two snapshots", parents=[common])
-    pd.add_argument("a", help="snapshot id or number")
-    pd.add_argument("b", help="snapshot id or number")
+    pd = sub.add_parser("diff", help="show what changed between two snapshots, or a snapshot and the working tree", parents=[common])
+    pd.add_argument("a", help="snapshot id or number, or 'wt' for the working tree")
+    pd.add_argument("b", help="snapshot id or number, or 'wt' for the working tree")
     pd.add_argument("path", nargs="?", help="show a line-by-line diff of just this file")
     pd.set_defaults(func=cmd_diff)
 

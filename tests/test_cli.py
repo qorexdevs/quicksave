@@ -273,3 +273,37 @@ def test_save_without_init_exits(tmp_path, monkeypatch):
         assert e.code == 1
     else:
         raise AssertionError("expected SystemExit")
+
+
+def test_log_shows_snapshot_details(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "b.txt").write_text("data")
+
+    main(["init"])
+    main(["save", "-m", "first", "-n", "v1"])
+    capsys.readouterr()
+
+    main(["log", "v1"])
+    out = capsys.readouterr().out
+    assert "v1" in out
+    assert "first" in out
+    assert "a.txt" in out
+    assert "sub/b.txt" in out
+    assert "Files: 2" in out
+
+    main(["log", "0"])
+    assert "v1" in capsys.readouterr().out
+
+
+def test_log_missing_snapshot_errors(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    try:
+        main(["log", "nope"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("expected SystemExit")
+    assert "not found" in capsys.readouterr().err

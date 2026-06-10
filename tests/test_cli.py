@@ -1,7 +1,14 @@
 import io
 import json
 
+
 from quicksave.cli import main
+
+import argparse
+
+from quicksave import store
+from quicksave.cli import cmd_list
+
 
 
 def test_cli_roundtrip(tmp_path, monkeypatch, capsys):
@@ -318,3 +325,44 @@ def test_log_missing_snapshot_errors(tmp_path, monkeypatch, capsys):
     else:
         raise AssertionError("expected SystemExit")
     assert "not found" in capsys.readouterr().err
+
+
+def test_list_limit_caps_output(capsys, monkeypatch):
+    snaps = [
+        {"seq": 1, "id": "a", "name": "", "created_at": 1, "count": 1, "size": 10, "message": ""},
+        {"seq": 2, "id": "b", "name": "", "created_at": 2, "count": 1, "size": 10, "message": ""},
+        {"seq": 3, "id": "c", "name": "", "created_at": 3, "count": 1, "size": 10, "message": ""},
+    ]
+
+    monkeypatch.setattr(store, "find_root", lambda: "/tmp")
+    monkeypatch.setattr(store, "list_snapshots", lambda root: snaps)
+    monkeypatch.setattr(store, "store_size", lambda root: 123)
+
+    args = argparse.Namespace(json=False, limit=2)
+    cmd_list(args)
+
+    out = capsys.readouterr().out
+
+    assert " a " not in out
+    assert " b " in out
+    assert " c " in out
+
+
+def test_list_limit_footer(capsys, monkeypatch):
+    snaps = [
+        {"seq": 1, "id": "a", "name": "", "created_at": 1, "count": 1, "size": 10, "message": ""},
+        {"seq": 2, "id": "b", "name": "", "created_at": 2, "count": 1, "size": 10, "message": ""},
+        {"seq": 3, "id": "c", "name": "", "created_at": 3, "count": 1, "size": 10, "message": ""},
+    ]
+
+    monkeypatch.setattr(store, "find_root", lambda: "/tmp")
+    monkeypatch.setattr(store, "list_snapshots", lambda root: snaps)
+    monkeypatch.setattr(store, "store_size", lambda root: 999)
+
+    args = argparse.Namespace(json=False, limit=1)
+    cmd_list(args)
+
+    out = capsys.readouterr().out.lower()
+
+    assert "showing 1 of 3 snapshots" in out
+

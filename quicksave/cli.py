@@ -22,9 +22,7 @@ def _human_size(n):
 def _root_or_die():
     root = store.find_root()
     if root is None:
-        err.print(
-            "[red]not a quicksave project[/], run 'quicksave init' first"
-        )
+        err.print("[red]not a quicksave project[/], run 'quicksave init' first")
         raise SystemExit(1)
     return root
 
@@ -39,17 +37,11 @@ def cmd_init(args):
 
 def cmd_save(args):
     root = _root_or_die()
-    snap_id, n, created = store.save(
-        root,
-        message=args.message or "",
-        force=args.force,
-        name=args.name or "",
-    )
+    snap_id, n, created = store.save(root, message=args.message or "", force=args.force,
+                                     name=args.name or "")
     if not created:
         if args.name:
-            console.print(
-                f"[dim]nothing changed, named {snap_id}[/] [magenta]{args.name}[/]"
-            )
+            console.print(f"[dim]nothing changed, named {snap_id}[/] [magenta]{args.name}[/]")
         else:
             console.print(f"[dim]nothing changed since {snap_id}, skipped[/]")
         return
@@ -70,7 +62,7 @@ def cmd_list(args):
     total_snaps = len(snaps)
     is_capped = False
     if args.limit and args.limit < total_snaps:
-        snaps = snaps[-args.limit :]
+        snaps = snaps[-args.limit:]
         is_capped = True
     table = Table(box=None, pad_edge=False)
     table.add_column("#", justify="right", style="dim")
@@ -81,29 +73,14 @@ def cmd_list(args):
     table.add_column("size", justify="right")
     table.add_column("message")
     for s in snaps:
-        when = (
-            datetime.fromtimestamp(s["created_at"]).strftime("%Y-%m-%d %H:%M")
-            if s["created_at"]
-            else "-"
-        )
-        table.add_row(
-            str(s["seq"]),
-            s["id"],
-            s.get("name") or "[dim]-[/]",
-            when,
-            str(s["count"]),
-            _human_size(s.get("size", 0)),
-            s["message"] or "[dim]-[/]",
-        )
+        when = datetime.fromtimestamp(s["created_at"]).strftime("%Y-%m-%d %H:%M") if s["created_at"] else "-"
+        table.add_row(str(s["seq"]), s["id"], s.get("name") or "[dim]-[/]", when,
+                      str(s["count"]), _human_size(s.get("size", 0)), s["message"] or "[dim]-[/]")
     console.print(table)
     if is_capped:
-        console.print(
-            f"[dim]Showing {len(snaps)} of {total_snaps} snapshots, {_human_size(store.store_size(root))} on disk[/]"
-        )
+        console.print(f"[dim]showing {len(snaps)} of {total_snaps} snapshots, {_human_size(store.store_size(root))} on disk[/]")
     else:
-        console.print(
-            f"[dim]{len(snaps)} snapshots, {_human_size(store.store_size(root))} on disk[/]"
-        )
+        console.print(f"[dim]{len(snaps)} snapshots, {_human_size(store.store_size(root))} on disk[/]")
 
 
 def cmd_restore(args):
@@ -116,21 +93,15 @@ def cmd_restore(args):
     # doesn't become the new "latest" and shadow a bare 'restore' ref.
     target = store.resolve_id(root, args.ref)
     if not args.no_backup:
-        bid, _, made = store.save(
-            root, message=f"before restore of {args.ref or 'latest'}"
-        )
+        bid, _, made = store.save(root, message=f"before restore of {args.ref or 'latest'}")
         if made:
             console.print(f"[dim]backed up current tree as {bid}[/]")
-    n, removed, manifest = store.restore(
-        root, target, args.paths, clean=args.clean
-    )
+    n, removed, manifest = store.restore(root, target, args.paths, clean=args.clean)
     ref = args.ref or "latest"
     when = manifest.get("message") or ref
     scope = f" [dim]({', '.join(args.paths)})[/]" if args.paths else ""
     extra = f" [red](removed {removed})[/]" if removed else ""
-    console.print(
-        f"restored [cyan]{n}[/] files from [cyan]{ref}[/] [dim]{when}[/]{scope}{extra}"
-    )
+    console.print(f"restored [cyan]{n}[/] files from [cyan]{ref}[/] [dim]{when}[/]{scope}{extra}")
 
 
 def cmd_restore_preview(args, root):
@@ -167,9 +138,7 @@ def cmd_undo(args):
             console.print(f"[dim]backed up current tree as {bid}[/]")
     n, removed, _ = store.restore(root, backup, clean=args.clean)
     extra = f" [red](removed {removed})[/]" if removed else ""
-    console.print(
-        f"undid last restore, [cyan]{n}[/] files back to [cyan]{backup}[/]{extra}"
-    )
+    console.print(f"undid last restore, [cyan]{n}[/] files back to [cyan]{backup}[/]{extra}")
 
 
 def cmd_status(args):
@@ -180,9 +149,7 @@ def cmd_status(args):
         return
     label = f"#{s['seq']} {s['id']}"
     if not (s["added"] or s["removed"] or s["modified"]):
-        console.print(
-            f"[green]clean[/] [dim]working tree matches snapshot {label}[/]"
-        )
+        console.print(f"[green]clean[/] [dim]working tree matches snapshot {label}[/]")
         return
     console.print(f"[dim]changes since snapshot {label}:[/]")
     for path in s["added"]:
@@ -217,7 +184,6 @@ def cmd_show(args):
     with open(1, "wb", closefd=False) as out:
         out.write(data)
 
-
 def cmd_log(args):
     root = _root_or_die()
 
@@ -232,9 +198,9 @@ def cmd_log(args):
 
     when = "-"
     if manifest.get("created_at"):
-        when = datetime.fromtimestamp(manifest["created_at"]).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        when = datetime.fromtimestamp(
+            manifest["created_at"]
+        ).strftime("%Y-%m-%d %H:%M:%S")
 
     console.print(f"Snapshot: {snap_id}")
     console.print(f"Name: {manifest.get('name') or '-'}")
@@ -254,18 +220,12 @@ def cmd_verify(args):
         print(json.dumps(r))
         return
     if r["ok"]:
-        console.print(
-            f"[green]ok[/] [dim]{r['blobs']} blobs, all snapshots intact[/]"
-        )
+        console.print(f"[green]ok[/] [dim]{r['blobs']} blobs, all snapshots intact[/]")
         return
     for digest in r["corrupt"]:
-        console.print(
-            f"[red]corrupt blob {digest[:12]}[/] (content no longer hashes to its name)"
-        )
+        console.print(f"[red]corrupt blob {digest[:12]}[/] (content no longer hashes to its name)")
     for m in r["missing"]:
-        console.print(
-            f"[red]missing {m['sha256'][:12]}[/] for {m['path']} [dim](snapshot {m['snapshot']})[/]"
-        )
+        console.print(f"[red]missing {m['sha256'][:12]}[/] for {m['path']} [dim](snapshot {m['snapshot']})[/]")
     console.print(
         f"[dim]{r['blobs']} blobs, {len(r['corrupt'])} corrupt, {len(r['missing'])} missing[/]"
     )
@@ -304,9 +264,7 @@ def cmd_hook(args):
     short = cmd.strip().splitlines()[0][:60]
     snap_id, n, created = store.save(root, message=f"pre: {short}")
     if created:
-        print(
-            f"quicksave {snap_id} ({n} files) before: {short}", file=sys.stderr
-        )
+        print(f"quicksave {snap_id} ({n} files) before: {short}", file=sys.stderr)
 
 
 def cmd_hook_install(args):
@@ -314,9 +272,7 @@ def cmd_hook_install(args):
     path, changed = store.install_hook(root, args.tool)
     rel = path.relative_to(root).as_posix()
     if changed:
-        console.print(
-            f"[green]wired quicksave hook[/] into {rel} ({args.tool})"
-        )
+        console.print(f"[green]wired quicksave hook[/] into {rel} ({args.tool})")
     else:
         console.print(f"[yellow]already wired[/] in {rel}")
 
@@ -325,196 +281,88 @@ def build_parser():
     # --quiet lives on a shared parent so it works both before and after the
     # subcommand; SUPPRESS keeps an unset copy from clobbering one that was set.
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="silence normal output, only errors and --json still print",
-    )
+    common.add_argument("-q", "--quiet", action="store_true", default=argparse.SUPPRESS,
+                        help="silence normal output, only errors and --json still print")
 
-    p = argparse.ArgumentParser(
-        prog="quicksave",
-        description="F5 for your filesystem",
-        parents=[common],
-    )
-    p.add_argument(
-        "--version", action="version", version=f"quicksave {__version__}"
-    )
+    p = argparse.ArgumentParser(prog="quicksave", description="F5 for your filesystem",
+                                parents=[common])
+    p.add_argument("--version", action="version", version=f"quicksave {__version__}")
     sub = p.add_subparsers(dest="cmd")
 
-    pi = sub.add_parser(
-        "init", help="start tracking the current directory", parents=[common]
-    )
+    pi = sub.add_parser("init", help="start tracking the current directory", parents=[common])
     pi.add_argument("path", nargs="?", default=None)
     pi.set_defaults(func=cmd_init)
 
-    ps = sub.add_parser(
-        "save", help="snapshot the working tree", parents=[common]
-    )
+    ps = sub.add_parser("save", help="snapshot the working tree", parents=[common])
     ps.add_argument("-m", "--message", default="")
-    ps.add_argument(
-        "-n",
-        "--name",
-        default="",
-        help="label the snapshot so you can restore it by name later",
-    )
-    ps.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="snapshot even if nothing changed since the last one",
-    )
+    ps.add_argument("-n", "--name", default="",
+                    help="label the snapshot so you can restore it by name later")
+    ps.add_argument("-f", "--force", action="store_true",
+                    help="snapshot even if nothing changed since the last one")
     ps.set_defaults(func=cmd_save)
 
     pl = sub.add_parser("list", help="list snapshots", parents=[common])
-    pl.add_argument(
-        "--json", action="store_true", help="print snapshots as json"
-    )
-    pl.add_argument(
-        "--limit", type=int, help="show only the N most recent snapshots"
-    )
+    pl.add_argument("--json", action="store_true", help="print snapshots as json")
+    pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
     pl.set_defaults(func=cmd_list)
 
-    pr = sub.add_parser(
-        "restore",
-        help="restore files from a snapshot (default latest)",
-        parents=[common],
-    )
-    pr.add_argument(
-        "ref",
-        nargs="?",
-        default=None,
-        help="snapshot id, number or name from 'quicksave list', defaults to latest",
-    )
-    pr.add_argument(
-        "paths", nargs="*", help="only restore these files or directories"
-    )
-    pr.add_argument(
-        "--clean",
-        action="store_true",
-        help="delete files not in the snapshot (exact rewind)",
-    )
-    pr.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="show what restore would change without writing anything",
-    )
-    pr.add_argument(
-        "--no-backup",
-        action="store_true",
-        help="don't snapshot the current tree before restoring",
-    )
+    pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])
+    pr.add_argument("ref", nargs="?", default=None,
+                    help="snapshot id, number or name from 'quicksave list', defaults to latest")
+    pr.add_argument("paths", nargs="*", help="only restore these files or directories")
+    pr.add_argument("--clean", action="store_true",
+                    help="delete files not in the snapshot (exact rewind)")
+    pr.add_argument("--dry-run", action="store_true",
+                    help="show what restore would change without writing anything")
+    pr.add_argument("--no-backup", action="store_true",
+                    help="don't snapshot the current tree before restoring")
     pr.set_defaults(func=cmd_restore)
 
-    pu = sub.add_parser(
-        "undo",
-        help="revert the last restore, back to the pre-restore tree",
-        parents=[common],
-    )
-    pu.add_argument(
-        "--clean",
-        action="store_true",
-        help="also delete files the restore added (exact rewind)",
-    )
-    pu.add_argument(
-        "--no-backup",
-        action="store_true",
-        help="don't snapshot the current tree before undoing",
-    )
+    pu = sub.add_parser("undo", help="revert the last restore, back to the pre-restore tree", parents=[common])
+    pu.add_argument("--clean", action="store_true",
+                    help="also delete files the restore added (exact rewind)")
+    pu.add_argument("--no-backup", action="store_true",
+                    help="don't snapshot the current tree before undoing")
     pu.set_defaults(func=cmd_undo)
 
-    pt = sub.add_parser(
-        "status",
-        help="show changes since a snapshot (default latest)",
-        parents=[common],
-    )
-    pt.add_argument(
-        "ref",
-        nargs="?",
-        default=None,
-        help="snapshot id or number, defaults to latest",
-    )
-    pt.add_argument(
-        "--json", action="store_true", help="print the diff as json"
-    )
+    pt = sub.add_parser("status", help="show changes since a snapshot (default latest)", parents=[common])
+    pt.add_argument("ref", nargs="?", default=None, help="snapshot id or number, defaults to latest")
+    pt.add_argument("--json", action="store_true", help="print the diff as json")
     pt.set_defaults(func=cmd_status)
 
-    pd = sub.add_parser(
-        "diff",
-        help="show what changed between two snapshots",
-        parents=[common],
-    )
+    pd = sub.add_parser("diff", help="show what changed between two snapshots", parents=[common])
     pd.add_argument("a", help="snapshot id or number")
     pd.add_argument("b", help="snapshot id or number")
     pd.set_defaults(func=cmd_diff)
 
-    ph = sub.add_parser(
-        "show",
-        help="print a file's contents from a snapshot to stdout",
-        parents=[common],
-    )
+    ph = sub.add_parser("show", help="print a file's contents from a snapshot to stdout", parents=[common])
     ph.add_argument("ref", help="snapshot id or number")
     ph.add_argument("path", help="file to print")
     ph.set_defaults(func=cmd_show)
 
-    plog = sub.add_parser(
-        "log", help="show one snapshot's details", parents=[common]
-    )
+    plog = sub.add_parser("log", help="show one snapshot's details", parents=[common])
     plog.add_argument("ref", help="snapshot id, number or name")
     plog.set_defaults(func=cmd_log)
 
-    pv = sub.add_parser(
-        "verify",
-        help="check the store for corrupt or missing blobs",
-        parents=[common],
-    )
-    pv.add_argument(
-        "--json", action="store_true", help="print the result as json"
-    )
+    pv = sub.add_parser("verify", help="check the store for corrupt or missing blobs", parents=[common])
+    pv.add_argument("--json", action="store_true", help="print the result as json")
     pv.set_defaults(func=cmd_verify)
 
-    pg = sub.add_parser(
-        "gc",
-        help="drop old snapshots and unreferenced blobs",
-        parents=[common],
-    )
-    pg.add_argument(
-        "refs",
-        nargs="*",
-        help="drop these specific snapshots too (id, number or name)",
-    )
-    pg.add_argument(
-        "--keep",
-        type=int,
-        default=None,
-        help="keep only the N most recent snapshots",
-    )
-    pg.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="show what would be removed without deleting",
-    )
+    pg = sub.add_parser("gc", help="drop old snapshots and unreferenced blobs", parents=[common])
+    pg.add_argument("refs", nargs="*",
+                    help="drop these specific snapshots too (id, number or name)")
+    pg.add_argument("--keep", type=int, default=None,
+                    help="keep only the N most recent snapshots")
+    pg.add_argument("--dry-run", action="store_true",
+                    help="show what would be removed without deleting")
     pg.set_defaults(func=cmd_gc)
 
-    phook = sub.add_parser(
-        "hook",
-        help="PreToolUse hook: auto-save before a risky bash command",
-        parents=[common],
-    )
+    phook = sub.add_parser("hook", help="PreToolUse hook: auto-save before a risky bash command", parents=[common])
     phook.set_defaults(func=cmd_hook)
     hsub = phook.add_subparsers(dest="hook_action")
-    hin = hsub.add_parser(
-        "install",
-        help="wire the hook into an agent runner's config",
-        parents=[common],
-    )
-    hin.add_argument(
-        "--tool",
-        choices=sorted(store.HOOK_TARGETS),
-        default="claude",
-        help="which runner to wire up",
-    )
+    hin = hsub.add_parser("install", help="wire the hook into an agent runner's config", parents=[common])
+    hin.add_argument("--tool", choices=sorted(store.HOOK_TARGETS), default="claude",
+                     help="which runner to wire up")
     hin.set_defaults(func=cmd_hook_install)
 
     return p

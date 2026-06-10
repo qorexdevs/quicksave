@@ -36,6 +36,7 @@ quicksave undo                 # revert the last restore, back to the pre-restor
 quicksave status               # what changed in the tree since the last snapshot
 quicksave list --json          # machine-readable output, same for status --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
+quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave diff 2 3             # see what changed between two snapshots
 quicksave gc --keep 10         # drop old snapshots and blobs nothing points at
 quicksave gc 4 pre-deploy      # drop specific snapshots by number, id or name
@@ -80,6 +81,11 @@ to before you run it.
 `show` writes one file's contents from a snapshot straight to stdout, so you can grab a single old
 version without overwriting what's on disk: `quicksave show 3 config.py > config.old.py` or pipe it
 into `diff`.
+
+`export` packs a whole snapshot into a tar archive without touching the live tree, so you can stash a
+known-good checkpoint or move it to another machine: `quicksave export backup.tar.gz pre-deploy`.
+A `.gz`/`.tgz` name gives a gzipped archive, anything else a plain tar; pass paths to export only part
+of the snapshot. With no ref it exports the latest.
 
 ## Auto-save before an agent's risky commands
 

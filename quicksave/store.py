@@ -1,8 +1,10 @@
 import fnmatch
 import hashlib
+import io
 import json
 import os
 import re
+import tarfile
 import time
 from pathlib import Path
 
@@ -413,6 +415,36 @@ def show(root, ref, path):
     if not obj.exists():
         raise QuicksaveError(f"missing blob {meta['sha256']} for {rel}")
     return obj.read_bytes()
+
+
+def export_snapshot(root, ref, dest, paths=None):
+    # materialize a snapshot into a tar archive without touching the live tree.
+    # gzip when dest ends in .gz/.tgz, plain tar otherwise. handy for archiving
+    # a known-good checkpoint or moving it to another machine.
+    store = store_path(root)
+    f = _resolve_snapshot(store, ref)
+    manifest = json.loads(f.read_text())
+    files, _ = _selected_files(manifest, paths, ref)
+    if not files:
+        raise QuicksaveError("nothing to export")
+
+    dest = Path(dest)
+    mode = "w:gz" if dest.suffix in (".gz", ".tgz") else "w"
+    written = 0
+    with tarfile.open(dest, mode) as tar:
+        for relpath, meta in sorted(files.items()):
+            obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
+            if not obj.exists():
+                raise QuicksaveError(f"missing blob {meta['sha256']} for {relpath}")
+            data = obj.read_bytes()
+            info = tarfile.TarInfo(relpath)
+            info.size = len(data)
+            info.mode = meta.get("mode", 0o644) & 0o777
+            if manifest.get("created_at"):
+                info.mtime = int(manifest["created_at"])
+            tar.addfile(info, io.BytesIO(data))
+            written += 1
+    return written, dest
 
 
 # commands worth a checkpoint before an agent runs them: deletes, overwrites,

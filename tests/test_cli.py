@@ -401,3 +401,21 @@ def test_list_limit_footer(capsys, monkeypatch):
 
     assert "showing 1 of 3 snapshots" in out
 
+
+def test_cli_export(tmp_path, monkeypatch, capsys):
+    import tarfile
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hi")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    dest = tmp_path / "snap.tgz"
+    main(["export", str(dest)])
+    out = capsys.readouterr().out
+    assert "exported" in out
+    with tarfile.open(dest) as tar:
+        assert tar.getnames() == ["a.txt"]
+        assert tar.extractfile("a.txt").read() == b"hi"
+

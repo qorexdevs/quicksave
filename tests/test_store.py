@@ -215,6 +215,52 @@ def test_show_missing_file_raises(tmp_path):
         store.show(tmp_path, "0", "nope.txt")
 
 
+def test_export_writes_tar(tmp_path):
+    import tarfile
+
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "b.txt").write_text("world")
+    store.save(tmp_path)
+
+    dest = tmp_path / "out.tar.gz"
+    n, out = store.export_snapshot(tmp_path, None, dest)
+    assert n == 2
+    assert out == dest
+    with tarfile.open(dest) as tar:
+        names = sorted(tar.getnames())
+        assert names == ["a.txt", "sub/b.txt"]
+        assert tar.extractfile("a.txt").read() == b"hello"
+
+
+def test_export_respects_paths(tmp_path):
+    import tarfile
+
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("a")
+    (tmp_path / "b.txt").write_text("b")
+    store.save(tmp_path)
+
+    dest = tmp_path / "out.tar"
+    n, _ = store.export_snapshot(tmp_path, None, dest, paths=["a.txt"])
+    assert n == 1
+    with tarfile.open(dest) as tar:
+        assert tar.getnames() == ["a.txt"]
+
+
+def test_export_missing_blob_raises(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("x")
+    store.save(tmp_path)
+    objects = tmp_path / ".quicksave" / "objects"
+    for d in objects.iterdir():
+        for f in d.iterdir():
+            f.unlink()
+    with pytest.raises(store.QuicksaveError):
+        store.export_snapshot(tmp_path, None, tmp_path / "out.tar")
+
+
 def test_diff_between_snapshots(tmp_path):
     store.init(tmp_path)
     (tmp_path / "keep.txt").write_text("same")

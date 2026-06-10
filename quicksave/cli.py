@@ -185,6 +185,14 @@ def cmd_show(args):
     with open(1, "wb", closefd=False) as out:
         out.write(data)
 
+
+def cmd_export(args):
+    root = _root_or_die()
+    n, dest = store.export_snapshot(root, args.ref, args.dest, args.paths or None)
+    ref = args.ref or "latest"
+    console.print(f"exported [cyan]{n}[/] files from [cyan]{ref}[/] to [dim]{dest}[/]")
+
+
 def cmd_log(args):
     root = _root_or_die()
 
@@ -370,6 +378,12 @@ def build_parser():
     ph.add_argument("ref", help="snapshot id or number")
     ph.add_argument("path", help="file to print")
     ph.set_defaults(func=cmd_show)
+
+    pe = sub.add_parser("export", help="write a snapshot to a tar archive without touching the tree", parents=[common])
+    pe.add_argument("dest", help="output path (.tar.gz/.tgz for gzip, else plain .tar)")
+    pe.add_argument("ref", nargs="?", help="snapshot id, number or name (default latest)")
+    pe.add_argument("paths", nargs="*", help="limit the export to these paths")
+    pe.set_defaults(func=cmd_export)
 
     plog = sub.add_parser("log", help="show one snapshot's details", parents=[common])
     plog.add_argument("ref", help="snapshot id, number or name")

@@ -174,7 +174,7 @@ def cmd_show(args):
     root = _root_or_die()
     data = store.show(root, args.ref, args.path)
     with open(1, "wb", closefd=False) as out:
-        out.write(data) 
+        out.write(data)
 
 def cmd_log(args):
     root = _root_or_die()
@@ -310,17 +310,10 @@ def build_parser():
     ph = sub.add_parser("show", help="print a file's contents from a snapshot to stdout", parents=[common])
     ph.add_argument("ref", help="snapshot id or number")
     ph.add_argument("path", help="file to print")
-    ph.set_defaults(func=cmd_show) 
+    ph.set_defaults(func=cmd_show)
 
-    plog = sub.add_parser(
-    "log",
-    help="show details for one snapshot",
-    parents=[common]
-    )
-    plog.add_argument(
-    "ref",
-    help="snapshot id, number or name"
-    )
+    plog = sub.add_parser("log", help="show one snapshot's details", parents=[common])
+    plog.add_argument("ref", help="snapshot id, number or name")
     plog.set_defaults(func=cmd_log)
 
     pg = sub.add_parser("gc", help="drop old snapshots and unreferenced blobs", parents=[common])
@@ -346,8 +339,7 @@ def build_parser():
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
-    if getattr(args, "quiet", False):
-        console.quiet = True
+    console.quiet = getattr(args, "quiet", False)
     if not getattr(args, "func", None):
         parser.print_help()
         return

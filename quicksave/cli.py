@@ -205,6 +205,25 @@ def cmd_log(args):
         console.print(f"{path} ({meta.get('size', 0)} bytes)")
 
 
+def cmd_verify(args):
+    root = _root_or_die()
+    r = store.verify(root)
+    if args.json:
+        print(json.dumps(r))
+        return
+    if r["ok"]:
+        console.print(f"[green]ok[/] [dim]{r['blobs']} blobs, all snapshots intact[/]")
+        return
+    for digest in r["corrupt"]:
+        console.print(f"[red]corrupt blob {digest[:12]}[/] (content no longer hashes to its name)")
+    for m in r["missing"]:
+        console.print(f"[red]missing {m['sha256'][:12]}[/] for {m['path']} [dim](snapshot {m['snapshot']})[/]")
+    console.print(
+        f"[dim]{r['blobs']} blobs, {len(r['corrupt'])} corrupt, {len(r['missing'])} missing[/]"
+    )
+    raise SystemExit(1)
+
+
 def cmd_gc(args):
     root = _root_or_die()
     r = store.gc(root, keep=args.keep, refs=args.refs, dry_run=args.dry_run)
@@ -315,6 +334,10 @@ def build_parser():
     plog = sub.add_parser("log", help="show one snapshot's details", parents=[common])
     plog.add_argument("ref", help="snapshot id, number or name")
     plog.set_defaults(func=cmd_log)
+
+    pv = sub.add_parser("verify", help="check the store for corrupt or missing blobs", parents=[common])
+    pv.add_argument("--json", action="store_true", help="print the result as json")
+    pv.set_defaults(func=cmd_verify)
 
     pg = sub.add_parser("gc", help="drop old snapshots and unreferenced blobs", parents=[common])
     pg.add_argument("refs", nargs="*",

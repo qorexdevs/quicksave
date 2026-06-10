@@ -323,6 +323,38 @@ def gc(root, keep=None, refs=None, dry_run=False):
     return {"pruned": pruned, "blobs": removed, "dry_run": dry_run}
 
 
+def verify(root):
+    # a backup store is only worth trusting if it isn't quietly rotting. check
+    # two things: every blob still hashes to its own name (no bit-flips on disk),
+    # and every file a snapshot points at actually has its blob.
+    store = store_path(root)
+    if not store.is_dir():
+        raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
+
+    blobs = 0
+    corrupt = []
+    on_disk = set()
+    for obj, digest in _iter_blobs(store):
+        blobs += 1
+        on_disk.add(digest)
+        if _sha256(obj.read_bytes()) != digest:
+            corrupt.append(digest)
+
+    missing = []
+    for f in _snapshot_files(store):
+        snap_id = f.stem.partition("-")[2]
+        for relpath, meta in json.loads(f.read_text())["files"].items():
+            if meta["sha256"] not in on_disk:
+                missing.append({"snapshot": snap_id, "path": relpath, "sha256": meta["sha256"]})
+
+    return {
+        "blobs": blobs,
+        "corrupt": sorted(set(corrupt)),
+        "missing": missing,
+        "ok": not corrupt and not missing,
+    }
+
+
 def show(root, ref, path):
     store = store_path(root)
     f = _find_snapshot(store, ref)

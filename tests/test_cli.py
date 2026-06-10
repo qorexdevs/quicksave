@@ -156,6 +156,17 @@ def test_cli_status_json(tmp_path, monkeypatch, capsys):
     assert s["modified"] == ["a.txt"]
 
 
+def test_cli_verify_reports_ok(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["verify"])
+    assert "ok" in capsys.readouterr().out
+
+
 def test_hook_saves_before_risky_command(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "data.txt").write_text("keep")

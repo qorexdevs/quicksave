@@ -442,6 +442,47 @@ def test_gc_dry_run_keeps_everything(tmp_path):
     assert len(store.list_snapshots(tmp_path)) == 2
 
 
+def test_verify_clean_store(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path)
+    (tmp_path / "f.txt").write_text("two")
+    store.save(tmp_path)
+
+    r = store.verify(tmp_path)
+    assert r["ok"]
+    assert r["blobs"] == 2
+    assert r["corrupt"] == []
+    assert r["missing"] == []
+
+
+def test_verify_detects_corrupt_blob(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("hello")
+    store.save(tmp_path)
+
+    obj, digest = next(store._iter_blobs(tmp_path / ".quicksave"))
+    obj.write_bytes(b"tampered")
+
+    r = store.verify(tmp_path)
+    assert not r["ok"]
+    assert r["corrupt"] == [digest]
+
+
+def test_verify_detects_missing_blob(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("hello")
+    store.save(tmp_path)
+
+    obj, _ = next(store._iter_blobs(tmp_path / ".quicksave"))
+    obj.unlink()
+
+    r = store.verify(tmp_path)
+    assert not r["ok"]
+    assert len(r["missing"]) == 1
+    assert r["missing"][0]["path"] == "f.txt"
+
+
 def test_save_with_name_and_restore_by_name(tmp_path):
     store.init(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

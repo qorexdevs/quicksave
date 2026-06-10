@@ -161,8 +161,46 @@ def cmd_status(args):
         console.print(f"[yellow]~ {path}[/]")
 
 
+def _file_text(root, ref, path):
+    # returns the file as text lines, or None if it isn't in that snapshot or
+    # isn't decodable (binary). callers treat None as "no text side to show".
+    try:
+        data = store.show(root, ref, path)
+    except store.QuicksaveError:
+        return None
+    try:
+        return data.decode().splitlines(keepends=True)
+    except UnicodeDecodeError:
+        return None
+
+
 def cmd_diff(args):
     root = _root_or_die()
+    if args.path:
+        import difflib
+        a = _file_text(root, args.a, args.path)
+        b = _file_text(root, args.b, args.path)
+        if a is None and b is None:
+            console.print(f"[dim]{args.path} is in neither {args.a} nor {args.b}, or is binary[/]")
+            return
+        lines = difflib.unified_diff(a or [], b or [],
+                                     fromfile=f"{args.path}@{args.a}",
+                                     tofile=f"{args.path}@{args.b}")
+        printed = False
+        for line in lines:
+            printed = True
+            line = line.rstrip("\n")
+            if line.startswith("+"):
+                console.print(f"[green]{line}[/]")
+            elif line.startswith("-"):
+                console.print(f"[red]{line}[/]")
+            elif line.startswith("@@"):
+                console.print(f"[cyan]{line}[/]")
+            else:
+                console.print(line)
+        if not printed:
+            console.print(f"[dim]{args.path} is identical in {args.a} and {args.b}[/]")
+        return
     d = store.diff(root, args.a, args.b)
     if not any(d.values()):
         console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
@@ -372,6 +410,7 @@ def build_parser():
     pd = sub.add_parser("diff", help="show what changed between two snapshots", parents=[common])
     pd.add_argument("a", help="snapshot id or number")
     pd.add_argument("b", help="snapshot id or number")
+    pd.add_argument("path", nargs="?", help="show a line-by-line diff of just this file")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents from a snapshot to stdout", parents=[common])

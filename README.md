@@ -38,6 +38,7 @@ quicksave list --json          # machine-readable output, same for status --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave diff 2 3             # see what changed between two snapshots
+quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots
 quicksave gc --keep 10         # drop old snapshots and blobs nothing points at
 quicksave gc 4 pre-deploy      # drop specific snapshots by number, id or name
 quicksave verify               # check the store for corrupt or missing blobs

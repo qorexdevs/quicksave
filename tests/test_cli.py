@@ -419,3 +419,29 @@ def test_cli_export(tmp_path, monkeypatch, capsys):
         assert tar.getnames() == ["a.txt"]
         assert tar.extractfile("a.txt").read() == b"hi"
 
+
+def test_diff_file_shows_line_changes(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo changed\nthree\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "a.txt"])
+    out = capsys.readouterr().out
+    assert "+two changed" in out
+    assert "+three" in out
+    assert "-two" in out
+
+
+def test_diff_file_identical(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("same\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "b.txt").write_text("other\n")
+    main(["save", "-m", "two"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "a.txt"])
+    assert "identical" in capsys.readouterr().out

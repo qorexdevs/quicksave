@@ -174,7 +174,35 @@ def cmd_show(args):
     root = _root_or_die()
     data = store.show(root, args.ref, args.path)
     with open(1, "wb", closefd=False) as out:
-        out.write(data)
+        out.write(data) 
+
+def cmd_log(args):
+    root = _root_or_die()
+
+    snap_file = store._find_snapshot(store.store_path(root), args.ref)
+    if snap_file is None:
+        raise store.QuicksaveError(f"snapshot '{args.ref}' not found")
+
+    manifest = json.loads(snap_file.read_text())
+    files = manifest.get("files", {})
+
+    snap_id = snap_file.stem.partition("-")[2]
+
+    when = "-"
+    if manifest.get("created_at"):
+        when = datetime.fromtimestamp(
+            manifest["created_at"]
+        ).strftime("%Y-%m-%d %H:%M:%S")
+
+    console.print(f"Snapshot: {snap_id}")
+    console.print(f"Name: {manifest.get('name') or '-'}")
+    console.print(f"Message: {manifest.get('message') or '-'}")
+    console.print(f"Time: {when}")
+    console.print(f"Files: {len(files)}")
+
+    console.print("\nFile List:")
+    for path, meta in sorted(files.items()):
+        console.print(f"{path} ({meta.get('size', 0)} bytes)")
 
 
 def cmd_gc(args):
@@ -282,7 +310,18 @@ def build_parser():
     ph = sub.add_parser("show", help="print a file's contents from a snapshot to stdout", parents=[common])
     ph.add_argument("ref", help="snapshot id or number")
     ph.add_argument("path", help="file to print")
-    ph.set_defaults(func=cmd_show)
+    ph.set_defaults(func=cmd_show) 
+
+    plog = sub.add_parser(
+    "log",
+    help="show details for one snapshot",
+    parents=[common]
+    )
+    plog.add_argument(
+    "ref",
+    help="snapshot id, number or name"
+    )
+    plog.set_defaults(func=cmd_log)
 
     pg = sub.add_parser("gc", help="drop old snapshots and unreferenced blobs", parents=[common])
     pg.add_argument("refs", nargs="*",

@@ -208,6 +208,20 @@ def cmd_log(args):
 
 def cmd_verify(args):
     root = _root_or_die()
+    if args.repair:
+        r = store.repair(root, dry_run=args.dry_run)
+        tag = " [dim](dry run)[/]" if r["dry_run"] else ""
+        if not r["dropped"] and not r["corrupt_blobs"]:
+            console.print(f"[green]ok[/] [dim]nothing to repair[/]{tag}")
+            return
+        for name in r["dropped"]:
+            console.print(f"[red]- snapshot {name}[/] (referenced a bad blob)")
+        console.print(
+            f"dropped [cyan]{len(r['dropped'])}[/] snapshots, "
+            f"deleted [cyan]{r['corrupt_blobs']}[/] corrupt blobs, "
+            f"swept [cyan]{r['blobs']}[/] orphaned blobs{tag}"
+        )
+        return
     r = store.verify(root)
     if args.json:
         print(json.dumps(r))
@@ -354,6 +368,10 @@ def build_parser():
 
     pv = sub.add_parser("verify", help="check the store for corrupt or missing blobs", parents=[common])
     pv.add_argument("--json", action="store_true", help="print the result as json")
+    pv.add_argument("--repair", action="store_true",
+                    help="drop snapshots with corrupt or missing blobs")
+    pv.add_argument("--dry-run", action="store_true",
+                    help="with --repair, show what would be dropped without touching the store")
     pv.set_defaults(func=cmd_verify)
 
     pg = sub.add_parser("gc", help="drop old snapshots and unreferenced blobs", parents=[common])

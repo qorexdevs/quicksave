@@ -40,6 +40,7 @@ quicksave diff 2 3             # see what changed between two snapshots
 quicksave gc --keep 10         # drop old snapshots and blobs nothing points at
 quicksave gc 4 pre-deploy      # drop specific snapshots by number, id or name
 quicksave verify               # check the store for corrupt or missing blobs
+quicksave verify --repair      # drop snapshots that point at corrupt or missing blobs
 quicksave save -q -m wip       # -q/--quiet: silence output for scripts and hooks
 ```
 

@@ -355,6 +355,50 @@ def verify(root):
     }
 
 
+def repair(root, dry_run=False):
+    # a snapshot is only as good as the blobs it points at. if verify finds any
+    # corrupt or missing, the snapshots that reference them can't restore cleanly.
+    # drop those snapshots (and delete the corrupt blobs) so the rest of the store
+    # is trustworthy again, then sweep the orphaned blobs.
+    store = store_path(root)
+    state = verify(root)
+    bad = set(state["corrupt"]) | {m["sha256"] for m in state["missing"]}
+    if not bad:
+        return {"dropped": [], "corrupt_blobs": 0, "blobs": 0, "dry_run": dry_run}
+
+    corrupt_removed = 0
+    for digest in state["corrupt"]:
+        obj = store / "objects" / digest[:2] / digest[2:]
+        corrupt_removed += 1
+        if not dry_run:
+            obj.unlink(missing_ok=True)
+
+    snaps = _snapshot_files(store)
+    survivors, dropped = [], []
+    for f in snaps:
+        shas = {m["sha256"] for m in json.loads(f.read_text())["files"].values()}
+        if shas & bad:
+            dropped.append(f.stem)
+            if not dry_run:
+                f.unlink()
+        else:
+            survivors.append(f)
+
+    refs = _referenced_blobs(survivors)
+    removed = 0
+    for obj, digest in list(_iter_blobs(store)):
+        if digest in refs:
+            continue
+        removed += 1
+        if not dry_run:
+            obj.unlink()
+            try:
+                obj.parent.rmdir()
+            except OSError:
+                pass
+    return {"dropped": dropped, "corrupt_blobs": corrupt_removed, "blobs": removed, "dry_run": dry_run}
+
+
 def show(root, ref, path):
     store = store_path(root)
     f = _find_snapshot(store, ref)

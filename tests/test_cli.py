@@ -1,3 +1,4 @@
+import hashlib
 import io
 import json
 
@@ -163,6 +164,25 @@ def test_cli_verify_reports_ok(tmp_path, monkeypatch, capsys):
     main(["save", "-m", "base"])
     capsys.readouterr()
 
+    main(["verify"])
+    assert "ok" in capsys.readouterr().out
+
+
+def test_cli_verify_repair_drops_broken_snapshot(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("keep")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("broken")
+    main(["save", "-m", "second"])
+
+    broken = hashlib.sha256(b"broken").hexdigest()
+    (tmp_path / ".quicksave" / "objects" / broken[:2] / broken[2:]).unlink()
+    capsys.readouterr()
+
+    main(["verify", "--repair"])
+    assert "dropped" in capsys.readouterr().out
+    capsys.readouterr()
     main(["verify"])
     assert "ok" in capsys.readouterr().out
 

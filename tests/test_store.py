@@ -1,3 +1,4 @@
+import hashlib
 import os
 
 import pytest
@@ -481,6 +482,49 @@ def test_verify_detects_missing_blob(tmp_path):
     assert not r["ok"]
     assert len(r["missing"]) == 1
     assert r["missing"][0]["path"] == "f.txt"
+
+
+def test_repair_clean_store_is_noop(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path)
+
+    r = store.repair(tmp_path)
+    assert r["dropped"] == []
+    assert r["corrupt_blobs"] == 0
+    assert r["blobs"] == 0
+
+
+def test_repair_drops_snapshot_with_missing_blob(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("keep")
+    store.save(tmp_path)
+    (tmp_path / "f.txt").write_text("broken")
+    store.save(tmp_path)
+
+    # nuke the blob the second snapshot needs, leaving the first one intact
+    broken = hashlib.sha256(b"broken").hexdigest()
+    objects = tmp_path / ".quicksave" / "objects"
+    (objects / broken[:2] / broken[2:]).unlink()
+
+    r = store.repair(tmp_path)
+    assert len(r["dropped"]) == 1
+    assert store.verify(tmp_path)["ok"]
+    assert len(store.list_snapshots(tmp_path)) == 1
+
+
+def test_repair_dry_run_touches_nothing(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("hello")
+    store.save(tmp_path)
+    obj, _ = next(store._iter_blobs(tmp_path / ".quicksave"))
+    obj.unlink()
+
+    r = store.repair(tmp_path, dry_run=True)
+    assert len(r["dropped"]) == 1
+    assert r["dry_run"]
+    # snapshot manifest still on disk after a dry run
+    assert len(store.list_snapshots(tmp_path)) == 1
 
 
 def test_save_with_name_and_restore_by_name(tmp_path):

@@ -172,6 +172,21 @@ def save(root, message="", ignore=DEFAULT_IGNORE, force=False, name=""):
     return snap_id, len(files), True
 
 
+def set_name(root, ref, name):
+    if name and name.isdigit():
+        raise QuicksaveError("snapshot name can't be all digits, it would clash with list numbers")
+    store = store_path(root)
+    f = _resolve_snapshot(store, ref)
+    m = json.loads(f.read_text())
+    old = m.get("name", "")
+    if name:
+        m["name"] = name
+    else:
+        m.pop("name", None)
+    f.write_text(json.dumps(m, indent=2))
+    return f.stem.partition("-")[2], old
+
+
 def list_snapshots(root):
     store = store_path(root)
     out = []

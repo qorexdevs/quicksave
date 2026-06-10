@@ -606,6 +606,31 @@ def test_name_lands_on_unchanged_snapshot(tmp_path):
     assert store._find_snapshot(store.store_path(tmp_path), "keep") is not None
 
 
+def test_set_name_labels_existing_snapshot(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("x")
+    snap_id, _, _ = store.save(tmp_path)
+    rid, old = store.set_name(tmp_path, "0", "good-state")
+    assert rid == snap_id
+    assert old == ""
+    assert store.list_snapshots(tmp_path)[0]["name"] == "good-state"
+    # resolvable by the new name, and renaming reports the previous one
+    _, prev = store.set_name(tmp_path, "good-state", "better")
+    assert prev == "good-state"
+    assert store._find_snapshot(store.store_path(tmp_path), "better") is not None
+
+
+def test_set_name_clears_and_rejects_digits(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("x")
+    store.save(tmp_path, name="tmp")
+    _, old = store.set_name(tmp_path, "0", "")
+    assert old == "tmp"
+    assert store.list_snapshots(tmp_path)[0]["name"] == ""
+    with pytest.raises(store.QuicksaveError):
+        store.set_name(tmp_path, "0", "42")
+
+
 def test_reused_name_resolves_to_latest(tmp_path):
     store.init(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

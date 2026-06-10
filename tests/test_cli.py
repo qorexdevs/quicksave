@@ -61,6 +61,24 @@ def test_restore_backs_up_current_tree(tmp_path, monkeypatch, capsys):
     assert (tmp_path / "note.md").read_text() == "v2"
 
 
+def test_name_command_labels_and_resolves(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["name", "0", "good-build"])
+    assert "good-build" in capsys.readouterr().out
+
+    # the name now resolves in list and restore
+    main(["list"])
+    assert "good-build" in capsys.readouterr().out
+    (tmp_path / "a.txt").write_text("v2")
+    main(["restore", "good-build", "--no-backup"])
+    assert (tmp_path / "a.txt").read_text() == "v1"
+
+
 def test_undo_reverts_last_restore(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("v1")

@@ -231,6 +231,21 @@ def cmd_export(args):
     console.print(f"exported [cyan]{n}[/] files from [cyan]{ref}[/] to [dim]{dest}[/]")
 
 
+def cmd_name(args):
+    root = _root_or_die()
+    snap_id, old = store.set_name(root, args.ref, args.name)
+    if not args.name:
+        if old:
+            console.print(f"cleared name [magenta]{old}[/] from [cyan]{snap_id}[/]")
+        else:
+            console.print(f"[dim]{snap_id} had no name[/]")
+        return
+    if old and old != args.name:
+        console.print(f"renamed [cyan]{snap_id}[/] [magenta]{old}[/] -> [magenta]{args.name}[/]")
+    else:
+        console.print(f"named [cyan]{snap_id}[/] [magenta]{args.name}[/]")
+
+
 def cmd_log(args):
     root = _root_or_die()
 
@@ -427,6 +442,11 @@ def build_parser():
     plog = sub.add_parser("log", help="show one snapshot's details", parents=[common])
     plog.add_argument("ref", help="snapshot id, number or name")
     plog.set_defaults(func=cmd_log)
+
+    pn = sub.add_parser("name", help="label a snapshot, or clear its name with an empty value", parents=[common])
+    pn.add_argument("ref", help="snapshot id, number or current name")
+    pn.add_argument("name", nargs="?", default="", help="new name, omit to clear")
+    pn.set_defaults(func=cmd_name)
 
     pv = sub.add_parser("verify", help="check the store for corrupt or missing blobs", parents=[common])
     pv.add_argument("--json", action="store_true", help="print the result as json")

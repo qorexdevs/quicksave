@@ -33,6 +33,7 @@ quicksave restore 3 --clean    # exact rewind: also delete files added after the
 quicksave restore 3 --dry-run  # preview what restore would write or delete, no changes
 quicksave restore 3 --no-backup # skip the safety snapshot of the current tree
 quicksave undo                 # revert the last restore, back to the pre-restore tree
+quicksave name 3 good-build    # tag an existing snapshot after the fact (empty name clears it)
 quicksave status               # what changed in the tree since the last snapshot
 quicksave list --json          # machine-readable output, same for status --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
@@ -73,7 +74,9 @@ snapshot, and `--no-backup` turns it off.
 `save -n <name>` tags a snapshot so you can roll back to it without hunting for its number or id:
 `quicksave restore pre-deploy`. Anywhere a command takes a snapshot ref (`restore`, `status`, `show`,
 `diff`) the name works too. Names can't be all digits so they never clash with the list numbers, and
-if you reuse a name the most recent one wins.
+if you reuse a name the most recent one wins. The hook saves nameless snapshots as it fires, so when
+one turns out to be the good state you can label it afterwards with `quicksave name 4 good-build`,
+or pass an empty name to clear one.
 
 `status` compares the working tree to a snapshot (the latest one unless you name another) and shows
 what was added, removed or modified since then, so you can see what a checkpoint would pull you back

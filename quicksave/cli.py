@@ -60,6 +60,11 @@ def cmd_list(args):
     if not snaps:
         console.print("[dim]no snapshots yet, run 'quicksave save'[/]")
         return
+    total_snaps = len(snaps)
+    is_capped = False
+    if args.limit and args.limit < total_snaps:
+        snaps = snaps[-args.limit:]
+        is_capped = True
     table = Table(box=None, pad_edge=False)
     table.add_column("#", justify="right", style="dim")
     table.add_column("id", style="cyan")
@@ -73,7 +78,10 @@ def cmd_list(args):
         table.add_row(str(s["seq"]), s["id"], s.get("name") or "[dim]-[/]", when,
                       str(s["count"]), _human_size(s.get("size", 0)), s["message"] or "[dim]-[/]")
     console.print(table)
-    console.print(f"[dim]{len(snaps)} snapshots, {_human_size(store.store_size(root))} on disk[/]")
+    if is_capped:
+        console.print(f"[dim]showing {len(snaps)} of {total_snaps} snapshots, {_human_size(store.store_size(root))} on disk[/]")
+    else:
+        console.print(f"[dim]{len(snaps)} snapshots, {_human_size(store.store_size(root))} on disk[/]")
 
 
 def cmd_restore(args):
@@ -326,6 +334,7 @@ def build_parser():
 
     pl = sub.add_parser("list", help="list snapshots", parents=[common])
     pl.add_argument("--json", action="store_true", help="print snapshots as json")
+    pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
     pl.set_defaults(func=cmd_list)
 
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])

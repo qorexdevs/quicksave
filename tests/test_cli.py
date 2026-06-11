@@ -368,6 +368,22 @@ def test_log_shows_snapshot_details(tmp_path, monkeypatch, capsys):
     assert "v1" in capsys.readouterr().out
 
 
+def test_log_defaults_to_latest(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    main(["init"])
+    main(["save", "-m", "first", "-n", "v1"])
+    (tmp_path / "a.txt").write_text("changed")
+    main(["save", "-m", "second", "-n", "v2"])
+    capsys.readouterr()
+
+    main(["log"])
+    out = capsys.readouterr().out
+    assert "v2" in out
+    assert "second" in out
+    assert "v1" not in out
+
+
 def test_log_json_emits_files(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("hello")

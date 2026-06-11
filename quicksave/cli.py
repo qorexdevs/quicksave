@@ -597,8 +597,8 @@ def build_parser():
     pi.add_argument("--name", default="", help="label for the new snapshot")
     pi.set_defaults(func=cmd_import)
 
-    plog = sub.add_parser("log", help="show one snapshot's details", parents=[common])
-    plog.add_argument("ref", help="snapshot id, number or name")
+    plog = sub.add_parser("log", help="show one snapshot's details (default latest)", parents=[common])
+    plog.add_argument("ref", nargs="?", default=None, help="snapshot id, number or name, defaults to latest")
     plog.add_argument("--json", action="store_true", help="print the snapshot details as json")
     plog.set_defaults(func=cmd_log)
 

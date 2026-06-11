@@ -103,6 +103,32 @@ def cmd_list(args):
         console.print(f"[dim]{len(snaps)} snapshots, {_human_size(store.store_size(root))} on disk[/]")
 
 
+def cmd_stats(args):
+    root = _root_or_die()
+    s = store.stats(root)
+    if args.json:
+        print(json.dumps(s))
+        return
+    if not s["snapshots"]:
+        console.print("[dim]no snapshots yet, run 'quicksave save'[/]")
+        return
+    saved = s["logical_bytes"] - s["disk_bytes"]
+    ratio = s["logical_bytes"] / s["disk_bytes"] if s["disk_bytes"] else 1.0
+    table = Table(box=None, pad_edge=False, show_header=False)
+    table.add_column(style="dim")
+    table.add_column(justify="right")
+    table.add_row("snapshots", str(s["snapshots"]))
+    table.add_row("blobs", str(s["blobs"]))
+    table.add_row("logical size", _human_size(s["logical_bytes"]))
+    table.add_row("on disk", _human_size(s["disk_bytes"]))
+    table.add_row("dedup", f"{ratio:.1f}x [dim]({_human_size(saved)} saved)[/]")
+    if s["first"]:
+        first = datetime.fromtimestamp(s["first"]).strftime("%Y-%m-%d %H:%M")
+        last = datetime.fromtimestamp(s["last"]).strftime("%Y-%m-%d %H:%M")
+        table.add_row("span", first if first == last else f"{first} -> {last}")
+    console.print(table)
+
+
 def cmd_find(args):
     root = _root_or_die()
     snaps = store.find_file(root, args.path)
@@ -486,6 +512,10 @@ def build_parser():
     pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
     pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
     pl.set_defaults(func=cmd_list)
+
+    pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])
+    pst.add_argument("--json", action="store_true", help="print the stats as json")
+    pst.set_defaults(func=cmd_stats)
 
     pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])
     pf.add_argument("path", help="file path or part of one to search for")

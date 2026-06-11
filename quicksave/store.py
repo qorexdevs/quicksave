@@ -218,6 +218,40 @@ def store_size(root):
     return total
 
 
+def stats(root):
+    # store health and how much dedup is buying you: logical size is what naive
+    # copies of every snapshot would cost, disk is what content-addressed storage
+    # actually uses, so logical/disk is the dedup ratio.
+    store = store_path(root)
+    if not store.is_dir():
+        raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
+    snaps = _snapshot_files(store)
+    logical = 0
+    times = []
+    for f in snaps:
+        m = json.loads(f.read_text())
+        if m.get("created_at"):
+            times.append(m["created_at"])
+        for meta in m.get("files", {}).values():
+            logical += meta.get("size", 0)
+    blobs = 0
+    disk = 0
+    for obj, _ in _iter_blobs(store):
+        blobs += 1
+        try:
+            disk += obj.stat().st_size
+        except OSError:
+            continue
+    return {
+        "snapshots": len(snaps),
+        "blobs": blobs,
+        "logical_bytes": logical,
+        "disk_bytes": disk,
+        "first": min(times) if times else 0,
+        "last": max(times) if times else 0,
+    }
+
+
 def _find_snapshot(store, ref):
     ref = str(ref)
     files = _snapshot_files(store)

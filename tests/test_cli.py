@@ -547,3 +547,22 @@ def test_cli_find(tmp_path, monkeypatch, capsys):
 
     main(["find", "ghost.txt"])
     assert "no snapshot" in capsys.readouterr().out
+
+
+def test_cli_stats(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("same")
+    (tmp_path / "b.txt").write_text("same")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["stats"])
+    out = capsys.readouterr().out
+    assert "snapshots" in out
+    assert "dedup" in out
+
+    main(["stats", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data["snapshots"] == 1
+    assert data["blobs"] == 1

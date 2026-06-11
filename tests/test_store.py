@@ -798,3 +798,26 @@ def test_find_file_matches_directory_prefix_and_missing(tmp_path):
     by_dir = store.find_file(tmp_path, "src")
     assert by_dir[0]["files"][0]["path"] == "src/a.txt"
     assert store.find_file(tmp_path, "nope.txt") == []
+
+
+def test_stats_counts_and_dedup(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("same")
+    (tmp_path / "b.txt").write_text("same")
+    store.save(tmp_path, message="first")
+    (tmp_path / "c.txt").write_text("other")
+    store.save(tmp_path, message="second")
+
+    s = store.stats(tmp_path)
+    assert s["snapshots"] == 2
+    # "same" dedups to one blob, "c.txt" adds another -> 2 unique blobs
+    assert s["blobs"] == 2
+    # logical counts every file in every snapshot, disk counts each blob once
+    assert s["logical_bytes"] > s["disk_bytes"]
+    assert s["disk_bytes"] == store.store_size(tmp_path)
+    assert s["first"] <= s["last"]
+
+
+def test_stats_requires_init(tmp_path):
+    with pytest.raises(store.QuicksaveError):
+        store.stats(tmp_path)

@@ -358,6 +358,33 @@ def test_export_import_roundtrips_through_a_stream(tmp_path):
     assert (tmp_path / "a.txt").read_text() == "hello"
 
 
+def test_gzip_stream_is_compressed_and_roundtrips(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    store.save(tmp_path)
+
+    buf = io.BytesIO()
+    store.export_snapshot(tmp_path, None, "-", out=buf, gzip=True)
+    assert buf.getvalue()[:2] == b"\x1f\x8b"  # gzip magic
+
+    buf.seek(0)
+    snap_id, got = store.import_archive(tmp_path, "-", fileobj=buf)
+    assert got == 1
+    os.remove(tmp_path / "a.txt")
+    store.restore(tmp_path, snap_id)
+    assert (tmp_path / "a.txt").read_text() == "hello"
+
+
+def test_gzip_path_compresses_without_gz_suffix(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    store.save(tmp_path)
+
+    dest = tmp_path / "out.tar"
+    store.export_snapshot(tmp_path, None, dest, gzip=True)
+    assert dest.read_bytes()[:2] == b"\x1f\x8b"
+
+
 def test_import_from_stream_rejects_non_tar(tmp_path):
     store.init(tmp_path)
     with pytest.raises(store.QuicksaveError):

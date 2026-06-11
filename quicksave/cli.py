@@ -257,10 +257,11 @@ def cmd_export(args):
     ref = args.ref or "latest"
     if args.dest == "-":
         n, _ = store.export_snapshot(root, args.ref, args.dest, args.paths or None,
-                                     out=sys.stdout.buffer)
+                                     out=sys.stdout.buffer, gzip=args.gzip)
         err.print(f"exported [cyan]{n}[/] files from [cyan]{ref}[/] to [dim]stdout[/]")
         return
-    n, dest = store.export_snapshot(root, args.ref, args.dest, args.paths or None)
+    n, dest = store.export_snapshot(root, args.ref, args.dest, args.paths or None,
+                                    gzip=args.gzip)
     console.print(f"exported [cyan]{n}[/] files from [cyan]{ref}[/] to [dim]{dest}[/]")
 
 
@@ -483,6 +484,7 @@ def build_parser():
     pe.add_argument("dest", help="output path (.tar.gz/.tgz for gzip, else plain .tar), or - for stdout")
     pe.add_argument("ref", nargs="?", help="snapshot id, number or name (default latest)")
     pe.add_argument("paths", nargs="*", help="limit the export to these paths")
+    pe.add_argument("-z", "--gzip", action="store_true", help="gzip the archive, even when streaming to stdout")
     pe.set_defaults(func=cmd_export)
 
     pi = sub.add_parser("import", help="read a tar archive back into a new snapshot without touching the tree", parents=[common])

@@ -432,11 +432,11 @@ def show(root, ref, path):
     return obj.read_bytes()
 
 
-def export_snapshot(root, ref, dest, paths=None, out=None):
+def export_snapshot(root, ref, dest, paths=None, out=None, gzip=False):
     # materialize a snapshot into a tar archive without touching the live tree.
-    # gzip when dest ends in .gz/.tgz, plain tar otherwise. handy for archiving
-    # a known-good checkpoint or moving it to another machine. pass out to stream
-    # a plain tar into an open binary file (e.g. stdout) instead of a path.
+    # gzip when dest ends in .gz/.tgz or gzip is set, plain tar otherwise. handy
+    # for archiving a known-good checkpoint or moving it to another machine. pass
+    # out to stream a tar into an open binary file (e.g. stdout) instead of a path.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
@@ -445,12 +445,12 @@ def export_snapshot(root, ref, dest, paths=None, out=None):
         raise QuicksaveError("nothing to export")
 
     if out is not None:
-        with tarfile.open(fileobj=out, mode="w|") as tar:
+        with tarfile.open(fileobj=out, mode="w|gz" if gzip else "w|") as tar:
             written = _add_to_tar(tar, store, manifest, files)
         return written, "-"
 
     dest = Path(dest)
-    mode = "w:gz" if dest.suffix in (".gz", ".tgz") else "w"
+    mode = "w:gz" if gzip or dest.suffix in (".gz", ".tgz") else "w"
     with tarfile.open(dest, mode) as tar:
         written = _add_to_tar(tar, store, manifest, files)
     return written, dest

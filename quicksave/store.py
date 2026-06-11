@@ -477,28 +477,35 @@ def import_archive(root, src, message="", name=""):
         raise QuicksaveError(f"archive '{src}' not found")
 
     files = {}
-    with tarfile.open(src) as tar:
-        for member in tar.getmembers():
-            if not member.isfile():
-                continue
-            rel = member.name[2:] if member.name.startswith("./") else member.name
-            if not rel or rel.startswith("/") or ".." in Path(rel).parts:
-                raise QuicksaveError(f"unsafe path in archive: {member.name}")
-            f = tar.extractfile(member)
-            if f is None:
-                continue
-            data = f.read()
-            digest = _write_blob(store, data)
-            files[Path(rel).as_posix()] = {
-                "sha256": digest,
-                "size": len(data),
-                "mode": member.mode & 0o777 or 0o644,
-            }
+    newest = 0
+    try:
+        with tarfile.open(src) as tar:
+            for member in tar.getmembers():
+                if not member.isfile():
+                    continue
+                rel = member.name[2:] if member.name.startswith("./") else member.name
+                if not rel or rel.startswith("/") or ".." in Path(rel).parts:
+                    raise QuicksaveError(f"unsafe path in archive: {member.name}")
+                f = tar.extractfile(member)
+                if f is None:
+                    continue
+                data = f.read()
+                digest = _write_blob(store, data)
+                files[Path(rel).as_posix()] = {
+                    "sha256": digest,
+                    "size": len(data),
+                    "mode": member.mode & 0o777 or 0o644,
+                }
+                newest = max(newest, member.mtime)
+    except tarfile.TarError as e:
+        raise QuicksaveError(f"can't read '{src}' as a tar archive: {e}")
     if not files:
         raise QuicksaveError("no files in archive")
 
     snaps = _snapshot_files(store)
-    manifest = {"message": message, "name": name, "created_at": time.time(), "files": files}
+    # export stamps members with the snapshot's created_at, so the newest mtime
+    # carries the original timestamp through an export/import round trip
+    manifest = {"message": message, "name": name, "created_at": newest or time.time(), "files": files}
     body = json.dumps(manifest, sort_keys=True).encode()
     snap_id = _sha256(body)[:12]
     fname = f"{len(snaps):04d}-{snap_id}.json"

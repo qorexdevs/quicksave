@@ -309,6 +309,31 @@ def test_import_empty_archive_raises(tmp_path):
         store.import_archive(tmp_path, empty)
 
 
+def test_import_not_a_tar_raises(tmp_path):
+    store.init(tmp_path)
+    bogus = tmp_path / "bogus.tar"
+    bogus.write_text("plain text, not a tar")
+    with pytest.raises(store.QuicksaveError):
+        store.import_archive(tmp_path, bogus)
+
+
+def test_import_keeps_export_timestamp(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    store.save(tmp_path)
+    orig = json.loads(store._snapshot_files(store.store_path(tmp_path))[0].read_text())
+
+    dest = tmp_path / "out.tar"
+    store.export_snapshot(tmp_path, None, dest)
+    snap_id, _ = store.import_archive(tmp_path, dest)
+
+    f = store._resolve_snapshot(store.store_path(tmp_path), snap_id)
+    m = json.loads(f.read_text())
+    # export stamps members with the snapshot's created_at, so the round trip
+    # keeps the original timestamp instead of the import time
+    assert m["created_at"] == int(orig["created_at"])
+
+
 def test_diff_between_snapshots(tmp_path):
     store.init(tmp_path)
     (tmp_path / "keep.txt").write_text("same")

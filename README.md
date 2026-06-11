@@ -93,6 +93,10 @@ if you reuse a name the most recent one wins. The hook saves nameless snapshots 
 one turns out to be the good state you can label it afterwards with `quicksave name 4 good-build`,
 or pass an empty name to clear one.
 
+You can also point at a snapshot by how recent it is. `latest` is the newest one and `latest~1` (or
+just `~1`) is the one before it, counting back, so `quicksave diff ~1 wt` shows what changed since the
+previous checkpoint without looking up an id.
+
 `status` compares the working tree to a snapshot (the latest one unless you name another) and shows
 what was added, removed or modified since then, so you can see what a checkpoint would pull you back
 to before you run it. `diff` does the same between two snapshots, and the ref `wt` stands in for the

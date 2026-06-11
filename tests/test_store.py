@@ -466,6 +466,36 @@ def test_find_snapshot_number_beats_id_prefix(tmp_path):
     assert f.stem == "0001-bbbbbbbbbbbb"
 
 
+def test_relative_refs_count_back_from_newest(tmp_path):
+    store.init(tmp_path)
+    ids = []
+    for v in ("a", "b", "c"):
+        (tmp_path / "f.txt").write_text(v)
+        sid, _, _ = store.save(tmp_path)
+        ids.append(sid)
+    assert store.resolve_id(tmp_path, "latest") == ids[-1]
+    assert store.resolve_id(tmp_path, "latest~1") == ids[-2]
+    assert store.resolve_id(tmp_path, "~2") == ids[-3]
+
+
+def test_relative_ref_out_of_range(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a")
+    store.save(tmp_path)
+    with pytest.raises(store.QuicksaveError):
+        store.resolve_id(tmp_path, "latest~5")
+
+
+def test_diff_with_relative_refs(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("v1")
+    store.save(tmp_path)
+    (tmp_path / "f.txt").write_text("v2")
+    store.save(tmp_path)
+    d = store.diff(tmp_path, "latest~1", "latest")
+    assert d["modified"] == ["f.txt"]
+
+
 def test_status_against_latest(tmp_path):
     store.init(tmp_path)
     (tmp_path / "keep.txt").write_text("same")

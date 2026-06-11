@@ -266,9 +266,26 @@ def stats(root):
     }
 
 
+def _relative_ref(ref):
+    # 'latest' is the newest snapshot, 'latest~2' or '~2' steps back from it.
+    # returns how many to count back from the end, or None when not relative.
+    if ref == "latest":
+        return 0
+    for prefix in ("latest~", "~"):
+        if ref.startswith(prefix):
+            n = ref[len(prefix):]
+            if n.isdigit():
+                return int(n)
+    return None
+
+
 def _find_snapshot(store, ref):
     ref = str(ref)
     files = _snapshot_files(store)
+    # relative refs count back from the newest, so 'latest~1' is the one before it
+    back = _relative_ref(ref)
+    if back is not None:
+        return files[-1 - back] if 0 <= back < len(files) else None
     # a bare number is a sequence from 'list'; resolve it before any id-prefix
     # match so an id that happens to start with that digit can't shadow it
     for f in files:

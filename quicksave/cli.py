@@ -94,7 +94,8 @@ def cmd_list(args):
             when = datetime.fromtimestamp(s["created_at"]).strftime("%Y-%m-%d %H:%M") if s["created_at"] else "-"
         else:
             when = _relative_time(s["created_at"], now)
-        table.add_row(str(s["seq"]), s["id"], s.get("name") or "[dim]-[/]", when,
+        sid = f"{s['id']} [yellow]*[/]" if s.get("pinned") else s["id"]
+        table.add_row(str(s["seq"]), sid, s.get("name") or "[dim]-[/]", when,
                       str(s["count"]), _human_size(s.get("size", 0)), s["message"] or "[dim]-[/]")
     console.print(table)
     if is_capped:
@@ -366,6 +367,24 @@ def cmd_name(args):
         console.print(f"named [cyan]{snap_id}[/] [magenta]{args.name}[/]")
 
 
+def cmd_pin(args):
+    root = _root_or_die()
+    snap_id, was = store.set_pinned(root, args.ref, True)
+    if was:
+        console.print(f"[dim]{snap_id} already pinned[/]")
+    else:
+        console.print(f"[green]pinned[/] [cyan]{snap_id}[/], gc --keep won't drop it")
+
+
+def cmd_unpin(args):
+    root = _root_or_die()
+    snap_id, was = store.set_pinned(root, args.ref, False)
+    if was:
+        console.print(f"unpinned [cyan]{snap_id}[/]")
+    else:
+        console.print(f"[dim]{snap_id} wasn't pinned[/]")
+
+
 def cmd_log(args):
     root = _root_or_die()
 
@@ -386,6 +405,7 @@ def cmd_log(args):
 
     console.print(f"Snapshot: {snap_id}")
     console.print(f"Name: {manifest.get('name') or '-'}")
+    console.print(f"Pinned: {'yes' if manifest.get('pinned') else 'no'}")
     console.print(f"Message: {manifest.get('message') or '-'}")
     console.print(f"Time: {when}")
     console.print(f"Files: {len(files)}")
@@ -585,6 +605,14 @@ def build_parser():
     pn.add_argument("ref", help="snapshot id, number or current name")
     pn.add_argument("name", nargs="?", default="", help="new name, omit to clear")
     pn.set_defaults(func=cmd_name)
+
+    pp = sub.add_parser("pin", help="protect a snapshot from gc --keep rotation", parents=[common])
+    pp.add_argument("ref", help="snapshot id, number or name")
+    pp.set_defaults(func=cmd_pin)
+
+    pup = sub.add_parser("unpin", help="let gc --keep rotate a snapshot again", parents=[common])
+    pup.add_argument("ref", help="snapshot id, number or name")
+    pup.set_defaults(func=cmd_unpin)
 
     pv = sub.add_parser("verify", help="check the store for corrupt or missing blobs", parents=[common])
     pv.add_argument("--json", action="store_true", help="print the result as json")

@@ -48,6 +48,8 @@ quicksave diff 2 3             # see what changed between two snapshots
 quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots
 quicksave diff 3 wt            # what the live tree changed since snapshot 3
 quicksave diff 3 wt src/app.py # line-by-line diff of one file against the tree
+quicksave pin 4                # protect a snapshot, gc --keep won't rotate it away
+quicksave unpin 4              # let gc --keep rotate it again
 quicksave gc --keep 10         # drop old snapshots and blobs nothing points at
 quicksave gc 4 pre-deploy      # drop specific snapshots by number, id or name
 quicksave verify               # check the store for corrupt or missing blobs
@@ -161,6 +163,10 @@ after each save:
 ```
 export QUICKSAVE_KEEP=50
 ```
+
+If a checkpoint matters, `quicksave pin <ref>` keeps it out of that rotation so a busy hook can't
+reap the one good state you wanted to keep. `quicksave unpin <ref>` lets it rotate again, and an
+explicit `quicksave gc <ref>` still drops it when you mean it.
 
 ## How it works
 

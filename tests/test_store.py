@@ -619,6 +619,49 @@ def test_gc_dry_run_keeps_everything(tmp_path):
     assert len(store.list_snapshots(tmp_path)) == 2
 
 
+def test_gc_keep_spares_pinned(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path, message="s0")
+    (tmp_path / "f.txt").write_text("two")
+    store.save(tmp_path, message="s1")
+    (tmp_path / "f.txt").write_text("three")
+    store.save(tmp_path, message="s2")
+
+    snap_id, was = store.set_pinned(tmp_path, "0", True)
+    assert was is False
+
+    r = store.gc(tmp_path, keep=1)
+    msgs = [s["message"] for s in store.list_snapshots(tmp_path)]
+    assert msgs == ["s0", "s2"]
+    assert "s0" not in [p for p in r["pruned"]]
+
+
+def test_pin_shows_in_list_and_unpin_clears(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a")
+    store.save(tmp_path)
+    store.set_pinned(tmp_path, "0", True)
+    assert store.list_snapshots(tmp_path)[0]["pinned"] is True
+
+    _, was = store.set_pinned(tmp_path, "0", False)
+    assert was is True
+    assert store.list_snapshots(tmp_path)[0]["pinned"] is False
+
+
+def test_pinned_still_drops_on_explicit_ref(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a")
+    store.save(tmp_path, message="s0")
+    (tmp_path / "f.txt").write_text("b")
+    store.save(tmp_path, message="s1")
+    store.set_pinned(tmp_path, "0", True)
+
+    store.gc(tmp_path, refs=["0"])
+    msgs = [s["message"] for s in store.list_snapshots(tmp_path)]
+    assert msgs == ["s1"]
+
+
 def test_verify_clean_store(tmp_path):
     store.init(tmp_path)
     (tmp_path / "f.txt").write_text("one")

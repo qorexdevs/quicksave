@@ -187,6 +187,19 @@ def set_name(root, ref, name):
     return f.stem.partition("-")[2], old
 
 
+def set_pinned(root, ref, pinned):
+    store = store_path(root)
+    f = _resolve_snapshot(store, ref)
+    m = json.loads(f.read_text())
+    was = m.get("pinned", False)
+    if pinned:
+        m["pinned"] = True
+    else:
+        m.pop("pinned", None)
+    f.write_text(json.dumps(m, indent=2))
+    return f.stem.partition("-")[2], was
+
+
 def list_snapshots(root):
     store = store_path(root)
     out = []
@@ -202,6 +215,7 @@ def list_snapshots(root):
             "created_at": m.get("created_at", 0),
             "count": len(files),
             "size": sum(meta.get("size", 0) for meta in files.values()),
+            "pinned": m.get("pinned", False),
         })
     return out
 
@@ -371,6 +385,8 @@ def gc(root, keep=None, refs=None, dry_run=False):
 
     snaps = _snapshot_files(store)
     drop = list(snaps[: len(snaps) - keep]) if keep is not None and keep < len(snaps) else []
+    # pinned snapshots survive --keep rotation; an explicit ref still drops them.
+    drop = [f for f in drop if not json.loads(f.read_text()).get("pinned", False)]
     for ref in refs or []:
         f = _find_snapshot(store, ref)
         if f is None:

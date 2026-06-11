@@ -458,6 +458,34 @@ def test_list_relative_when(capsys, monkeypatch):
     assert "ago" in capsys.readouterr().out
 
 
+def test_list_pinned_filters(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "keep me"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "throwaway"])
+    main(["pin", "0"])
+    capsys.readouterr()
+
+    main(["list", "--pinned", "--json"])
+    snaps = json.loads(capsys.readouterr().out)
+    assert len(snaps) == 1
+    assert snaps[0]["message"] == "keep me"
+    assert snaps[0]["pinned"] is True
+
+
+def test_list_pinned_empty(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "wip"])
+    capsys.readouterr()
+
+    main(["list", "--pinned"])
+    assert "no pinned snapshots" in capsys.readouterr().out
+
+
 def test_cli_export(tmp_path, monkeypatch, capsys):
     import tarfile
 

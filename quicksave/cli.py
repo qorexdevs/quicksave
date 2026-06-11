@@ -68,11 +68,17 @@ def cmd_save(args):
 def cmd_list(args):
     root = _root_or_die()
     snaps = store.list_snapshots(root)
+    pinned_only = getattr(args, "pinned", False)
+    if pinned_only:
+        snaps = [s for s in snaps if s.get("pinned")]
     if args.json:
         print(json.dumps(snaps))
         return
     if not snaps:
-        console.print("[dim]no snapshots yet, run 'quicksave save'[/]")
+        if pinned_only:
+            console.print("[dim]no pinned snapshots, pin one with 'quicksave pin <ref>'[/]")
+        else:
+            console.print("[dim]no snapshots yet, run 'quicksave save'[/]")
         return
     total_snaps = len(snaps)
     is_capped = False
@@ -530,6 +536,7 @@ def build_parser():
     pl.add_argument("--json", action="store_true", help="print snapshots as json")
     pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
     pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
+    pl.add_argument("--pinned", action="store_true", help="show only pinned snapshots")
     pl.set_defaults(func=cmd_list)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])

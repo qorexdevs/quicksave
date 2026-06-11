@@ -566,3 +566,9 @@ def test_cli_stats(tmp_path, monkeypatch, capsys):
     data = json.loads(capsys.readouterr().out)
     assert data["snapshots"] == 1
     assert data["blobs"] == 1
+
+    main(["stats", "--markdown"])
+    out = capsys.readouterr().out
+    assert "| snapshots | blobs | on disk | dedup |" in out
+    assert "| --- | --- | --- | --- |" in out
+    assert "| 1 | 1 |" in out

@@ -38,6 +38,7 @@ quicksave name 3 good-build    # tag an existing snapshot after the fact (empty 
 quicksave status               # what changed in the tree since the last snapshot
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
 quicksave stats                # store size and how much dedup is saving you
+quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
 quicksave list --json          # machine-readable output, same for status --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched

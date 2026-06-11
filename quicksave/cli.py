@@ -114,6 +114,12 @@ def cmd_stats(args):
         return
     saved = s["logical_bytes"] - s["disk_bytes"]
     ratio = s["logical_bytes"] / s["disk_bytes"] if s["disk_bytes"] else 1.0
+    if args.markdown:
+        # plain print so it survives a copy-paste into a readme or a tweet
+        print("| snapshots | blobs | on disk | dedup |")
+        print("| --- | --- | --- | --- |")
+        print(f"| {s['snapshots']} | {s['blobs']} | {_human_size(s['disk_bytes'])} | {ratio:.1f}x |")
+        return
     table = Table(box=None, pad_edge=False, show_header=False)
     table.add_column(style="dim")
     table.add_column(justify="right")
@@ -515,6 +521,7 @@ def build_parser():
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])
     pst.add_argument("--json", action="store_true", help="print the stats as json")
+    pst.add_argument("--markdown", action="store_true", help="print a small markdown table to paste into a readme or tweet")
     pst.set_defaults(func=cmd_stats)
 
     pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])

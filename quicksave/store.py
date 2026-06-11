@@ -462,6 +462,50 @@ def export_snapshot(root, ref, dest, paths=None):
     return written, dest
 
 
+def import_archive(root, src, message="", name=""):
+    # turn a tar archive (from 'export' or any plain tarball) into a fresh
+    # snapshot: every regular file becomes a blob and lands in a new manifest,
+    # without touching the live tree. restore it later to materialize the files.
+    root = Path(root)
+    store = store_path(root)
+    if not store.is_dir():
+        raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
+    if name and name.isdigit():
+        raise QuicksaveError("snapshot name can't be all digits, it would clash with list numbers")
+    src = Path(src)
+    if not src.is_file():
+        raise QuicksaveError(f"archive '{src}' not found")
+
+    files = {}
+    with tarfile.open(src) as tar:
+        for member in tar.getmembers():
+            if not member.isfile():
+                continue
+            rel = member.name[2:] if member.name.startswith("./") else member.name
+            if not rel or rel.startswith("/") or ".." in Path(rel).parts:
+                raise QuicksaveError(f"unsafe path in archive: {member.name}")
+            f = tar.extractfile(member)
+            if f is None:
+                continue
+            data = f.read()
+            digest = _write_blob(store, data)
+            files[Path(rel).as_posix()] = {
+                "sha256": digest,
+                "size": len(data),
+                "mode": member.mode & 0o777 or 0o644,
+            }
+    if not files:
+        raise QuicksaveError("no files in archive")
+
+    snaps = _snapshot_files(store)
+    manifest = {"message": message, "name": name, "created_at": time.time(), "files": files}
+    body = json.dumps(manifest, sort_keys=True).encode()
+    snap_id = _sha256(body)[:12]
+    fname = f"{len(snaps):04d}-{snap_id}.json"
+    (store / "snapshots" / fname).write_text(json.dumps(manifest, indent=2))
+    return snap_id, len(files)
+
+
 # commands worth a checkpoint before an agent runs them: deletes, overwrites,
 # in-place edits and history rewrites. not exhaustive, just the usual footguns.
 _RISKY = [

@@ -38,6 +38,7 @@ quicksave status               # what changed in the tree since the last snapsho
 quicksave list --json          # machine-readable output, same for status --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
+quicksave import backup.tgz    # read a tar archive back into a new snapshot
 quicksave diff 2 3             # see what changed between two snapshots
 quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots
 quicksave diff 3 wt            # what the live tree changed since snapshot 3
@@ -94,6 +95,10 @@ into `diff`.
 known-good checkpoint or move it to another machine: `quicksave export backup.tar.gz pre-deploy`.
 A `.gz`/`.tgz` name gives a gzipped archive, anything else a plain tar; pass paths to export only part
 of the snapshot. With no ref it exports the latest.
+
+`import` is the other direction: it reads a tar archive (one made by `export`, or any plain tarball) back
+into a fresh snapshot without touching the live tree. Restore it later to materialize the files:
+`quicksave import backup.tar.gz --name recovered`. Archives with absolute or `..` paths are rejected.
 
 ## Auto-save before an agent's risky commands
 

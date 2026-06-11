@@ -1,4 +1,6 @@
 import hashlib
+import io
+import json
 import os
 
 import pytest
@@ -259,6 +261,52 @@ def test_export_missing_blob_raises(tmp_path):
             f.unlink()
     with pytest.raises(store.QuicksaveError):
         store.export_snapshot(tmp_path, None, tmp_path / "out.tar")
+
+
+def test_import_roundtrips_an_export(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "b.txt").write_text("world")
+    store.save(tmp_path)
+
+    dest = tmp_path / "out.tar.gz"
+    store.export_snapshot(tmp_path, None, dest)
+
+    snap_id, n = store.import_archive(tmp_path, dest, message="from tar", name="restored")
+    assert n == 2
+    f = store._resolve_snapshot(store.store_path(tmp_path), snap_id)
+    m = json.loads(f.read_text())
+    assert sorted(m["files"]) == ["a.txt", "sub/b.txt"]
+    assert m["name"] == "restored"
+    os.remove(tmp_path / "a.txt")
+    store.restore(tmp_path, snap_id)
+    assert (tmp_path / "a.txt").read_text() == "hello"
+
+
+def test_import_rejects_path_escape(tmp_path):
+    import tarfile
+
+    store.init(tmp_path)
+    bad = tmp_path / "evil.tar"
+    with tarfile.open(bad, "w") as tar:
+        info = tarfile.TarInfo("../escape.txt")
+        data = b"x"
+        info.size = len(data)
+        tar.addfile(info, io.BytesIO(data))
+    with pytest.raises(store.QuicksaveError):
+        store.import_archive(tmp_path, bad)
+
+
+def test_import_empty_archive_raises(tmp_path):
+    import tarfile
+
+    store.init(tmp_path)
+    empty = tmp_path / "empty.tar"
+    with tarfile.open(empty, "w"):
+        pass
+    with pytest.raises(store.QuicksaveError):
+        store.import_archive(tmp_path, empty)
 
 
 def test_diff_between_snapshots(tmp_path):

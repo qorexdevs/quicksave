@@ -8,7 +8,7 @@ from quicksave.cli import main
 import argparse
 
 from quicksave import store
-from quicksave.cli import cmd_list
+from quicksave.cli import cmd_list, _relative_time
 
 
 
@@ -391,7 +391,7 @@ def test_list_limit_caps_output(capsys, monkeypatch):
     monkeypatch.setattr(store, "list_snapshots", lambda root: snaps)
     monkeypatch.setattr(store, "store_size", lambda root: 123)
 
-    args = argparse.Namespace(json=False, limit=2)
+    args = argparse.Namespace(json=False, limit=2, absolute=True)
     cmd_list(args)
 
     out = capsys.readouterr().out
@@ -418,6 +418,29 @@ def test_list_limit_footer(capsys, monkeypatch):
     out = capsys.readouterr().out.lower()
 
     assert "showing 1 of 3 snapshots" in out
+
+
+def test_relative_time():
+    now = 1_000_000.0
+    assert _relative_time(0, now) == "-"
+    assert _relative_time(now - 10, now) == "just now"
+    assert _relative_time(now - 120, now) == "2m ago"
+    assert _relative_time(now - 7200, now) == "2h ago"
+    assert _relative_time(now - 3 * 86400, now) == "3d ago"
+
+
+def test_list_relative_when(capsys, monkeypatch):
+    snaps = [
+        {"seq": 1, "id": "a", "name": "", "created_at": 1, "count": 1, "size": 10, "message": ""},
+    ]
+    monkeypatch.setattr(store, "find_root", lambda: "/tmp")
+    monkeypatch.setattr(store, "list_snapshots", lambda root: snaps)
+    monkeypatch.setattr(store, "store_size", lambda root: 1)
+
+    args = argparse.Namespace(json=False, limit=None, absolute=False)
+    cmd_list(args)
+
+    assert "ago" in capsys.readouterr().out
 
 
 def test_cli_export(tmp_path, monkeypatch, capsys):

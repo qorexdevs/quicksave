@@ -20,6 +20,20 @@ def _human_size(n):
         n /= 1024
 
 
+def _relative_time(ts, now=None):
+    if not ts:
+        return "-"
+    secs = (now or datetime.now().timestamp()) - ts
+    if secs < 0:
+        secs = 0
+    if secs < 60:
+        return "just now"
+    for unit, size in (("d", 86400), ("h", 3600), ("m", 60)):
+        if secs >= size:
+            return f"{int(secs // size)}{unit} ago"
+    return "just now"
+
+
 def _root_or_die():
     root = store.find_root()
     if root is None:
@@ -73,8 +87,13 @@ def cmd_list(args):
     table.add_column("files", justify="right")
     table.add_column("size", justify="right")
     table.add_column("message")
+    absolute = getattr(args, "absolute", False)
+    now = datetime.now().timestamp()
     for s in snaps:
-        when = datetime.fromtimestamp(s["created_at"]).strftime("%Y-%m-%d %H:%M") if s["created_at"] else "-"
+        if absolute:
+            when = datetime.fromtimestamp(s["created_at"]).strftime("%Y-%m-%d %H:%M") if s["created_at"] else "-"
+        else:
+            when = _relative_time(s["created_at"], now)
         table.add_row(str(s["seq"]), s["id"], s.get("name") or "[dim]-[/]", when,
                       str(s["count"]), _human_size(s.get("size", 0)), s["message"] or "[dim]-[/]")
     console.print(table)
@@ -443,6 +462,7 @@ def build_parser():
     pl = sub.add_parser("list", help="list snapshots", parents=[common])
     pl.add_argument("--json", action="store_true", help="print snapshots as json")
     pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
+    pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
     pl.set_defaults(func=cmd_list)
 
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])

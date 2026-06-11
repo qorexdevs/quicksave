@@ -526,3 +526,24 @@ def test_diff_against_working_tree(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "+two edited" in out
     assert "-two" in out
+
+
+def test_cli_find(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "keep.txt").write_text("data")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "keep.txt").unlink()
+    capsys.readouterr()
+
+    main(["find", "keep.txt"])
+    out = capsys.readouterr().out
+    assert "keep.txt" in out
+    assert "quicksave restore" in out
+
+    main(["find", "keep.txt", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data[0]["files"][0]["path"] == "keep.txt"
+
+    main(["find", "ghost.txt"])
+    assert "no snapshot" in capsys.readouterr().out

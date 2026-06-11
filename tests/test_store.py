@@ -769,3 +769,32 @@ def test_reused_name_resolves_to_latest(tmp_path):
     store.save(tmp_path, name="checkpoint")
     f = store._find_snapshot(store.store_path(tmp_path), "checkpoint")
     assert f.stem.startswith("0001-")
+
+
+def test_find_file_lists_matching_snapshots_newest_first(tmp_path):
+    store.init(tmp_path)
+    sub = tmp_path / "src"
+    sub.mkdir()
+    (sub / "foo.py").write_text("v1")
+    store.save(tmp_path, message="first")
+    (sub / "foo.py").write_text("v2")
+    store.save(tmp_path, message="second")
+
+    hits = store.find_file(tmp_path, "foo.py")
+    assert len(hits) == 2
+    assert hits[0]["seq"] == 1 and hits[0]["message"] == "second"
+    assert hits[1]["seq"] == 0
+    assert hits[0]["files"][0]["path"] == "src/foo.py"
+
+
+def test_find_file_matches_directory_prefix_and_missing(tmp_path):
+    store.init(tmp_path)
+    sub = tmp_path / "src"
+    sub.mkdir()
+    (sub / "a.txt").write_text("a")
+    (tmp_path / "b.txt").write_text("b")
+    store.save(tmp_path)
+
+    by_dir = store.find_file(tmp_path, "src")
+    assert by_dir[0]["files"][0]["path"] == "src/a.txt"
+    assert store.find_file(tmp_path, "nope.txt") == []

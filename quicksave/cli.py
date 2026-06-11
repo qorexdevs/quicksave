@@ -103,6 +103,28 @@ def cmd_list(args):
         console.print(f"[dim]{len(snaps)} snapshots, {_human_size(store.store_size(root))} on disk[/]")
 
 
+def cmd_find(args):
+    root = _root_or_die()
+    snaps = store.find_file(root, args.path)
+    if args.json:
+        print(json.dumps(snaps))
+        return
+    if not snaps:
+        console.print(f"[dim]no snapshot holds a file matching '{args.path}'[/]")
+        return
+    now = datetime.now().timestamp()
+    for s in snaps:
+        when = _relative_time(s["created_at"], now)
+        label = f"#{s['seq']} [cyan]{s['id']}[/]"
+        if s.get("name"):
+            label += f" [magenta]{s['name']}[/]"
+        console.print(f"{label} [dim]{when}[/]")
+        for h in s["files"]:
+            console.print(f"  {h['path']} [dim]{_human_size(h['size'])}[/]")
+    newest = snaps[0]
+    console.print(f"[dim]restore with 'quicksave restore {newest['id']} {args.path}'[/]")
+
+
 def cmd_restore(args):
     root = _root_or_die()
     if args.dry_run:
@@ -464,6 +486,11 @@ def build_parser():
     pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
     pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
     pl.set_defaults(func=cmd_list)
+
+    pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])
+    pf.add_argument("path", help="file path or part of one to search for")
+    pf.add_argument("--json", action="store_true", help="print matches as json")
+    pf.set_defaults(func=cmd_find)
 
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])
     pr.add_argument("ref", nargs="?", default=None,

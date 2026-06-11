@@ -368,6 +368,21 @@ def test_log_shows_snapshot_details(tmp_path, monkeypatch, capsys):
     assert "v1" in capsys.readouterr().out
 
 
+def test_log_json_emits_files(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    main(["init"])
+    main(["save", "-m", "first", "-n", "v1"])
+    capsys.readouterr()
+
+    main(["log", "v1", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data["id"] and data["name"] == "v1"
+    assert data["message"] == "first"
+    assert [f["path"] for f in data["files"]] == ["a.txt"]
+    assert data["files"][0]["size"] == 5
+
+
 def test_log_missing_snapshot_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

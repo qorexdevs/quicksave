@@ -387,32 +387,25 @@ def cmd_unpin(args):
 
 def cmd_log(args):
     root = _root_or_die()
-
-    snap_file = store._find_snapshot(store.store_path(root), args.ref)
-    if snap_file is None:
-        raise store.QuicksaveError(f"snapshot '{args.ref}' not found")
-
-    manifest = json.loads(snap_file.read_text())
-    files = manifest.get("files", {})
-
-    snap_id = snap_file.stem.partition("-")[2]
+    s = store.snapshot_detail(root, args.ref)
+    if args.json:
+        print(json.dumps(s))
+        return
 
     when = "-"
-    if manifest.get("created_at"):
-        when = datetime.fromtimestamp(
-            manifest["created_at"]
-        ).strftime("%Y-%m-%d %H:%M:%S")
+    if s["created_at"]:
+        when = datetime.fromtimestamp(s["created_at"]).strftime("%Y-%m-%d %H:%M:%S")
 
-    console.print(f"Snapshot: {snap_id}")
-    console.print(f"Name: {manifest.get('name') or '-'}")
-    console.print(f"Pinned: {'yes' if manifest.get('pinned') else 'no'}")
-    console.print(f"Message: {manifest.get('message') or '-'}")
+    console.print(f"Snapshot: {s['id']}")
+    console.print(f"Name: {s['name'] or '-'}")
+    console.print(f"Pinned: {'yes' if s['pinned'] else 'no'}")
+    console.print(f"Message: {s['message'] or '-'}")
     console.print(f"Time: {when}")
-    console.print(f"Files: {len(files)}")
+    console.print(f"Files: {len(s['files'])}")
 
     console.print("\nFile List:")
-    for path, meta in sorted(files.items()):
-        console.print(f"{path} ({meta.get('size', 0)} bytes)")
+    for h in s["files"]:
+        console.print(f"{h['path']} ({h['size']} bytes)")
 
 
 def cmd_verify(args):
@@ -599,6 +592,7 @@ def build_parser():
 
     plog = sub.add_parser("log", help="show one snapshot's details", parents=[common])
     plog.add_argument("ref", help="snapshot id, number or name")
+    plog.add_argument("--json", action="store_true", help="print the snapshot details as json")
     plog.set_defaults(func=cmd_log)
 
     pn = sub.add_parser("name", help="label a snapshot, or clear its name with an empty value", parents=[common])

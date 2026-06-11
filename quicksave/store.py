@@ -220,6 +220,27 @@ def list_snapshots(root):
     return out
 
 
+def snapshot_detail(root, ref):
+    # everything 'log' needs about one snapshot, resolved through the same ref
+    # rules as the rest of the store so cli doesn't reach into the manifest itself.
+    store = store_path(root)
+    f = _resolve_snapshot(store, ref)
+    m = json.loads(f.read_text())
+    files = m.get("files", {})
+    return {
+        "seq": int(f.stem.partition("-")[0]),
+        "id": f.stem.partition("-")[2],
+        "name": m.get("name", ""),
+        "message": m.get("message", ""),
+        "pinned": m.get("pinned", False),
+        "created_at": m.get("created_at", 0),
+        "files": [
+            {"path": p, "size": meta.get("size", 0), "sha256": meta.get("sha256", "")}
+            for p, meta in sorted(files.items())
+        ],
+    }
+
+
 def store_size(root):
     # bytes on disk in the object store: dedup means this is usually far less
     # than the sum of snapshot sizes, since unchanged files share one blob

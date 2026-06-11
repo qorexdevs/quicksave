@@ -254,16 +254,27 @@ def cmd_show(args):
 
 def cmd_export(args):
     root = _root_or_die()
-    n, dest = store.export_snapshot(root, args.ref, args.dest, args.paths or None)
     ref = args.ref or "latest"
+    if args.dest == "-":
+        n, _ = store.export_snapshot(root, args.ref, args.dest, args.paths or None,
+                                     out=sys.stdout.buffer)
+        err.print(f"exported [cyan]{n}[/] files from [cyan]{ref}[/] to [dim]stdout[/]")
+        return
+    n, dest = store.export_snapshot(root, args.ref, args.dest, args.paths or None)
     console.print(f"exported [cyan]{n}[/] files from [cyan]{ref}[/] to [dim]{dest}[/]")
 
 
 def cmd_import(args):
     root = _root_or_die()
-    snap_id, n = store.import_archive(root, args.src, args.message, args.name)
+    if args.src == "-":
+        snap_id, n = store.import_archive(root, args.src, args.message, args.name,
+                                          fileobj=sys.stdin.buffer)
+        label_src = "stdin"
+    else:
+        snap_id, n = store.import_archive(root, args.src, args.message, args.name)
+        label_src = args.src
     label = f" [magenta]{args.name}[/]" if args.name else ""
-    console.print(f"imported [cyan]{n}[/] files from [dim]{args.src}[/] as [cyan]{snap_id}[/]{label}")
+    console.print(f"imported [cyan]{n}[/] files from [dim]{label_src}[/] as [cyan]{snap_id}[/]{label}")
 
 
 def cmd_name(args):
@@ -469,13 +480,13 @@ def build_parser():
     ph.set_defaults(func=cmd_show)
 
     pe = sub.add_parser("export", help="write a snapshot to a tar archive without touching the tree", parents=[common])
-    pe.add_argument("dest", help="output path (.tar.gz/.tgz for gzip, else plain .tar)")
+    pe.add_argument("dest", help="output path (.tar.gz/.tgz for gzip, else plain .tar), or - for stdout")
     pe.add_argument("ref", nargs="?", help="snapshot id, number or name (default latest)")
     pe.add_argument("paths", nargs="*", help="limit the export to these paths")
     pe.set_defaults(func=cmd_export)
 
     pi = sub.add_parser("import", help="read a tar archive back into a new snapshot without touching the tree", parents=[common])
-    pi.add_argument("src", help="archive to read (.tar/.tar.gz/.tgz)")
+    pi.add_argument("src", help="archive to read (.tar/.tar.gz/.tgz), or - for stdin")
     pi.add_argument("-m", "--message", default="", help="snapshot message")
     pi.add_argument("--name", default="", help="label for the new snapshot")
     pi.set_defaults(func=cmd_import)

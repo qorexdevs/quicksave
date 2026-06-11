@@ -39,6 +39,7 @@ quicksave list --json          # machine-readable output, same for status --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave import backup.tgz    # read a tar archive back into a new snapshot
+quicksave export - | ssh host 'cd repo && quicksave import -'  # pipe a checkpoint to another machine
 quicksave diff 2 3             # see what changed between two snapshots
 quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots
 quicksave diff 3 wt            # what the live tree changed since snapshot 3
@@ -94,11 +95,14 @@ into `diff`.
 `export` packs a whole snapshot into a tar archive without touching the live tree, so you can stash a
 known-good checkpoint or move it to another machine: `quicksave export backup.tar.gz pre-deploy`.
 A `.gz`/`.tgz` name gives a gzipped archive, anything else a plain tar; pass paths to export only part
-of the snapshot. With no ref it exports the latest.
+of the snapshot. With no ref it exports the latest. Use `-` as the destination to stream a plain tar to
+stdout instead of a file.
 
 `import` is the other direction: it reads a tar archive (one made by `export`, or any plain tarball) back
 into a fresh snapshot without touching the live tree. Restore it later to materialize the files:
 `quicksave import backup.tar.gz --name recovered`. Archives with absolute or `..` paths are rejected.
+Use `-` as the source to read from stdin, so you can pipe a checkpoint straight to another machine:
+`quicksave export - | ssh host 'cd repo && quicksave import -'`.
 
 ## Auto-save before an agent's risky commands
 

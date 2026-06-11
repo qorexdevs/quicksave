@@ -432,10 +432,11 @@ def show(root, ref, path):
     return obj.read_bytes()
 
 
-def export_snapshot(root, ref, dest, paths=None):
+def export_snapshot(root, ref, dest, paths=None, out=None):
     # materialize a snapshot into a tar archive without touching the live tree.
     # gzip when dest ends in .gz/.tgz, plain tar otherwise. handy for archiving
-    # a known-good checkpoint or moving it to another machine.
+    # a known-good checkpoint or moving it to another machine. pass out to stream
+    # a plain tar into an open binary file (e.g. stdout) instead of a path.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
@@ -443,43 +444,65 @@ def export_snapshot(root, ref, dest, paths=None):
     if not files:
         raise QuicksaveError("nothing to export")
 
+    if out is not None:
+        with tarfile.open(fileobj=out, mode="w|") as tar:
+            written = _add_to_tar(tar, store, manifest, files)
+        return written, "-"
+
     dest = Path(dest)
     mode = "w:gz" if dest.suffix in (".gz", ".tgz") else "w"
-    written = 0
     with tarfile.open(dest, mode) as tar:
-        for relpath, meta in sorted(files.items()):
-            obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
-            if not obj.exists():
-                raise QuicksaveError(f"missing blob {meta['sha256']} for {relpath}")
-            data = obj.read_bytes()
-            info = tarfile.TarInfo(relpath)
-            info.size = len(data)
-            info.mode = meta.get("mode", 0o644) & 0o777
-            if manifest.get("created_at"):
-                info.mtime = int(manifest["created_at"])
-            tar.addfile(info, io.BytesIO(data))
-            written += 1
+        written = _add_to_tar(tar, store, manifest, files)
     return written, dest
 
 
-def import_archive(root, src, message="", name=""):
+def _add_to_tar(tar, store, manifest, files):
+    written = 0
+    for relpath, meta in sorted(files.items()):
+        obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
+        if not obj.exists():
+            raise QuicksaveError(f"missing blob {meta['sha256']} for {relpath}")
+        data = obj.read_bytes()
+        info = tarfile.TarInfo(relpath)
+        info.size = len(data)
+        info.mode = meta.get("mode", 0o644) & 0o777
+        if manifest.get("created_at"):
+            info.mtime = int(manifest["created_at"])
+        tar.addfile(info, io.BytesIO(data))
+        written += 1
+    return written
+
+
+def _open_archive(src):
+    # tarfile auto-detects gzip/plain; src is a path or a seekable binary stream
+    if isinstance(src, (str, Path)):
+        return tarfile.open(src)
+    return tarfile.open(fileobj=src)
+
+
+def import_archive(root, src, message="", name="", fileobj=None):
     # turn a tar archive (from 'export' or any plain tarball) into a fresh
     # snapshot: every regular file becomes a blob and lands in a new manifest,
     # without touching the live tree. restore it later to materialize the files.
+    # pass fileobj to read the archive from an open binary stream (e.g. stdin).
     root = Path(root)
     store = store_path(root)
     if not store.is_dir():
         raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
     if name and name.isdigit():
         raise QuicksaveError("snapshot name can't be all digits, it would clash with list numbers")
-    src = Path(src)
-    if not src.is_file():
-        raise QuicksaveError(f"archive '{src}' not found")
+    if fileobj is not None:
+        # buffer the stream so tarfile can seek for compression detection
+        src = io.BytesIO(fileobj.read())
+    else:
+        src = Path(src)
+        if not src.is_file():
+            raise QuicksaveError(f"archive '{src}' not found")
 
     files = {}
     newest = 0
     try:
-        with tarfile.open(src) as tar:
+        with _open_archive(src) as tar:
             for member in tar.getmembers():
                 if not member.isfile():
                     continue
@@ -498,7 +521,8 @@ def import_archive(root, src, message="", name=""):
                 }
                 newest = max(newest, member.mtime)
     except tarfile.TarError as e:
-        raise QuicksaveError(f"can't read '{src}' as a tar archive: {e}")
+        label = "stdin" if fileobj is not None else src
+        raise QuicksaveError(f"can't read '{label}' as a tar archive: {e}")
     if not files:
         raise QuicksaveError("no files in archive")
 

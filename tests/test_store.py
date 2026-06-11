@@ -334,6 +334,36 @@ def test_import_keeps_export_timestamp(tmp_path):
     assert m["created_at"] == int(orig["created_at"])
 
 
+def test_export_import_roundtrips_through_a_stream(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "b.txt").write_text("world")
+    store.save(tmp_path)
+
+    buf = io.BytesIO()
+    n, where = store.export_snapshot(tmp_path, None, "-", out=buf)
+    assert n == 2
+    assert where == "-"
+
+    buf.seek(0)
+    snap_id, got = store.import_archive(tmp_path, "-", name="piped", fileobj=buf)
+    assert got == 2
+    f = store._resolve_snapshot(store.store_path(tmp_path), snap_id)
+    m = json.loads(f.read_text())
+    assert sorted(m["files"]) == ["a.txt", "sub/b.txt"]
+    assert m["name"] == "piped"
+    os.remove(tmp_path / "a.txt")
+    store.restore(tmp_path, snap_id)
+    assert (tmp_path / "a.txt").read_text() == "hello"
+
+
+def test_import_from_stream_rejects_non_tar(tmp_path):
+    store.init(tmp_path)
+    with pytest.raises(store.QuicksaveError):
+        store.import_archive(tmp_path, "-", fileobj=io.BytesIO(b"not a tar at all"))
+
+
 def test_diff_between_snapshots(tmp_path):
     store.init(tmp_path)
     (tmp_path / "keep.txt").write_text("same")

@@ -529,6 +529,9 @@ def cmd_gc(args):
     root = _root_or_die()
     older = store.parse_duration(args.older_than) if args.older_than else None
     r = store.gc(root, keep=args.keep, refs=args.refs, dry_run=args.dry_run, older_than=older)
+    if args.json:
+        print(json.dumps(r))
+        return
     tag = " [dim](dry run)[/]" if r["dry_run"] else ""
     if r["pruned"]:
         for name in r["pruned"]:
@@ -730,6 +733,7 @@ def build_parser():
                     help="drop snapshots older than a duration like 7d, 12h, 30m")
     pg.add_argument("--dry-run", action="store_true",
                     help="show what would be removed without deleting")
+    pg.add_argument("--json", action="store_true", help="print what gc removed as json")
     pg.set_defaults(func=cmd_gc)
 
     phook = sub.add_parser("hook", help="PreToolUse hook: auto-save before a risky bash command", parents=[common])

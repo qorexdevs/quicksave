@@ -244,6 +244,24 @@ def test_cli_save_json(tmp_path, monkeypatch, capsys):
     assert out["created"] is False
 
 
+def test_cli_gc_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    note = tmp_path / "note.md"
+    note.write_text("v1")
+    main(["init"])
+    main(["save", "-m", "one"])
+    note.write_text("v2")
+    main(["save", "-m", "two"])
+    capsys.readouterr()
+
+    main(["gc", "--keep", "1", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert out["dry_run"] is False
+    assert len(out["pruned"]) == 1
+    assert out["blobs"] >= 1
+    assert out["bytes"] >= 0
+
+
 def test_cli_list_since_filters_old_snapshots(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

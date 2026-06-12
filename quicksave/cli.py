@@ -270,11 +270,19 @@ def cmd_diff(args):
         a = _file_text(root, args.a, args.path)
         b = _file_text(root, args.b, args.path)
         if a is None and b is None:
+            if args.json:
+                print(json.dumps({"path": args.path, "a": args.a, "b": args.b, "diff": None}))
+                return
             console.print(f"[dim]{args.path} is in neither {args.a} nor {args.b}, or is binary[/]")
             return
-        lines = difflib.unified_diff(a or [], b or [],
-                                     fromfile=f"{args.path}@{args.a}",
-                                     tofile=f"{args.path}@{args.b}")
+        lines = list(difflib.unified_diff(a or [], b or [],
+                                          fromfile=f"{args.path}@{args.a}",
+                                          tofile=f"{args.path}@{args.b}"))
+        if args.json:
+            text = "".join(lines)
+            print(json.dumps({"path": args.path, "a": args.a, "b": args.b,
+                              "diff": text or None}))
+            return
         printed = False
         for line in lines:
             printed = True
@@ -297,6 +305,10 @@ def cmd_diff(args):
         added, removed = s["added"], s["removed"]
         if args.a == "wt":
             added, removed = removed, added
+        if args.json:
+            print(json.dumps({"a": args.a, "b": args.b, "added": added,
+                              "removed": removed, "modified": s["modified"]}))
+            return
         if not (added or removed or s["modified"]):
             console.print(f"[dim]working tree matches {snap}[/]")
             return
@@ -312,6 +324,10 @@ def cmd_diff(args):
         )
         return
     d = store.diff(root, args.a, args.b)
+    if args.json:
+        print(json.dumps({"a": args.a, "b": args.b, "added": d["added"],
+                          "removed": d["removed"], "modified": d["modified"]}))
+        return
     if not any(d.values()):
         console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
         return
@@ -581,6 +597,7 @@ def build_parser():
     pd.add_argument("a", help="snapshot id or number, or 'wt' for the working tree")
     pd.add_argument("b", help="snapshot id or number, or 'wt' for the working tree")
     pd.add_argument("path", nargs="?", help="show a line-by-line diff of just this file")
+    pd.add_argument("--json", action="store_true", help="print the diff as json")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents from a snapshot to stdout", parents=[common])

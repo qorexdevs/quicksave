@@ -587,6 +587,58 @@ def test_diff_against_working_tree(tmp_path, monkeypatch, capsys):
     assert "-two" in out
 
 
+def test_diff_json_between_snapshots(tmp_path, monkeypatch, capsys):
+    import json
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    (tmp_path / "drop.txt").write_text("gone\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "drop.txt").unlink()
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--json"])
+    d = json.loads(capsys.readouterr().out)
+    assert d["added"] == ["new.txt"]
+    assert d["removed"] == ["drop.txt"]
+    assert d["modified"] == ["a.txt"]
+
+
+def test_diff_json_against_working_tree(tmp_path, monkeypatch, capsys):
+    import json
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one edited\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--json"])
+    d = json.loads(capsys.readouterr().out)
+    assert d["added"] == ["new.txt"]
+    assert d["modified"] == ["a.txt"]
+
+
+def test_diff_json_file(tmp_path, monkeypatch, capsys):
+    import json
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo changed\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "a.txt", "--json"])
+    d = json.loads(capsys.readouterr().out)
+    assert d["path"] == "a.txt"
+    assert "+two changed" in d["diff"]
+
+
 def test_cli_find(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "keep.txt").write_text("data")

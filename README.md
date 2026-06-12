@@ -40,7 +40,7 @@ quicksave status               # what changed in the tree since the last snapsho
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
 quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
-quicksave list --json          # machine-readable output, same for status, stats and log --json
+quicksave list --json          # machine-readable output, same for status, stats, log and diff --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave import backup.tgz    # read a tar archive back into a new snapshot
@@ -49,6 +49,7 @@ quicksave diff 2 3             # see what changed between two snapshots
 quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots
 quicksave diff 3 wt            # what the live tree changed since snapshot 3
 quicksave diff 3 wt src/app.py # line-by-line diff of one file against the tree
+quicksave diff 2 3 --json      # the changed-file lists as json, add a path for the unified diff
 quicksave pin 4                # protect a snapshot, gc --keep won't rotate it away
 quicksave unpin 4              # let gc --keep rotate it again
 quicksave gc --keep 10         # drop old snapshots and blobs nothing points at

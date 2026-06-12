@@ -245,6 +245,35 @@ def test_cli_status_json(tmp_path, monkeypatch, capsys):
     assert s["modified"] == ["a.txt"]
 
 
+def test_cli_status_exit_code(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    # clean tree exits 0
+    main(["status", "--exit-code"])
+
+    (tmp_path / "a.txt").write_text("v2")
+    try:
+        main(["status", "--exit-code"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("dirty tree should exit 1")
+    capsys.readouterr()
+
+    # --json honours the exit code too
+    try:
+        main(["status", "--json", "--exit-code"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("dirty --json should exit 1")
+    assert json.loads(capsys.readouterr().out)["modified"] == ["a.txt"]
+
+
 def test_cli_verify_reports_ok(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

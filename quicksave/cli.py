@@ -250,11 +250,14 @@ def cmd_undo(args):
 def cmd_status(args):
     root = _root_or_die()
     s = store.status(root, args.ref)
+    dirty = bool(s["added"] or s["removed"] or s["modified"])
     if args.json:
         print(json.dumps(s))
+        if args.exit_code and dirty:
+            raise SystemExit(1)
         return
     label = f"#{s['seq']} {s['id']}"
-    if not (s["added"] or s["removed"] or s["modified"]):
+    if not dirty:
         console.print(f"[green]clean[/] [dim]working tree matches snapshot {label}[/]")
         return
     console.print(f"[dim]changes since snapshot {label}:[/]")
@@ -264,6 +267,9 @@ def cmd_status(args):
         console.print(f"[red]- {path}[/]")
     for path in s["modified"]:
         console.print(f"[yellow]~ {path}[/]")
+    # like 'git diff --exit-code', so a hook can save only when something changed
+    if args.exit_code:
+        raise SystemExit(1)
 
 
 def _file_text(root, ref, path):
@@ -620,6 +626,8 @@ def build_parser():
     pt = sub.add_parser("status", help="show changes since a snapshot (default latest)", parents=[common])
     pt.add_argument("ref", nargs="?", default=None, help="snapshot id or number, defaults to latest")
     pt.add_argument("--json", action="store_true", help="print the diff as json")
+    pt.add_argument("--exit-code", action="store_true",
+                    help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.set_defaults(func=cmd_status)
 
     pd = sub.add_parser("diff", help="show what changed between two snapshots, or a snapshot and the working tree", parents=[common])

@@ -40,6 +40,7 @@ quicksave restore 3 --into /tmp/old # pull the snapshot aside, leave the live tr
 quicksave undo                 # revert the last restore, back to the pre-restore tree
 quicksave name 3 good-build    # tag an existing snapshot after the fact (empty name clears it)
 quicksave status               # what changed in the tree since the last snapshot
+quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
 quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet

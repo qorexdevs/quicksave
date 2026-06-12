@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import time
 
 
 from quicksave.cli import main
@@ -165,6 +166,29 @@ def test_cli_list_json(tmp_path, monkeypatch, capsys):
     assert snaps[0]["message"] == "wip"
     assert snaps[0]["count"] == 1
     assert snaps[0]["size"] == len("draft")
+
+
+def test_cli_list_since_filters_old_snapshots(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "note.md").write_text("draft")
+    main(["init"])
+    main(["save", "-m", "old"])
+    (tmp_path / "note.md").write_text("draft 2")
+    main(["save", "-m", "fresh"])
+    capsys.readouterr()
+
+    snap_files = sorted((tmp_path / ".quicksave" / "snapshots").glob("*.json"))
+    oldest = json.loads(snap_files[0].read_text())
+    oldest["created_at"] = time.time() - 3 * 3600
+    snap_files[0].write_text(json.dumps(oldest))
+
+    main(["list", "--since", "1h", "--json"])
+    snaps = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in snaps] == ["fresh"]
+
+    main(["list", "--since", "5h", "--json"])
+    snaps = json.loads(capsys.readouterr().out)
+    assert {s["message"] for s in snaps} == {"old", "fresh"}
 
 
 def test_cli_status_json(tmp_path, monkeypatch, capsys):

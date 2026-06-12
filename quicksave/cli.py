@@ -71,12 +71,18 @@ def cmd_list(args):
     pinned_only = getattr(args, "pinned", False)
     if pinned_only:
         snaps = [s for s in snaps if s.get("pinned")]
+    since = getattr(args, "since", None)
+    if since:
+        cutoff = datetime.now().timestamp() - store.parse_duration(since)
+        snaps = [s for s in snaps if s["created_at"] and s["created_at"] >= cutoff]
     if args.json:
         print(json.dumps(snaps))
         return
     if not snaps:
         if pinned_only:
             console.print("[dim]no pinned snapshots, pin one with 'quicksave pin <ref>'[/]")
+        elif since:
+            console.print(f"[dim]no snapshots in the last {since}[/]")
         else:
             console.print("[dim]no snapshots yet, run 'quicksave save'[/]")
         return
@@ -556,6 +562,8 @@ def build_parser():
     pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
     pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
     pl.add_argument("--pinned", action="store_true", help="show only pinned snapshots")
+    pl.add_argument("--since", default=None, metavar="DUR",
+                    help="show only snapshots newer than a duration like 1h, 30m, 7d")
     pl.set_defaults(func=cmd_list)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])

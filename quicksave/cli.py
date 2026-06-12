@@ -145,6 +145,8 @@ def cmd_stats(args):
 def cmd_find(args):
     root = _root_or_die()
     snaps = store.find_file(root, args.path)
+    if args.limit and args.limit < len(snaps):
+        snaps = snaps[:args.limit]
     if args.json:
         print(json.dumps(snaps))
         return
@@ -548,6 +550,7 @@ def build_parser():
     pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])
     pf.add_argument("path", help="file path or part of one to search for")
     pf.add_argument("--json", action="store_true", help="print matches as json")
+    pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.set_defaults(func=cmd_find)
 
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])

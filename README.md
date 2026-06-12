@@ -86,7 +86,7 @@ snapshot, and `--no-backup` turns it off.
 Lost a file and not sure which checkpoint still has it? `quicksave find app.py` lists every snapshot
 holding a file whose path matches, newest first, with the size of each match and a ready-made restore
 line. The query matches an exact path, a directory prefix, or just part of a name, so a bare basename
-finds it wherever it lived.
+finds it wherever it lived. `--limit N` keeps only the N newest matches when you just want the last few.
 
 `save -n <name>` tags a snapshot so you can roll back to it without hunting for its number or id:
 `quicksave restore pre-deploy`. Anywhere a command takes a snapshot ref (`restore`, `status`, `show`,

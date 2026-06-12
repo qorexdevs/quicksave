@@ -608,6 +608,22 @@ def test_cli_find(tmp_path, monkeypatch, capsys):
     assert "no snapshot" in capsys.readouterr().out
 
 
+def test_cli_find_limit(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "keep.txt"
+    main(["init"])
+    for v in ("one", "two", "three"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["find", "keep.txt", "--limit", "2", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert len(data) == 2
+    assert data[0]["message"] == "three"
+    assert data[1]["message"] == "two"
+
+
 def test_cli_stats(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("same")

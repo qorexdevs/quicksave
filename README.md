@@ -56,7 +56,7 @@ quicksave diff 3 wt src/app.py # line-by-line diff of one file against the tree
 quicksave diff 2 3 --json      # the changed-file lists as json, add a path for the unified diff
 quicksave pin 4                # protect a snapshot, gc --keep won't rotate it away
 quicksave unpin 4              # let gc --keep rotate it again
-quicksave gc --keep 10         # drop old snapshots and blobs nothing points at
+quicksave gc --keep 10         # drop old snapshots and blobs nothing points at, reports space freed
 quicksave gc --older-than 7d   # drop snapshots older than a duration (7d, 12h, 30m)
 quicksave gc 4 pre-deploy      # drop specific snapshots by number, id or name
 quicksave verify               # check the store for corrupt or missing blobs

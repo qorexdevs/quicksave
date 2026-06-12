@@ -456,10 +456,15 @@ def gc(root, keep=None, refs=None, dry_run=False, older_than=None):
 
     refs = _referenced_blobs(survivors)
     removed = 0
+    freed = 0
     for obj, digest in list(_iter_blobs(store)):
         if digest in refs:
             continue
         removed += 1
+        try:
+            freed += obj.stat().st_size
+        except OSError:
+            pass
         if not dry_run:
             obj.unlink()
             shard = obj.parent
@@ -467,7 +472,7 @@ def gc(root, keep=None, refs=None, dry_run=False, older_than=None):
                 shard.rmdir()
             except OSError:
                 pass
-    return {"pruned": pruned, "blobs": removed, "dry_run": dry_run}
+    return {"pruned": pruned, "blobs": removed, "bytes": freed, "dry_run": dry_run}
 
 
 def verify(root):

@@ -650,6 +650,32 @@ def test_gc_dry_run_keeps_everything(tmp_path):
     assert len(store.list_snapshots(tmp_path)) == 2
 
 
+def test_gc_reports_freed_bytes(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("x" * 4096)
+    store.save(tmp_path, message="s0")
+    (tmp_path / "f.txt").write_text("y" * 8192)
+    store.save(tmp_path, message="s1")
+
+    before = store.store_size(tmp_path)
+    r = store.gc(tmp_path, keep=1)
+    assert r["bytes"] > 0
+    assert before - store.store_size(tmp_path) == r["bytes"]
+
+
+def test_gc_dry_run_freed_bytes_keeps_blobs(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a" * 2048)
+    store.save(tmp_path)
+    (tmp_path / "f.txt").write_text("b" * 2048)
+    store.save(tmp_path)
+
+    before = store.store_size(tmp_path)
+    r = store.gc(tmp_path, keep=1, dry_run=True)
+    assert r["bytes"] > 0
+    assert store.store_size(tmp_path) == before
+
+
 def test_gc_keep_spares_pinned(tmp_path):
     store.init(tmp_path)
     (tmp_path / "f.txt").write_text("one")

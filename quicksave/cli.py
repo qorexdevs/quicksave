@@ -505,9 +505,11 @@ def cmd_gc(args):
     if not r["pruned"] and not r["blobs"]:
         console.print(f"[green]nothing to collect[/]{tag}")
         return
+    verb = "would free" if r["dry_run"] else "freed"
     console.print(
         f"removed [cyan]{len(r['pruned'])}[/] snapshots, "
-        f"[cyan]{r['blobs']}[/] unreferenced blobs{tag}"
+        f"[cyan]{r['blobs']}[/] unreferenced blobs, "
+        f"{verb} [cyan]{_human_size(r['bytes'])}[/]{tag}"
     )
 
 

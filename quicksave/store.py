@@ -813,9 +813,12 @@ def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE)
     }
 
 
-def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE):
+def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest=None):
     root = Path(root)
     store = store_path(root)
+    # dest pulls a snapshot aside into another directory without touching the
+    # live tree. clean only makes sense against the tree, so it stays off here.
+    base = Path(dest) if dest else root
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
     files, wanted = _selected_files(manifest, paths, ref)
@@ -826,7 +829,7 @@ def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE):
         obj = store / "objects" / digest[:2] / digest[2:]
         if not obj.exists():
             raise QuicksaveError(f"missing blob {digest} for {relpath}")
-        target = root / relpath
+        target = base / relpath
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(obj.read_bytes())
         try:
@@ -836,7 +839,7 @@ def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE):
         restored += 1
 
     removed = 0
-    if clean:
+    if clean and dest is None:
         keep = set(files)
         for rel in iter_files(root, ignore):
             relp = rel.as_posix()

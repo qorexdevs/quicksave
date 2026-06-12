@@ -181,6 +181,16 @@ def cmd_find(args):
 
 def cmd_restore(args):
     root = _root_or_die()
+    into = getattr(args, "into", None)
+    if into:
+        # pulling a snapshot aside, the live tree is untouched so no backup and
+        # no clean. dry-run previews against the tree, which is meaningless here.
+        target = store.resolve_id(root, args.ref)
+        n, _, _ = store.restore(root, target, args.paths, dest=into)
+        ref = args.ref or "latest"
+        scope = f" [dim]({', '.join(args.paths)})[/]" if args.paths else ""
+        console.print(f"restored [cyan]{n}[/] files from [cyan]{ref}[/] into [cyan]{into}[/]{scope}")
+        return
     if args.dry_run:
         cmd_restore_preview(args, root)
         return
@@ -596,6 +606,8 @@ def build_parser():
                     help="show what restore would change without writing anything")
     pr.add_argument("--no-backup", action="store_true",
                     help="don't snapshot the current tree before restoring")
+    pr.add_argument("--into", metavar="DIR",
+                    help="write the snapshot into DIR instead of overwriting the tree")
     pr.set_defaults(func=cmd_restore)
 
     pu = sub.add_parser("undo", help="revert the last restore, back to the pre-restore tree", parents=[common])

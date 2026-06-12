@@ -138,6 +138,24 @@ def test_restore_no_backup_skips_snapshot(tmp_path, monkeypatch, capsys):
     assert len(snaps) == 1
 
 
+def test_restore_into_leaves_tree_untouched(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "note.md").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    (tmp_path / "note.md").write_text("v2")
+    out_dir = tmp_path / "recovered"
+    main(["restore", "0", "--into", str(out_dir)])
+
+    # the snapshot lands in out_dir, the live tree and snapshot count stay as they were
+    assert (out_dir / "note.md").read_text() == "v1"
+    assert (tmp_path / "note.md").read_text() == "v2"
+    snaps = list((tmp_path / ".quicksave" / "snapshots").glob("*.json"))
+    assert len(snaps) == 1
+
+
 def test_cli_restore_dry_run_changes_nothing(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

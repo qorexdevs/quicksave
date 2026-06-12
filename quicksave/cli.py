@@ -54,6 +54,10 @@ def cmd_save(args):
     root = _root_or_die()
     snap_id, n, created = store.save(root, message=args.message or "", force=args.force,
                                      name=args.name or "")
+    if getattr(args, "json", False):
+        print(json.dumps({"id": snap_id, "files": n, "created": created,
+                          "name": args.name or None, "message": args.message or None}))
+        return
     if not created:
         if args.name:
             console.print(f"[dim]nothing changed, named {snap_id}[/] [magenta]{args.name}[/]")
@@ -607,6 +611,7 @@ def build_parser():
                     help="label the snapshot so you can restore it by name later")
     ps.add_argument("-f", "--force", action="store_true",
                     help="snapshot even if nothing changed since the last one")
+    ps.add_argument("--json", action="store_true", help="print the saved snapshot as json")
     ps.set_defaults(func=cmd_save)
 
     pl = sub.add_parser("list", help="list snapshots", parents=[common])

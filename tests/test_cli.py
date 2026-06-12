@@ -224,6 +224,26 @@ def test_cli_list_json(tmp_path, monkeypatch, capsys):
     assert snaps[0]["size"] == len("draft")
 
 
+def test_cli_save_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "note.md").write_text("draft")
+    main(["init"])
+    capsys.readouterr()
+
+    main(["save", "-m", "wip", "-n", "pre", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert out["created"] is True
+    assert out["files"] == 1
+    assert out["name"] == "pre"
+    assert out["message"] == "wip"
+    assert len(out["id"]) > 0
+
+    # nothing changed: still valid json, created False, and quiet doesn't swallow it
+    main(["save", "-q", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert out["created"] is False
+
+
 def test_cli_list_since_filters_old_snapshots(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

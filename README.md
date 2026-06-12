@@ -23,6 +23,7 @@ Needs Python 3.10+.
 quicksave init                 # start tracking this directory
 quicksave save -m "before refactor"
 quicksave save -n pre-deploy   # tag the snapshot with a name
+quicksave save --json          # print the new snapshot's id and file count for a script or hook
 quicksave list                 # snapshots with file count, size and "2h ago" relative time
 quicksave list --absolute      # show full timestamps instead of relative time
 quicksave list --pinned        # only the snapshots you pinned out of gc rotation
@@ -45,7 +46,7 @@ quicksave find app.py          # which snapshots still hold a file you lost, new
 quicksave recover app.py       # just bring it back from the newest snapshot that has it
 quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
-quicksave list --json          # machine-readable output, same for status, stats, log and diff --json
+quicksave list --json          # machine-readable output, same for save, status, stats, log and diff --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave show src/app.py      # same, from the newest snapshot that still has it
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched

@@ -44,6 +44,44 @@ def test_cli_status_and_clean(tmp_path, monkeypatch, capsys):
     assert "clean" in capsys.readouterr().out
 
 
+def test_recover_pulls_a_file_from_the_newest_snapshot_that_had_it(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "keep.txt").write_text("stay")
+    (tmp_path / "gone.txt").write_text("important")
+    main(["init"])
+    main(["save", "-m", "with file"])
+
+    # delete it and snapshot the tree without it a couple of times
+    (tmp_path / "gone.txt").unlink()
+    (tmp_path / "keep.txt").write_text("changed")
+    main(["save", "-m", "after delete"])
+
+    # tree is dirty now, so recover's pre-restore backup is a real snapshot
+    (tmp_path / "keep.txt").write_text("dirty")
+    capsys.readouterr()
+
+    main(["recover", "gone.txt"])
+    assert (tmp_path / "gone.txt").read_text() == "important"
+    assert "recovered" in capsys.readouterr().out
+    # the pre-recover tree is backed up, so undo --clean rewinds the recovery
+    main(["undo", "--clean"])
+    assert not (tmp_path / "gone.txt").exists()
+
+
+def test_recover_no_match_errors(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+
+    try:
+        main(["recover", "nope.txt"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("recover should exit non-zero when nothing matches")
+
+
 def test_restore_backs_up_current_tree(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("v1")

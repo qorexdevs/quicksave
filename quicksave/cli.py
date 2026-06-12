@@ -179,6 +179,27 @@ def cmd_find(args):
     console.print(f"[dim]restore with 'quicksave restore {newest['id']} {args.path}'[/]")
 
 
+def cmd_recover(args):
+    # the panic case: a file got deleted some commands ago and you don't know
+    # which snapshot still has it. find the newest one that does and restore it
+    # in one shot. resolve before the backup so it stays the target.
+    root = _root_or_die()
+    snaps = store.find_file(root, args.path)
+    if not snaps:
+        err.print(f"[red]no snapshot holds a file matching '{args.path}'[/]")
+        raise SystemExit(1)
+    newest = snaps[0]
+    paths = [h["path"] for h in newest["files"]]
+    if not args.no_backup:
+        bid, _, made = store.save(root, message=f"before restore of recover '{args.path}'")
+        if made:
+            console.print(f"[dim]backed up current tree as {bid}[/]")
+    n, _, _ = store.restore(root, newest["id"], paths)
+    label = f"#{newest['seq']} [cyan]{newest['id']}[/]"
+    when = _relative_time(newest["created_at"])
+    console.print(f"recovered [cyan]{n}[/] files matching '{args.path}' from {label} [dim]{when}[/]")
+
+
 def cmd_restore(args):
     root = _root_or_die()
     into = getattr(args, "into", None)
@@ -603,6 +624,12 @@ def build_parser():
     pf.add_argument("--json", action="store_true", help="print matches as json")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.set_defaults(func=cmd_find)
+
+    prc = sub.add_parser("recover", help="restore a file from the newest snapshot that still has it", parents=[common])
+    prc.add_argument("path", help="file path or part of one to bring back")
+    prc.add_argument("--no-backup", action="store_true",
+                     help="don't snapshot the current tree before recovering")
+    prc.set_defaults(func=cmd_recover)
 
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])
     pr.add_argument("ref", nargs="?", default=None,

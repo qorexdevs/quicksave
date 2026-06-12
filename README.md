@@ -42,6 +42,7 @@ quicksave name 3 good-build    # tag an existing snapshot after the fact (empty 
 quicksave status               # what changed in the tree since the last snapshot
 quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
+quicksave recover app.py       # just bring it back from the newest snapshot that has it
 quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
 quicksave list --json          # machine-readable output, same for status, stats, log and diff --json
@@ -92,6 +93,11 @@ Lost a file and not sure which checkpoint still has it? `quicksave find app.py` 
 holding a file whose path matches, newest first, with the size of each match and a ready-made restore
 line. The query matches an exact path, a directory prefix, or just part of a name, so a bare basename
 finds it wherever it lived. `--limit N` keeps only the N newest matches when you just want the last few.
+
+When you don't care which checkpoint, `quicksave recover app.py` skips that step: it finds the newest
+snapshot that still holds the file and restores it in one shot, even if it was deleted several commands
+ago and isn't in the latest snapshot. It backs the tree up first (so `undo` reverts it), or `--no-backup`
+to skip that.
 
 `save -n <name>` tags a snapshot so you can roll back to it without hunting for its number or id:
 `quicksave restore pre-deploy`. Anywhere a command takes a snapshot ref (`restore`, `status`, `show`,

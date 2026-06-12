@@ -416,13 +416,28 @@ def _iter_blobs(store):
             yield obj, shard.name + obj.name
 
 
-def gc(root, keep=None, refs=None, dry_run=False):
+_DURATION_UNITS = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
+
+
+def parse_duration(text):
+    # "7d", "12h", "30m", "90s", "2w" -> seconds. plain digits mean seconds.
+    m = re.fullmatch(r"\s*(\d+)\s*([smhdw]?)\s*", text or "", re.IGNORECASE)
+    if not m:
+        raise QuicksaveError(f"bad duration '{text}', use forms like 7d, 12h, 30m")
+    return int(m.group(1)) * _DURATION_UNITS[(m.group(2) or "s").lower()]
+
+
+def gc(root, keep=None, refs=None, dry_run=False, older_than=None):
     store = store_path(root)
     if not store.is_dir():
         raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
 
     snaps = _snapshot_files(store)
     drop = list(snaps[: len(snaps) - keep]) if keep is not None and keep < len(snaps) else []
+    if older_than is not None:
+        cutoff = time.time() - older_than
+        old = [f for f in snaps if json.loads(f.read_text()).get("created_at", 0) < cutoff]
+        drop = drop + [f for f in old if f not in drop]
     # pinned snapshots survive --keep rotation; an explicit ref still drops them.
     drop = [f for f in drop if not json.loads(f.read_text()).get("pinned", False)]
     for ref in refs or []:

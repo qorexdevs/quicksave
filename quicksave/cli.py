@@ -449,7 +449,8 @@ def cmd_verify(args):
 
 def cmd_gc(args):
     root = _root_or_die()
-    r = store.gc(root, keep=args.keep, refs=args.refs, dry_run=args.dry_run)
+    older = store.parse_duration(args.older_than) if args.older_than else None
+    r = store.gc(root, keep=args.keep, refs=args.refs, dry_run=args.dry_run, older_than=older)
     tag = " [dim](dry run)[/]" if r["dry_run"] else ""
     if r["pruned"]:
         for name in r["pruned"]:
@@ -628,6 +629,8 @@ def build_parser():
                     help="drop these specific snapshots too (id, number or name)")
     pg.add_argument("--keep", type=int, default=None,
                     help="keep only the N most recent snapshots")
+    pg.add_argument("--older-than", default=None, metavar="DUR",
+                    help="drop snapshots older than a duration like 7d, 12h, 30m")
     pg.add_argument("--dry-run", action="store_true",
                     help="show what would be removed without deleting")
     pg.set_defaults(func=cmd_gc)

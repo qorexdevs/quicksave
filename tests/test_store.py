@@ -2,6 +2,7 @@ import hashlib
 import io
 import json
 import os
+import time
 
 import pytest
 
@@ -665,6 +666,54 @@ def test_gc_keep_spares_pinned(tmp_path):
     msgs = [s["message"] for s in store.list_snapshots(tmp_path)]
     assert msgs == ["s0", "s2"]
     assert "s0" not in [p for p in r["pruned"]]
+
+
+def _age_snapshot(tmp_path, seq, seconds):
+    # rewrite a snapshot's created_at so it looks `seconds` old, for gc --older-than
+    for f in store._snapshot_files(store.store_path(tmp_path)):
+        m = json.loads(f.read_text())
+        if int(f.stem.partition("-")[0]) == seq:
+            m["created_at"] = time.time() - seconds
+            f.write_text(json.dumps(m))
+            return
+    raise AssertionError(f"snapshot {seq} not found")
+
+
+def test_gc_older_than_drops_aged_snapshots(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path, message="s0")
+    (tmp_path / "f.txt").write_text("two")
+    store.save(tmp_path, message="s1")
+
+    _age_snapshot(tmp_path, 0, 8 * 86400)
+    r = store.gc(tmp_path, older_than=store.parse_duration("7d"))
+    msgs = [s["message"] for s in store.list_snapshots(tmp_path)]
+    assert msgs == ["s1"]
+    assert r["pruned"] and r["blobs"] == 1
+
+
+def test_gc_older_than_spares_pinned(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path, message="s0")
+    store.set_pinned(tmp_path, "0", True)
+    _age_snapshot(tmp_path, 0, 30 * 86400)
+
+    r = store.gc(tmp_path, older_than=store.parse_duration("1d"))
+    assert r["pruned"] == []
+    assert [s["message"] for s in store.list_snapshots(tmp_path)] == ["s0"]
+
+
+def test_parse_duration_forms():
+    assert store.parse_duration("90s") == 90
+    assert store.parse_duration("30m") == 1800
+    assert store.parse_duration("12h") == 43200
+    assert store.parse_duration("7d") == 604800
+    assert store.parse_duration("2w") == 1209600
+    assert store.parse_duration("3600") == 3600
+    with pytest.raises(store.QuicksaveError):
+        store.parse_duration("soon")
 
 
 def test_pin_shows_in_list_and_unpin_clears(tmp_path):

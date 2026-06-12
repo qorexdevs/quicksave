@@ -75,6 +75,11 @@ def cmd_list(args):
     if since:
         cutoff = datetime.now().timestamp() - store.parse_duration(since)
         snaps = [s for s in snaps if s["created_at"] and s["created_at"] >= cutoff]
+    grep = getattr(args, "grep", None)
+    if grep:
+        needle = grep.lower()
+        snaps = [s for s in snaps
+                 if needle in (s["message"] or "").lower() or needle in (s.get("name") or "").lower()]
     if args.json:
         print(json.dumps(snaps))
         return
@@ -83,6 +88,8 @@ def cmd_list(args):
             console.print("[dim]no pinned snapshots, pin one with 'quicksave pin <ref>'[/]")
         elif since:
             console.print(f"[dim]no snapshots in the last {since}[/]")
+        elif grep:
+            console.print(f"[dim]no snapshots match '{grep}'[/]")
         else:
             console.print("[dim]no snapshots yet, run 'quicksave save'[/]")
         return
@@ -564,6 +571,8 @@ def build_parser():
     pl.add_argument("--pinned", action="store_true", help="show only pinned snapshots")
     pl.add_argument("--since", default=None, metavar="DUR",
                     help="show only snapshots newer than a duration like 1h, 30m, 7d")
+    pl.add_argument("--grep", default=None, metavar="TEXT",
+                    help="show only snapshots whose message or name contains this text")
     pl.set_defaults(func=cmd_list)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])

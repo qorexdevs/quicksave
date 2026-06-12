@@ -191,6 +191,27 @@ def test_cli_list_since_filters_old_snapshots(tmp_path, monkeypatch, capsys):
     assert {s["message"] for s in snaps} == {"old", "fresh"}
 
 
+def test_cli_list_grep_filters_by_message(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "note.md").write_text("draft")
+    main(["init"])
+    main(["save", "-m", "pre: rm -rf build"])
+    (tmp_path / "note.md").write_text("draft 2")
+    main(["save", "-m", "wip layout"])
+    capsys.readouterr()
+
+    main(["list", "--grep", "rm -rf", "--json"])
+    snaps = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in snaps] == ["pre: rm -rf build"]
+
+    main(["list", "--grep", "LAYOUT", "--json"])
+    snaps = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in snaps] == ["wip layout"]
+
+    main(["list", "--grep", "nothing"])
+    assert "no snapshots match 'nothing'" in capsys.readouterr().out
+
+
 def test_cli_status_json(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

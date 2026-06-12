@@ -218,6 +218,22 @@ def test_show_missing_file_raises(tmp_path):
         store.show(tmp_path, "0", "nope.txt")
 
 
+def test_show_without_ref_uses_newest_holder(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "b.txt").write_text("keep")
+    store.save(tmp_path)
+    (tmp_path / "a.txt").write_text("v2")
+    store.save(tmp_path)
+    # a.txt is gone from the tree and from the latest snapshot, but show with no
+    # ref still finds its most recent saved content
+    (tmp_path / "a.txt").unlink()
+    store.save(tmp_path)
+    assert store.show(tmp_path, None, "a.txt") == b"v2"
+    with pytest.raises(store.QuicksaveError):
+        store.show(tmp_path, None, "never.txt")
+
+
 def test_export_writes_tar(tmp_path):
     import tarfile
 

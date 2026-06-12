@@ -395,7 +395,13 @@ def cmd_diff(args):
 
 def cmd_show(args):
     root = _root_or_die()
-    data = store.show(root, args.ref, args.path)
+    # one positional means just a path: print it from the newest snapshot that
+    # still has it. two means an explicit ref then the path.
+    if args.path is None:
+        ref, path = None, args.ref
+    else:
+        ref, path = args.ref, args.path
+    data = store.show(root, ref, path)
     with open(1, "wb", closefd=False) as out:
         out.write(data)
 
@@ -666,9 +672,9 @@ def build_parser():
     pd.add_argument("--json", action="store_true", help="print the diff as json")
     pd.set_defaults(func=cmd_diff)
 
-    ph = sub.add_parser("show", help="print a file's contents from a snapshot to stdout", parents=[common])
-    ph.add_argument("ref", help="snapshot id or number")
-    ph.add_argument("path", help="file to print")
+    ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])
+    ph.add_argument("ref", help="snapshot id or number, or just the file if you want the newest snapshot that has it")
+    ph.add_argument("path", nargs="?", help="file to print (omit to treat ref as the file)")
     ph.set_defaults(func=cmd_show)
 
     pe = sub.add_parser("export", help="write a snapshot to a tar archive without touching the tree", parents=[common])

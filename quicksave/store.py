@@ -553,14 +553,26 @@ def repair(root, dry_run=False):
 
 def show(root, ref, path):
     store = store_path(root)
-    f = _find_snapshot(store, ref)
-    if f is None:
-        raise QuicksaveError(f"snapshot '{ref}' not found")
-    files = json.loads(f.read_text())["files"]
     rel = Path(path).as_posix()
-    meta = files.get(rel)
-    if meta is None:
-        raise QuicksaveError(f"'{path}' not in snapshot '{ref}'")
+    if ref is None:
+        # peek at a lost file without writing it: walk newest-first and take the
+        # first snapshot that still has this exact path. the read-only sibling of
+        # recover, so 'show config.env' works even after the file was deleted.
+        for f in reversed(_snapshot_files(store)):
+            files = json.loads(f.read_text())["files"]
+            if rel in files:
+                meta = files[rel]
+                break
+        else:
+            raise QuicksaveError(f"no snapshot holds '{path}'")
+    else:
+        f = _find_snapshot(store, ref)
+        if f is None:
+            raise QuicksaveError(f"snapshot '{ref}' not found")
+        files = json.loads(f.read_text())["files"]
+        meta = files.get(rel)
+        if meta is None:
+            raise QuicksaveError(f"'{path}' not in snapshot '{ref}'")
     obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
     if not obj.exists():
         raise QuicksaveError(f"missing blob {meta['sha256']} for {rel}")

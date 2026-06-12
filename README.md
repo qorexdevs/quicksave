@@ -47,6 +47,7 @@ quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
 quicksave list --json          # machine-readable output, same for status, stats, log and diff --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
+quicksave show src/app.py      # same, from the newest snapshot that still has it
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave import backup.tgz    # read a tar archive back into a new snapshot
 quicksave export - -z | ssh host 'cd repo && quicksave import -'  # pipe a gzipped checkpoint to another machine
@@ -118,7 +119,8 @@ you exactly what an agent touched since your last checkpoint before you decide t
 
 `show` writes one file's contents from a snapshot straight to stdout, so you can grab a single old
 version without overwriting what's on disk: `quicksave show 3 config.py > config.old.py` or pipe it
-into `diff`.
+into `diff`. Drop the snapshot ref and it prints the file from the newest snapshot that still has it,
+so `quicksave show config.py` works even after the file was deleted - the read-only peek to `recover`.
 
 `export` packs a whole snapshot into a tar archive without touching the live tree, so you can stash a
 known-good checkpoint or move it to another machine: `quicksave export backup.tar.gz pre-deploy`.

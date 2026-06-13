@@ -637,7 +637,7 @@ def build_parser():
     pst.set_defaults(func=cmd_stats)
 
     pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])
-    pf.add_argument("path", help="file path or part of one to search for")
+    pf.add_argument("path", help="file path, part of one, or a glob like '*.py' to search for")
     pf.add_argument("--json", action="store_true", help="print matches as json")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.set_defaults(func=cmd_find)

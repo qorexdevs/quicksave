@@ -5,6 +5,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `find` now accepts shell globs, so `find '*.py'` or `find 'src/**/test_*.py'` match by pattern.
+  Queries without glob chars keep the old exact/prefix/substring behaviour.
+
 ## [0.3.0] - 2026-06-13
 
 Most of this is about finding and bringing back files after they're already gone, plus moving

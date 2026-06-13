@@ -126,7 +126,9 @@ snapshot, and `--no-backup` turns it off.
 Lost a file and not sure which checkpoint still has it? `quicksave find app.py` lists every snapshot
 holding a file whose path matches, newest first, with the size of each match and a ready-made restore
 line. The query matches an exact path, a directory prefix, or just part of a name, so a bare basename
-finds it wherever it lived. `--limit N` keeps only the N newest matches when you just want the last few.
+finds it wherever it lived. A query with glob chars matches that way instead, so `quicksave find '*.py'`
+or `quicksave find 'src/**/test_*.py'` work too. `--limit N` keeps only the N newest matches when you
+just want the last few.
 
 When you don't care which checkpoint, `quicksave recover app.py` skips that step: it finds the newest
 snapshot that still holds the file and restores it in one shot, even if it was deleted several commands

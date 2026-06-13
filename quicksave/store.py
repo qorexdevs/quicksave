@@ -351,15 +351,22 @@ def find_file(root, query):
     # which snapshots hold a file matching `query` - the "I deleted foo.py, where
     # can I get it back" lookup. matches on exact path, a directory prefix, or the
     # query as a substring of the relpath so a bare basename finds src/foo.py.
+    # if the query has glob chars (* ? [) we match relpaths with a shell glob
+    # instead, so 'quicksave find *.py' or 'src/**/test_*.py' work.
     store = store_path(root)
     q = Path(query).as_posix()
+    glob = any(c in query for c in "*?[")
     out = []
     for f in reversed(_snapshot_files(store)):
         seq, _, snap_id = f.stem.partition("-")
         m = json.loads(f.read_text())
         hits = []
         for rel, meta in m.get("files", {}).items():
-            if rel == q or rel.startswith(q.rstrip("/") + "/") or q in rel:
+            if glob:
+                match = fnmatch.fnmatch(rel, q) or fnmatch.fnmatch(rel, "*/" + q)
+            else:
+                match = rel == q or rel.startswith(q.rstrip("/") + "/") or q in rel
+            if match:
                 hits.append({"path": rel, "size": meta.get("size", 0),
                              "sha256": meta.get("sha256", "")})
         if hits:

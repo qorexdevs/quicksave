@@ -881,6 +881,25 @@ def test_cli_find_limit(tmp_path, monkeypatch, capsys):
     assert data[1]["message"] == "two"
 
 
+def test_cli_find_glob(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "app.py").write_text("a")
+    (src / "util.py").write_text("u")
+    (tmp_path / "notes.txt").write_text("n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["find", "*.py", "--json"])
+    paths = {h["path"] for h in json.loads(capsys.readouterr().out)[0]["files"]}
+    assert paths == {"src/app.py", "src/util.py"}
+
+    main(["find", "src/*.txt"])
+    assert "no snapshot" in capsys.readouterr().out
+
+
 def test_cli_stats(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("same")

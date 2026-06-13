@@ -238,6 +238,9 @@ eval "$(quicksave completion bash)"
 
 # zsh, in ~/.zshrc (after compinit)
 eval "$(quicksave completion zsh)"
+
+# fish, in ~/.config/fish/config.fish
+quicksave completion fish | source
 ```
 
 It completes subcommands at the first word and falls back to file completion after that. The

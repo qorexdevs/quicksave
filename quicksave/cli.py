@@ -613,7 +613,11 @@ _quicksave() {
 }
 compdef _quicksave quicksave
 """
-
+_FISH_COMPLETION = """\
+complete -c quicksave -f -n __fish_use_subcommand -a "__CMDS__"
+complete -c quicksave -n __fish_use_subcommand -l help -l json -l quiet -s q
+complete -c quicksave -n 'not __fish_use_subcommand' -F
+"""
 
 def _subcommands():
     parser = build_parser()
@@ -625,9 +629,9 @@ def _subcommands():
 
 def cmd_completion(args):
     cmds = " ".join(_subcommands())
-    script = _BASH_COMPLETION if args.shell == "bash" else _ZSH_COMPLETION
+    scripts = {"bash": _BASH_COMPLETION, "zsh": _ZSH_COMPLETION, "fish": _FISH_COMPLETION}
     # plain print so 'eval "$(quicksave completion bash)"' gets a clean script
-    print(script.replace("__CMDS__", cmds), end="")
+    print(scripts[args.shell].replace("__CMDS__", cmds), end="")
 
 
 def cmd_hook_install(args):
@@ -786,7 +790,7 @@ def build_parser():
     pg.set_defaults(func=cmd_gc)
 
     pcomp = sub.add_parser("completion", help="print a tab-completion script for your shell", parents=[common])
-    pcomp.add_argument("shell", choices=("bash", "zsh"),
+    pcomp.add_argument("shell", choices=("bash", "zsh", "fish"),
                        help="which shell to emit a completion script for")
     pcomp.set_defaults(func=cmd_completion)
 

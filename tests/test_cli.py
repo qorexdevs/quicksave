@@ -963,3 +963,10 @@ def test_completion_zsh_wires_compdef(capsys):
     assert out.startswith("#compdef quicksave")
     assert "compdef _quicksave quicksave" in out
     assert "restore" in out
+
+def test_completion_fish_lists_subcommands(capsys):
+    main(["completion", "fish"])
+    out = capsys.readouterr().out
+    assert "complete -c quicksave" in out
+    assert "__fish_use_subcommand" in out
+    assert "restore" in out

@@ -9,6 +9,34 @@ own session, so an agent's `rm`, `mv`, or a stray script can wipe files that not
 quicksave snapshots the whole working tree into a local content-addressed store, so you can roll
 back to any checkpoint - including files that were never committed.
 
+## Quick tour
+
+An agent wipes a source dir and your `.env`, and git never tracked either. One restore brings it all
+back ([examples/tour.sh](examples/tour.sh) runs this end to end):
+
+```
+$ quicksave init
+initialized quicksave in /tmp/demo
+$ quicksave save -n pre-agent -m "before the agent runs"
+saved 98c66e6a3d2e pre-agent (3 files) before the agent runs
+
+$ rm -rf src .env        # the agent wipes files git never tracked
+$ ls -A
+.quicksave
+README.md
+
+$ quicksave restore pre-agent --clean
+backed up current tree as c8aca5f9b067
+restored 3 files from pre-agent before the agent runs
+$ ls -A && cat src/app.py
+.env
+.quicksave
+README.md
+src
+def main():
+    print("hi")
+```
+
 ## Install
 
 ```

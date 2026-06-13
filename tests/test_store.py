@@ -98,6 +98,15 @@ def test_gitignore_is_respected(tmp_path):
     assert "out.tmp" not in files
 
 
+def test_negation_line_does_not_ignore(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "keep.log").write_text("important")
+    (tmp_path / ".gitignore").write_text("!keep.log\n")
+    files = {p.as_posix() for p in store.iter_files(tmp_path)}
+    # a '!' line must not flip into an ignore rule for the same name
+    assert "keep.log" in files
+
+
 def test_dedup_same_content(tmp_path):
     store.init(tmp_path)
     (tmp_path / "a.txt").write_text("same")

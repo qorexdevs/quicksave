@@ -60,8 +60,14 @@ def load_patterns(root):
             continue
         for line in f.read_text(encoding="utf-8", errors="replace").splitlines():
             line = line.strip()
-            if line and not line.startswith("#"):
-                pats.append(line.lstrip("!").rstrip("/"))
+            if not line or line.startswith("#"):
+                continue
+            # no full gitignore semantics here, so a negation can't re-include an
+            # already-ignored path. stripping the '!' would flip it into an ignore
+            # rule, the opposite of what was meant, so skip the line instead.
+            if line.startswith("!"):
+                continue
+            pats.append(line.rstrip("/"))
     return pats
 
 

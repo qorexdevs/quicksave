@@ -753,6 +753,11 @@ def build_parser():
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
+    if "NO_COLOR" in os.environ:
+        # honor the NO_COLOR convention (https://no-color.org): set to anything = plain text
+        global console, err
+        console = Console(color_system=None)
+        err = Console(stderr=True, color_system=None)
     console.quiet = getattr(args, "quiet", False)
     if not getattr(args, "func", None):
         parser.print_help()

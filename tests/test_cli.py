@@ -904,3 +904,26 @@ def test_cli_stats(tmp_path, monkeypatch, capsys):
     assert "| snapshots | blobs | on disk | dedup |" in out
     assert "| --- | --- | --- | --- |" in out
     assert "| 1 | 1 |" in out
+
+
+def test_no_color_env_strips_styling(tmp_path, monkeypatch, capsys):
+    from quicksave import cli
+
+    from rich.color import ColorSystem
+
+    monkeypatch.chdir(tmp_path)
+    # make rich believe it is a real terminal so it would otherwise emit ansi
+    monkeypatch.setattr(cli.console, "_force_terminal", True)
+    monkeypatch.setattr(cli.console, "_color_system", ColorSystem.TRUECOLOR)
+    (tmp_path / "note.md").write_text("draft")
+    main(["init"])
+    main(["save", "-m", "wip"])
+    capsys.readouterr()
+
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    main(["list"])
+    assert "\x1b[" in capsys.readouterr().out
+
+    monkeypatch.setenv("NO_COLOR", "1")
+    main(["list"])
+    assert "\x1b[" not in capsys.readouterr().out

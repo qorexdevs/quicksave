@@ -220,6 +220,9 @@ If a checkpoint matters, `quicksave pin <ref>` keeps it out of that rotation so 
 reap the one good state you wanted to keep. `quicksave unpin <ref>` lets it rotate again, and an
 explicit `quicksave gc <ref>` still drops it when you mean it.
 
+Set `NO_COLOR` to any value and quicksave prints plain text without styling, following the
+[NO_COLOR](https://no-color.org) convention.
+
 ## How it works
 
 - Files are hashed with SHA-256 and stored once under `.quicksave/objects/` (identical content is

@@ -41,9 +41,14 @@ def main():
 
 ## Install
 
+Latest from git:
+
 ```
-pip install -e .
+pip install git+https://github.com/qorexdevs/quicksave
 ```
+
+Or grab a wheel from the [releases page](https://github.com/qorexdevs/quicksave/releases). For local
+hacking, clone and `pip install -e .`.
 
 Needs Python 3.10+.
 

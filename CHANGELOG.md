@@ -8,6 +8,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ### Added
 - `find` now accepts shell globs, so `find '*.py'` or `find 'src/**/test_*.py'` match by pattern.
   Queries without glob chars keep the old exact/prefix/substring behaviour.
+- release workflow builds the sdist and wheel on a published release, attaches them to the release,
+  and publishes to PyPI via trusted publishing. install straight from git with
+  `pip install git+https://github.com/qorexdevs/quicksave`.
 
 ## [0.3.0] - 2026-06-13
 

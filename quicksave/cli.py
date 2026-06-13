@@ -584,6 +584,52 @@ def cmd_hook(args):
         store.gc(root, keep=keep)
 
 
+_BASH_COMPLETION = """\
+_quicksave() {
+    local cur cmds
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    cmds="__CMDS__"
+    if [ "$COMP_CWORD" -eq 1 ]; then
+        COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
+    elif [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-q --quiet --json --help" -- "$cur") )
+    else
+        COMPREPLY=( $(compgen -f -- "$cur") )
+    fi
+}
+complete -F _quicksave quicksave
+"""
+
+_ZSH_COMPLETION = """\
+#compdef quicksave
+_quicksave() {
+    local -a cmds
+    cmds=(__CMDS__)
+    if (( CURRENT == 2 )); then
+        compadd -- $cmds
+    else
+        _files
+    fi
+}
+compdef _quicksave quicksave
+"""
+
+
+def _subcommands():
+    parser = build_parser()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return sorted(action.choices)
+    return []
+
+
+def cmd_completion(args):
+    cmds = " ".join(_subcommands())
+    script = _BASH_COMPLETION if args.shell == "bash" else _ZSH_COMPLETION
+    # plain print so 'eval "$(quicksave completion bash)"' gets a clean script
+    print(script.replace("__CMDS__", cmds), end="")
+
+
 def cmd_hook_install(args):
     root = _root_or_die()
     path, changed = store.install_hook(root, args.tool)
@@ -738,6 +784,11 @@ def build_parser():
                     help="show what would be removed without deleting")
     pg.add_argument("--json", action="store_true", help="print what gc removed as json")
     pg.set_defaults(func=cmd_gc)
+
+    pcomp = sub.add_parser("completion", help="print a tab-completion script for your shell", parents=[common])
+    pcomp.add_argument("shell", choices=("bash", "zsh"),
+                       help="which shell to emit a completion script for")
+    pcomp.set_defaults(func=cmd_completion)
 
     phook = sub.add_parser("hook", help="PreToolUse hook: auto-save before a risky bash command", parents=[common])
     phook.set_defaults(func=cmd_hook)

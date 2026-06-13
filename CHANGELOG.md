@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `completion bash|zsh` prints a tab-completion script with no extra deps. Enable it with
+  `eval "$(quicksave completion bash)"` in your shell rc.
 - `find` now accepts shell globs, so `find '*.py'` or `find 'src/**/test_*.py'` match by pattern.
   Queries without glob chars keep the old exact/prefix/substring behaviour.
 - release workflow builds the sdist and wheel on a published release, attaches them to the release,

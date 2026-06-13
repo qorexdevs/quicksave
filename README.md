@@ -227,6 +227,22 @@ If a checkpoint matters, `quicksave pin <ref>` keeps it out of that rotation so 
 reap the one good state you wanted to keep. `quicksave unpin <ref>` lets it rotate again, and an
 explicit `quicksave gc <ref>` still drops it when you mean it.
 
+## Shell completion
+
+There are a lot of subcommands now, so tab completion helps. `quicksave completion bash|zsh` prints
+a script with no extra dependencies. Source it from your shell rc:
+
+```
+# bash, in ~/.bashrc
+eval "$(quicksave completion bash)"
+
+# zsh, in ~/.zshrc (after compinit)
+eval "$(quicksave completion zsh)"
+```
+
+It completes subcommands at the first word and falls back to file completion after that. The
+command list is read from the parser, so it stays in sync as commands are added.
+
 Set `NO_COLOR` to any value and quicksave prints plain text without styling, following the
 [NO_COLOR](https://no-color.org) convention.
 

@@ -946,3 +946,20 @@ def test_no_color_env_strips_styling(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("NO_COLOR", "1")
     main(["list"])
     assert "\x1b[" not in capsys.readouterr().out
+
+
+def test_completion_bash_lists_subcommands(capsys):
+    main(["completion", "bash"])
+    out = capsys.readouterr().out
+    assert "complete -F _quicksave quicksave" in out
+    # the command list comes straight from the parser, so a real subcommand is in it
+    assert "restore" in out
+    assert "completion" in out
+
+
+def test_completion_zsh_wires_compdef(capsys):
+    main(["completion", "zsh"])
+    out = capsys.readouterr().out
+    assert out.startswith("#compdef quicksave")
+    assert "compdef _quicksave quicksave" in out
+    assert "restore" in out

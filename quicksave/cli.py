@@ -102,6 +102,8 @@ def cmd_list(args):
     if args.limit and args.limit < total_snaps:
         snaps = snaps[-args.limit:]
         is_capped = True
+    if getattr(args, "reverse", False):
+        snaps = snaps[::-1]
     table = Table(box=None, pad_edge=False)
     table.add_column("#", justify="right", style="dim")
     table.add_column("id", style="cyan")
@@ -626,6 +628,7 @@ def build_parser():
                     help="show only snapshots newer than a duration like 1h, 30m, 7d")
     pl.add_argument("--grep", default=None, metavar="TEXT",
                     help="show only snapshots whose message or name contains this text")
+    pl.add_argument("--reverse", action="store_true", help="show newest first instead of oldest first")
     pl.set_defaults(func=cmd_list)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])

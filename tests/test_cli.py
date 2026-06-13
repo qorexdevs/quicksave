@@ -600,6 +600,43 @@ def test_list_limit_caps_output(capsys, monkeypatch):
     assert " c " in out
 
 
+def test_list_reverse_shows_newest_first(capsys, monkeypatch):
+    snaps = [
+        {"seq": 1, "id": "a", "name": "", "created_at": 1, "count": 1, "size": 10, "message": ""},
+        {"seq": 2, "id": "b", "name": "", "created_at": 2, "count": 1, "size": 10, "message": ""},
+        {"seq": 3, "id": "c", "name": "", "created_at": 3, "count": 1, "size": 10, "message": ""},
+    ]
+
+    monkeypatch.setattr(store, "find_root", lambda: "/tmp")
+    monkeypatch.setattr(store, "list_snapshots", lambda root: snaps)
+    monkeypatch.setattr(store, "store_size", lambda root: 123)
+
+    args = argparse.Namespace(json=False, limit=None, absolute=True, reverse=True)
+    cmd_list(args)
+
+    out = capsys.readouterr().out
+    assert out.index(" c ") < out.index(" b ") < out.index(" a ")
+
+
+def test_list_reverse_with_limit_keeps_newest(capsys, monkeypatch):
+    snaps = [
+        {"seq": 1, "id": "a", "name": "", "created_at": 1, "count": 1, "size": 10, "message": ""},
+        {"seq": 2, "id": "b", "name": "", "created_at": 2, "count": 1, "size": 10, "message": ""},
+        {"seq": 3, "id": "c", "name": "", "created_at": 3, "count": 1, "size": 10, "message": ""},
+    ]
+
+    monkeypatch.setattr(store, "find_root", lambda: "/tmp")
+    monkeypatch.setattr(store, "list_snapshots", lambda root: snaps)
+    monkeypatch.setattr(store, "store_size", lambda root: 123)
+
+    args = argparse.Namespace(json=False, limit=2, absolute=True, reverse=True)
+    cmd_list(args)
+
+    out = capsys.readouterr().out
+    assert " a " not in out
+    assert out.index(" c ") < out.index(" b ")
+
+
 def test_list_limit_footer(capsys, monkeypatch):
     snaps = [
         {"seq": 1, "id": "a", "name": "", "created_at": 1, "count": 1, "size": 10, "message": ""},

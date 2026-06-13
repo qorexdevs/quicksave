@@ -256,6 +256,10 @@ pip install pytest
 pytest
 ```
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+
 ## License
 
 MIT. Made by [qorexdevs](https://github.com/qorexdevs).

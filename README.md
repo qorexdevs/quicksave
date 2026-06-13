@@ -9,6 +9,8 @@ own session, so an agent's `rm`, `mv`, or a stray script can wipe files that not
 quicksave snapshots the whole working tree into a local content-addressed store, so you can roll
 back to any checkpoint - including files that were never committed.
 
+<p align="center"><img src="assets/demo.svg" alt="quicksave demo: an agent runs rm -rf, one restore brings the files back" width="660"></p>
+
 ## Quick tour
 
 An agent wipes a source dir and your `.env`, and git never tracked either. One restore brings it all

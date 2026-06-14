@@ -27,6 +27,8 @@ jobs:
 
   publish:
     needs: build
+    # only runs once a PyPI trusted publisher is set up and PYPI_READY is flipped on
+    if: vars.PYPI_READY == 'true'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:

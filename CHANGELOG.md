@@ -3,7 +3,10 @@
 All notable changes are listed here. Versions follow [semver](https://semver.org) and the format
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
-## [Unreleased]
+## [0.4.0] - 2026-06-14
+
+shell completion for every common shell, glob matching in `find`, and installs straight from git
+or PyPI.
 
 ### Added
 - `list --before DUR` shows only snapshots older than a duration, the mirror of `--since`. Useful
@@ -69,6 +72,6 @@ you can roll back files an agent deleted or overwrote, even ones git never track
 - a `PreToolUse` hook (`quicksave hook`) plus `hook install` for Claude Code and Codex, to
   auto-checkpoint before a risky command.
 
-[Unreleased]: https://github.com/qorexdevs/quicksave/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/qorexdevs/quicksave/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/qorexdevs/quicksave/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/qorexdevs/quicksave/releases/tag/v0.2.0

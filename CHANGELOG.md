@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `list --before DUR` shows only snapshots older than a duration, the mirror of `--since`. Useful
+  for spotting stale snapshots before a `gc`.
 - `completion bash|zsh|fish|powershell` prints a tab-completion script with no extra deps. Enable
   it with `eval "$(quicksave completion bash)"` in your shell rc, `quicksave completion fish | source`
   in fish, or `quicksave completion powershell | Out-String | Invoke-Expression` in PowerShell.

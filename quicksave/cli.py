@@ -79,6 +79,10 @@ def cmd_list(args):
     if since:
         cutoff = datetime.now().timestamp() - store.parse_duration(since)
         snaps = [s for s in snaps if s["created_at"] and s["created_at"] >= cutoff]
+    before = getattr(args, "before", None)
+    if before:
+        cutoff = datetime.now().timestamp() - store.parse_duration(before)
+        snaps = [s for s in snaps if s["created_at"] and s["created_at"] <= cutoff]
     grep = getattr(args, "grep", None)
     if grep:
         needle = grep.lower()
@@ -92,6 +96,8 @@ def cmd_list(args):
             console.print("[dim]no pinned snapshots, pin one with 'quicksave pin <ref>'[/]")
         elif since:
             console.print(f"[dim]no snapshots in the last {since}[/]")
+        elif before:
+            console.print(f"[dim]no snapshots older than {before}[/]")
         elif grep:
             console.print(f"[dim]no snapshots match '{grep}'[/]")
         else:
@@ -690,6 +696,8 @@ def build_parser():
     pl.add_argument("--pinned", action="store_true", help="show only pinned snapshots")
     pl.add_argument("--since", default=None, metavar="DUR",
                     help="show only snapshots newer than a duration like 1h, 30m, 7d")
+    pl.add_argument("--before", default=None, metavar="DUR",
+                    help="show only snapshots older than a duration like 1h, 30m, 7d")
     pl.add_argument("--grep", default=None, metavar="TEXT",
                     help="show only snapshots whose message or name contains this text")
     pl.add_argument("--reverse", action="store_true", help="show newest first instead of oldest first")

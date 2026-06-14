@@ -970,3 +970,10 @@ def test_completion_fish_lists_subcommands(capsys):
     assert "complete -c quicksave" in out
     assert "__fish_use_subcommand" in out
     assert "restore" in out
+
+
+def test_completion_powershell_registers_completer(capsys):
+    main(["completion", "powershell"])
+    out = capsys.readouterr().out
+    assert "Register-ArgumentCompleter -Native -CommandName quicksave" in out
+    assert "restore" in out

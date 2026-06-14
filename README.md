@@ -229,8 +229,8 @@ explicit `quicksave gc <ref>` still drops it when you mean it.
 
 ## Shell completion
 
-There are a lot of subcommands now, so tab completion helps. `quicksave completion bash|zsh` prints
-a script with no extra dependencies. Source it from your shell rc:
+There are a lot of subcommands now, so tab completion helps. `quicksave completion bash|zsh|fish|powershell`
+prints a script with no extra dependencies. Source it from your shell rc:
 
 ```
 # bash, in ~/.bashrc
@@ -241,6 +241,9 @@ eval "$(quicksave completion zsh)"
 
 # fish, in ~/.config/fish/config.fish
 quicksave completion fish | source
+
+# powershell, in $PROFILE
+quicksave completion powershell | Out-String | Invoke-Expression
 ```
 
 It completes subcommands at the first word and falls back to file completion after that. The

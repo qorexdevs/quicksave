@@ -695,9 +695,9 @@ def build_parser():
     pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
     pl.add_argument("--pinned", action="store_true", help="show only pinned snapshots")
     pl.add_argument("--since", default=None, metavar="DUR",
-                    help="show only snapshots newer than a duration like 1h, 30m, 7d")
+                    help="show only snapshots newer than a duration (1h, 7d) or date (2026-06-01)")
     pl.add_argument("--before", default=None, metavar="DUR",
-                    help="show only snapshots older than a duration like 1h, 30m, 7d")
+                    help="show only snapshots older than a duration (1h, 7d) or date (2026-06-01)")
     pl.add_argument("--grep", default=None, metavar="TEXT",
                     help="show only snapshots whose message or name contains this text")
     pl.add_argument("--reverse", action="store_true", help="show newest first instead of oldest first")
@@ -805,7 +805,7 @@ def build_parser():
     pg.add_argument("--keep", type=int, default=None,
                     help="keep only the N most recent snapshots")
     pg.add_argument("--older-than", default=None, metavar="DUR",
-                    help="drop snapshots older than a duration like 7d, 12h, 30m")
+                    help="drop snapshots older than a duration (7d, 12h) or date (2026-06-01)")
     pg.add_argument("--dry-run", action="store_true",
                     help="show what would be removed without deleting")
     pg.add_argument("--json", action="store_true", help="print what gc removed as json")

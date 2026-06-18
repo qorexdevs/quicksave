@@ -3,6 +3,12 @@
 All notable changes are listed here. Versions follow [semver](https://semver.org) and the format
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
+## [Unreleased]
+
+### Added
+- `--since`/`--before` and `gc --older-than` now also accept an absolute date like `2026-06-01`
+  or `2026-06-01T12:00`, not just relative durations. The date is read as the cutoff directly.
+
 ## [0.4.0] - 2026-06-14
 
 shell completion for every common shell, glob matching in `find`, and installs straight from git

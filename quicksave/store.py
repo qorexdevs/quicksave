@@ -6,6 +6,7 @@ import os
 import re
 import tarfile
 import time
+from datetime import datetime
 from pathlib import Path
 
 STORE_DIR = ".quicksave"
@@ -434,10 +435,16 @@ _DURATION_UNITS = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
 
 def parse_duration(text):
     # "7d", "12h", "30m", "90s", "2w" -> seconds. plain digits mean seconds.
+    # an absolute date ("2026-06-01", "2026-06-01T12:00") is read as seconds-ago
+    # relative to now, so the same now - parse_duration(x) cutoff still works.
     m = re.fullmatch(r"\s*(\d+)\s*([smhdw]?)\s*", text or "", re.IGNORECASE)
-    if not m:
-        raise QuicksaveError(f"bad duration '{text}', use forms like 7d, 12h, 30m")
-    return int(m.group(1)) * _DURATION_UNITS[(m.group(2) or "s").lower()]
+    if m:
+        return int(m.group(1)) * _DURATION_UNITS[(m.group(2) or "s").lower()]
+    try:
+        when = datetime.fromisoformat((text or "").strip())
+    except ValueError:
+        raise QuicksaveError(f"bad duration '{text}', use forms like 7d, 12h or a date like 2026-06-01")
+    return time.time() - when.timestamp()
 
 
 def gc(root, keep=None, refs=None, dry_run=False, older_than=None):

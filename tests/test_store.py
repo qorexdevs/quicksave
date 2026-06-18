@@ -767,6 +767,17 @@ def test_parse_duration_forms():
         store.parse_duration("soon")
 
 
+def test_parse_duration_absolute_date():
+    from datetime import datetime
+
+    past = "2020-01-01"
+    ago = store.parse_duration(past)
+    expected = time.time() - datetime.fromisoformat(past).timestamp()
+    assert abs(ago - expected) < 5
+    # a date and a duration both resolve to "seconds ago", date is much larger
+    assert store.parse_duration("2020-01-01T12:00") > store.parse_duration("1h")
+
+
 def test_pin_shows_in_list_and_unpin_clears(tmp_path):
     store.init(tmp_path)
     (tmp_path / "f.txt").write_text("a")

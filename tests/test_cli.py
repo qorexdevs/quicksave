@@ -263,6 +263,32 @@ def test_cli_save_json(tmp_path, monkeypatch, capsys):
     assert out["created"] is False
 
 
+def test_save_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one")
+    main(["init"])
+    main(["save", "-m", "first"])
+    (tmp_path / "a.txt").write_text("changed")
+    (tmp_path / "b.txt").write_text("new")
+    capsys.readouterr()
+
+    main(["save", "--dry-run", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert out["would_change"] is True
+    assert out["added"] == ["b.txt"]
+    assert out["modified"] == ["a.txt"]
+
+    # the snapshot count didn't move
+    main(["list", "--json"])
+    assert len(json.loads(capsys.readouterr().out)) == 1
+
+    # clean tree: dry run reports no change
+    main(["save", "-m", "second"])
+    capsys.readouterr()
+    main(["save", "--dry-run"])
+    assert "nothing changed" in capsys.readouterr().out
+
+
 def test_cli_gc_json(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"

@@ -52,6 +52,27 @@ def cmd_init(args):
 
 def cmd_save(args):
     root = _root_or_die()
+    if getattr(args, "dry_run", False):
+        p = store.save_preview(root)
+        if getattr(args, "json", False):
+            print(json.dumps(p))
+            return
+        if p["first"]:
+            console.print(f"[dim]first snapshot, would capture {p['files']} files "
+                          f"({_human_size(p['size'])})[/]")
+            return
+        if not p["would_change"]:
+            console.print("[dim]nothing changed since the last snapshot, save would be skipped[/]")
+            return
+        for path in p["added"]:
+            console.print(f"[green]+ {path}[/]")
+        for path in p["removed"]:
+            console.print(f"[red]- {path}[/]")
+        for path in p["modified"]:
+            console.print(f"[yellow]~ {path}[/]")
+        console.print(f"[dim]would capture {p['files']} files ({_human_size(p['size'])}), "
+                      "nothing written[/]")
+        return
     snap_id, n, created = store.save(root, message=args.message or "", force=args.force,
                                      name=args.name or "")
     if getattr(args, "json", False):
@@ -698,6 +719,8 @@ def build_parser():
                     help="label the snapshot so you can restore it by name later")
     ps.add_argument("-f", "--force", action="store_true",
                     help="snapshot even if nothing changed since the last one")
+    ps.add_argument("--dry-run", action="store_true",
+                    help="show what would be captured without writing a snapshot")
     ps.add_argument("--json", action="store_true", help="print the saved snapshot as json")
     ps.set_defaults(func=cmd_save)
 

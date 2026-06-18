@@ -179,6 +179,38 @@ def save(root, message="", ignore=DEFAULT_IGNORE, force=False, name=""):
     return snap_id, len(files), True
 
 
+def save_preview(root, ignore=DEFAULT_IGNORE):
+    # what 'save' would capture, without writing any blobs or a manifest
+    root = Path(root)
+    store = store_path(root)
+    if not store.is_dir():
+        raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
+    cur = {}
+    total = 0
+    for rel in iter_files(root, ignore):
+        try:
+            data = (root / rel).read_bytes()
+        except OSError:
+            continue
+        cur[rel.as_posix()] = _sha256(data)
+        total += len(data)
+    snaps = _snapshot_files(store)
+    snap = ({p: m["sha256"] for p, m in json.loads(snaps[-1].read_text())["files"].items()}
+            if snaps else {})
+    added = sorted(set(cur) - set(snap))
+    removed = sorted(set(snap) - set(cur))
+    modified = sorted(p for p in set(cur) & set(snap) if cur[p] != snap[p])
+    return {
+        "files": len(cur),
+        "size": total,
+        "added": added,
+        "removed": removed,
+        "modified": modified,
+        "first": not snaps,
+        "would_change": not snaps or bool(added or removed or modified),
+    }
+
+
 def set_name(root, ref, name):
     if name and name.isdigit():
         raise QuicksaveError("snapshot name can't be all digits, it would clash with list numbers")

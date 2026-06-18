@@ -59,6 +59,7 @@ quicksave init                 # start tracking this directory
 quicksave save -m "before refactor"
 quicksave save -n pre-deploy   # tag the snapshot with a name
 quicksave save --json          # print the new snapshot's id and file count for a script or hook
+quicksave save --dry-run       # preview what a snapshot would capture, nothing written
 quicksave list                 # snapshots with file count, size and "2h ago" relative time
 quicksave list --absolute      # show full timestamps instead of relative time
 quicksave list --pinned        # only the snapshots you pinned out of gc rotation

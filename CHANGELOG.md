@@ -10,6 +10,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   or `2026-06-01T12:00`, not just relative durations. The date is read as the cutoff directly.
 - `recover --dry-run` shows which files would come back and from which snapshot without writing
   anything or taking a backup, the same preview `restore --dry-run` already gives.
+- `save --dry-run` previews what a snapshot would capture - new, modified and removed files since
+  the last snapshot, with a file count and total size - without writing blobs or a manifest. Handy
+  for catching build artifacts you forgot to ignore before they land in the store.
 
 ## [0.4.0] - 2026-06-14
 

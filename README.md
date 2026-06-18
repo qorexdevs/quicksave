@@ -139,7 +139,8 @@ just want the last few.
 When you don't care which checkpoint, `quicksave recover app.py` skips that step: it finds the newest
 snapshot that still holds the file and restores it in one shot, even if it was deleted several commands
 ago and isn't in the latest snapshot. It backs the tree up first (so `undo` reverts it), or `--no-backup`
-to skip that.
+to skip that. Add `--dry-run` to see which files it would bring back, and from which snapshot, before
+it touches anything.
 
 `save -n <name>` tags a snapshot so you can roll back to it without hunting for its number or id:
 `quicksave restore pre-deploy`. Anywhere a command takes a snapshot ref (`restore`, `status`, `show`,

@@ -8,6 +8,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ### Added
 - `--since`/`--before` and `gc --older-than` now also accept an absolute date like `2026-06-01`
   or `2026-06-01T12:00`, not just relative durations. The date is read as the cutoff directly.
+- `recover --dry-run` shows which files would come back and from which snapshot without writing
+  anything or taking a backup, the same preview `restore --dry-run` already gives.
 
 ## [0.4.0] - 2026-06-14
 

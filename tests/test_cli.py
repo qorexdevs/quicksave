@@ -68,6 +68,25 @@ def test_recover_pulls_a_file_from_the_newest_snapshot_that_had_it(tmp_path, mon
     assert not (tmp_path / "gone.txt").exists()
 
 
+def test_recover_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "gone.txt").write_text("important")
+    main(["init"])
+    main(["save", "-m", "with file"])
+    (tmp_path / "gone.txt").unlink()
+    main(["save", "-m", "after delete"])
+    n_snaps = len(store.list_snapshots(tmp_path))
+    capsys.readouterr()
+
+    main(["recover", "gone.txt", "--dry-run"])
+    out = capsys.readouterr().out
+    assert "dry run" in out
+    assert "gone.txt" in out
+    # nothing brought back and no backup snapshot taken
+    assert not (tmp_path / "gone.txt").exists()
+    assert len(store.list_snapshots(tmp_path)) == n_snaps
+
+
 def test_recover_no_match_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

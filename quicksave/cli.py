@@ -202,13 +202,25 @@ def cmd_recover(args):
         raise SystemExit(1)
     newest = snaps[0]
     paths = [h["path"] for h in newest["files"]]
+    label = f"#{newest['seq']} [cyan]{newest['id']}[/]"
+    when = _relative_time(newest["created_at"])
+    if args.dry_run:
+        p = store.restore_plan(root, newest["id"], paths)
+        total = len(p["created"]) + len(p["overwritten"])
+        for path in p["created"]:
+            console.print(f"[green]+ {path}[/]")
+        for path in p["overwritten"]:
+            console.print(f"[yellow]~ {path}[/]")
+        for path in p["missing"]:
+            console.print(f"[red]! {path} (blob missing)[/]")
+        console.print(f"[dim]would recover {total} matching '{args.path}' from {label} {when}"
+                      f" - dry run, nothing touched[/]")
+        return
     if not args.no_backup:
         bid, _, made = store.save(root, message=f"before restore of recover '{args.path}'")
         if made:
             console.print(f"[dim]backed up current tree as {bid}[/]")
     n, _, _ = store.restore(root, newest["id"], paths)
-    label = f"#{newest['seq']} [cyan]{newest['id']}[/]"
-    when = _relative_time(newest["created_at"])
     console.print(f"recovered [cyan]{n}[/] files matching '{args.path}' from {label} [dim]{when}[/]")
 
 
@@ -716,6 +728,8 @@ def build_parser():
 
     prc = sub.add_parser("recover", help="restore a file from the newest snapshot that still has it", parents=[common])
     prc.add_argument("path", help="file path or part of one to bring back")
+    prc.add_argument("--dry-run", action="store_true",
+                     help="show which files recover would bring back without writing anything")
     prc.add_argument("--no-backup", action="store_true",
                      help="don't snapshot the current tree before recovering")
     prc.set_defaults(func=cmd_recover)

@@ -5,14 +5,16 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `status --short` prints a one-line porcelain summary like `~3 +1 -0` (modified/added/removed),
+  or `clean`, instead of the per-file list, so a shell prompt or an agent can read drift at a
+  glance. `--json` still wins when both are passed, and `--exit-code` works the same.
+
 ## [0.5.0] - 2026-06-20
 
 batch recover and drop, working-tree diffs, and dry-run previews across save, restore and recover.
 
 ### Added
-- `status --short` prints a one-line porcelain summary like `~3 +1 -0` (modified/added/removed),
-  or `clean`, instead of the per-file list, so a shell prompt or an agent can read drift at a
-  glance. `--json` still wins when both are passed, and `--exit-code` works the same.
 - `recover` takes more than one path at a time, like `drop` already does: each path resolves to its
   own newest snapshot (or the one from `--from`), a single pre-restore backup covers the whole batch
   so one `undo` rewinds them all, and `--json` lists what came back per path under `results`. A path

@@ -82,6 +82,7 @@ quicksave status               # what changed in the tree since the last snapsho
 quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
 quicksave recover app.py       # just bring it back from the newest snapshot that has it
+quicksave recover app.py util.py config.json # several at once, each from its own newest snapshot
 quicksave recover app.py --from 3 # pull it from snapshot 3 if the newest copy is already broken
 quicksave recover app.py --json # report which snapshot it pulled from and the recovered files
 quicksave stats                # store size and how much dedup is saving you
@@ -146,8 +147,10 @@ snapshot that still holds the file and restores it in one shot, even if it was d
 ago and isn't in the latest snapshot. It backs the tree up first (so `undo` reverts it), or `--no-backup`
 to skip that. Add `--dry-run` to see which files it would bring back, and from which snapshot, before
 it touches anything, or `--into DIR` to write the matches aside into another directory and leave the
-live tree alone. If the newest copy turns out to be the broken one, `find` lists the candidates and
-`recover app.py --from 3` pulls from the snapshot you pick instead of scanning for the newest match.
+live tree alone. Pass several paths - `quicksave recover app.py utils.py config.json` - and each one
+resolves to its own newest snapshot while a single pre-restore backup covers the whole batch, so one
+`undo` rewinds them all. If the newest copy turns out to be the broken one, `find` lists the candidates
+and `recover app.py --from 3` pulls from the snapshot you pick instead of scanning for the newest match.
 
 `save -n <name>` tags a snapshot so you can roll back to it without hunting for its number or id:
 `quicksave restore pre-deploy`. Anywhere a command takes a snapshot ref (`restore`, `status`, `show`,

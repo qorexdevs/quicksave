@@ -215,70 +215,95 @@ def cmd_find(args):
 def cmd_recover(args):
     # the panic case: a file got deleted some commands ago and you don't know
     # which snapshot still has it. find the newest one that does and restore it
-    # in one shot. --from picks a specific snapshot instead, for when the newest
-    # copy is itself broken. resolve before the backup so it stays the target.
+    # in one shot. takes several paths at once - when an agent wipes a handful of
+    # files in one command, each resolves to its own newest snapshot and one
+    # pre-restore backup covers the whole batch. --from pins every path to one
+    # snapshot instead, for when the newest copies are themselves broken.
     root = _root_or_die()
     as_json = getattr(args, "json", False)
     from_ref = getattr(args, "from_ref", None)
-    if from_ref is not None:
-        newest = store.find_file_at(root, from_ref, args.path)
-    else:
-        snaps = store.find_file(root, args.path)
-        newest = snaps[0] if snaps else None
-    if newest is None:
+    into = getattr(args, "into", None)
+    queries = args.path
+
+    resolved = []
+    for q in queries:
+        if from_ref is not None:
+            m = store.find_file_at(root, from_ref, q)
+        else:
+            snaps = store.find_file(root, q)
+            m = snaps[0] if snaps else None
+        resolved.append((q, m))
+
+    if all(m is None for _, m in resolved):
         if as_json:
-            print(json.dumps({"path": args.path, "snapshot": None, "recovered": 0, "files": []}))
+            print(json.dumps({"paths": queries, "recovered": 0,
+                              "results": [{"path": q, "snapshot": None, "recovered": 0, "files": []}
+                                          for q in queries]}))
             return
         where = f" in snapshot '{from_ref}'" if from_ref is not None else ""
-        err.print(f"[red]no snapshot holds a file matching '{args.path}'{where}[/]")
+        names = "', '".join(queries)
+        err.print(f"[red]no snapshot holds a file matching '{names}'{where}[/]")
         raise SystemExit(1)
-    paths = [h["path"] for h in newest["files"]]
-    snap = {"seq": newest["seq"], "id": newest["id"], "name": newest.get("name") or "",
-            "created_at": newest["created_at"]}
-    label = f"#{newest['seq']} [cyan]{newest['id']}[/]"
-    when = _relative_time(newest["created_at"])
-    into = getattr(args, "into", None)
-    if into:
-        # pull the matches aside into another dir, the live tree is untouched so
-        # there's nothing to back up. dry-run previews against the tree, useless here.
-        n, _, _ = store.restore(root, newest["id"], paths, dest=into)
-        if as_json:
-            print(json.dumps({"path": args.path, "snapshot": snap, "recovered": n,
-                              "files": paths, "into": into}))
-            return
-        console.print(f"recovered [cyan]{n}[/] files matching '{args.path}' from {label} "
-                      f"[dim]{when}[/] into [cyan]{into}[/]")
-        return
-    if args.dry_run:
-        p = store.restore_plan(root, newest["id"], paths)
-        total = len(p["created"]) + len(p["overwritten"])
-        if as_json:
-            print(json.dumps({"path": args.path, "snapshot": snap, "dry_run": True,
-                              "would_recover": total, "created": p["created"],
-                              "overwritten": p["overwritten"], "missing": p["missing"]}))
-            return
-        for path in p["created"]:
-            console.print(f"[green]+ {path}[/]")
-        for path in p["overwritten"]:
-            console.print(f"[yellow]~ {path}[/]")
-        for path in p["missing"]:
-            console.print(f"[red]! {path} (blob missing)[/]")
-        console.print(f"[dim]would recover {total} matching '{args.path}' from {label} {when}"
-                      f" - dry run, nothing touched[/]")
-        return
+
+    # one pre-restore backup for the whole batch, before any write. skip it for
+    # --into (live tree untouched) and dry-run (nothing written). resolve above
+    # happened first so the backup never becomes a recover target.
     backup = None
-    if not args.no_backup:
-        bid, _, made = store.save(root, message=f"before restore of recover '{args.path}'")
+    if not into and not args.dry_run and not args.no_backup:
+        bid, _, made = store.save(root, message=f"before restore of recover '{' '.join(queries)}'")
         if made:
             backup = bid
             if not as_json:
                 console.print(f"[dim]backed up current tree as {bid}[/]")
-    n, _, _ = store.restore(root, newest["id"], paths)
+
+    results = []
+    for q, m in resolved:
+        if m is None:
+            results.append({"path": q, "snapshot": None, "recovered": 0, "files": []})
+            if not as_json:
+                err.print(f"[yellow]nothing matched '{q}', skipped[/]")
+            continue
+        paths = [h["path"] for h in m["files"]]
+        snap = {"seq": m["seq"], "id": m["id"], "name": m.get("name") or "",
+                "created_at": m["created_at"]}
+        label = f"#{m['seq']} [cyan]{m['id']}[/]"
+        when = _relative_time(m["created_at"])
+        if into:
+            n, _, _ = store.restore(root, m["id"], paths, dest=into)
+            results.append({"path": q, "snapshot": snap, "recovered": n, "files": paths, "into": into})
+            if not as_json:
+                console.print(f"recovered [cyan]{n}[/] files matching '{q}' from {label} "
+                              f"[dim]{when}[/] into [cyan]{into}[/]")
+        elif args.dry_run:
+            p = store.restore_plan(root, m["id"], paths)
+            total = len(p["created"]) + len(p["overwritten"])
+            results.append({"path": q, "snapshot": snap, "dry_run": True, "would_recover": total,
+                            "created": p["created"], "overwritten": p["overwritten"],
+                            "missing": p["missing"]})
+            if not as_json:
+                for path in p["created"]:
+                    console.print(f"[green]+ {path}[/]")
+                for path in p["overwritten"]:
+                    console.print(f"[yellow]~ {path}[/]")
+                for path in p["missing"]:
+                    console.print(f"[red]! {path} (blob missing)[/]")
+                console.print(f"[dim]would recover {total} matching '{q}' from {label} {when}"
+                              f" - dry run, nothing touched[/]")
+        else:
+            n, _, _ = store.restore(root, m["id"], paths)
+            results.append({"path": q, "snapshot": snap, "recovered": n, "files": paths})
+            if not as_json:
+                console.print(f"recovered [cyan]{n}[/] files matching '{q}' from {label} [dim]{when}[/]")
+
     if as_json:
-        print(json.dumps({"path": args.path, "snapshot": snap, "recovered": n,
-                          "files": paths, "backup": backup}))
-        return
-    console.print(f"recovered [cyan]{n}[/] files matching '{args.path}' from {label} [dim]{when}[/]")
+        out = {"paths": queries, "results": results}
+        if args.dry_run:
+            out["would_recover"] = sum(r.get("would_recover", 0) for r in results)
+        else:
+            out["recovered"] = sum(r.get("recovered", 0) for r in results)
+            if not into:
+                out["backup"] = backup
+        print(json.dumps(out))
 
 
 def cmd_restore(args):
@@ -801,8 +826,8 @@ def build_parser():
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.set_defaults(func=cmd_find)
 
-    prc = sub.add_parser("recover", help="restore a file from the newest snapshot that still has it", parents=[common])
-    prc.add_argument("path", help="file path or part of one to bring back")
+    prc = sub.add_parser("recover", help="restore files from the newest snapshot that still has them", parents=[common])
+    prc.add_argument("path", nargs="+", help="one or more file paths, or parts of one, to bring back")
     prc.add_argument("--from", dest="from_ref", metavar="REF",
                      help="recover from this snapshot instead of the newest one that holds a match")
     prc.add_argument("--dry-run", action="store_true",

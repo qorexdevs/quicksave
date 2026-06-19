@@ -168,16 +168,62 @@ def test_recover_json_reports_snapshot_and_files(tmp_path, monkeypatch, capsys):
     main(["recover", "gone.txt", "--json"])
     r = json.loads(capsys.readouterr().out)
     assert r["recovered"] == 1
-    assert r["files"] == ["gone.txt"]
-    assert r["snapshot"]["id"]
+    res = r["results"][0]
+    assert res["files"] == ["gone.txt"]
+    assert res["snapshot"]["id"]
     assert (tmp_path / "gone.txt").read_text() == "important"
 
     # no match emits an empty result instead of erroring out
     capsys.readouterr()
     main(["recover", "nope.txt", "--json"])
     r = json.loads(capsys.readouterr().out)
-    assert r["snapshot"] is None
+    assert r["results"][0]["snapshot"] is None
     assert r["recovered"] == 0
+
+
+def test_recover_takes_more_than_one_path(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "app.py").write_text("app")
+    (tmp_path / "util.py").write_text("util")
+    main(["init"])
+    main(["save", "-m", "both here"])
+    # util.py lives on in a later snapshot, app.py only in the first one
+    (tmp_path / "app.py").unlink()
+    main(["save", "-m", "app gone"])
+    (tmp_path / "util.py").unlink()
+    main(["save", "-m", "util gone"])
+    # something untracked in the tree so the pre-restore backup is a real snapshot
+    (tmp_path / "scratch.txt").write_text("wip")
+    capsys.readouterr()
+
+    main(["recover", "app.py", "util.py", "--json"])
+    r = json.loads(capsys.readouterr().out)
+    assert r["recovered"] == 2
+    assert {res["path"] for res in r["results"]} == {"app.py", "util.py"}
+    assert (tmp_path / "app.py").read_text() == "app"
+    assert (tmp_path / "util.py").read_text() == "util"
+    # one shared pre-restore backup for the whole batch, so undo rewinds it all
+    main(["undo", "--clean"])
+    assert not (tmp_path / "app.py").exists()
+    assert not (tmp_path / "util.py").exists()
+
+
+def test_recover_keeps_going_when_one_path_misses(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "real.txt").write_text("here")
+    main(["init"])
+    main(["save", "-m", "with file"])
+    (tmp_path / "real.txt").unlink()
+    main(["save", "-m", "after delete"])
+    capsys.readouterr()
+
+    main(["recover", "real.txt", "nope.txt", "--json"])
+    r = json.loads(capsys.readouterr().out)
+    assert r["recovered"] == 1
+    by_path = {res["path"]: res for res in r["results"]}
+    assert by_path["real.txt"]["snapshot"]["id"]
+    assert by_path["nope.txt"]["snapshot"] is None
+    assert (tmp_path / "real.txt").read_text() == "here"
 
 
 def test_restore_backs_up_current_tree(tmp_path, monkeypatch, capsys):

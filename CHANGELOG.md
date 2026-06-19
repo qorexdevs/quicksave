@@ -6,6 +6,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `recover` takes more than one path at a time, like `drop` already does: each path resolves to its
+  own newest snapshot (or the one from `--from`), a single pre-restore backup covers the whole batch
+  so one `undo` rewinds them all, and `--json` lists what came back per path under `results`. A path
+  that matches nothing is skipped with a note instead of aborting the rest.
 - `diff REF` now defaults its second side to the working tree, so `quicksave diff 3` shows what the
   live tree changed since snapshot 3. `diff 3 5` still compares two snapshots.
 - `recover --from REF` pulls a file from a snapshot you name instead of the newest one that holds

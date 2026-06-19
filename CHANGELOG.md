@@ -5,6 +5,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-20
+
+batch recover and drop, working-tree diffs, and dry-run previews across save, restore and recover.
+
 ### Added
 - `recover` takes more than one path at a time, like `drop` already does: each path resolves to its
   own newest snapshot (or the one from `--from`), a single pre-restore backup covers the whole batch

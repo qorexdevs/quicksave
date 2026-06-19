@@ -531,6 +531,24 @@ def test_cli_status_json(tmp_path, monkeypatch, capsys):
     assert s["modified"] == ["a.txt"]
 
 
+def test_cli_status_short(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "gone.txt").write_text("bye")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["status", "--short"])
+    assert capsys.readouterr().out.strip() == "clean"
+
+    (tmp_path / "a.txt").write_text("v2")
+    (tmp_path / "b.txt").write_text("new")
+    (tmp_path / "gone.txt").unlink()
+    main(["status", "--short"])
+    assert capsys.readouterr().out.strip() == "~1 +1 -1"
+
+
 def test_cli_status_exit_code(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

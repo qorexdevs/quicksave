@@ -383,6 +383,14 @@ def cmd_status(args):
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
+    if args.short:
+        if dirty:
+            print(f"~{len(s['modified'])} +{len(s['added'])} -{len(s['removed'])}")
+        else:
+            print("clean")
+        if args.exit_code and dirty:
+            raise SystemExit(1)
+        return
     label = f"#{s['seq']} {s['id']}"
     if not dirty:
         console.print(f"[green]clean[/] [dim]working tree matches snapshot {label}[/]")
@@ -864,6 +872,8 @@ def build_parser():
     pt = sub.add_parser("status", help="show changes since a snapshot (default latest)", parents=[common])
     pt.add_argument("ref", nargs="?", default=None, help="snapshot id or number, defaults to latest")
     pt.add_argument("--json", action="store_true", help="print the diff as json")
+    pt.add_argument("--short", action="store_true",
+                    help="print a one-line porcelain summary like '~3 +1 -0', or 'clean'")
     pt.add_argument("--exit-code", action="store_true",
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.set_defaults(func=cmd_status)

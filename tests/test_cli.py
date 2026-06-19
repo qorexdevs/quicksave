@@ -956,6 +956,20 @@ def test_diff_against_working_tree(tmp_path, monkeypatch, capsys):
     assert "-two" in out
 
 
+def test_diff_defaults_second_side_to_working_tree(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["diff", "0"])
+    out = capsys.readouterr().out
+    assert "+ new.txt" in out
+    assert "~ a.txt" in out
+
+
 def test_diff_json_between_snapshots(tmp_path, monkeypatch, capsys):
     import json
 

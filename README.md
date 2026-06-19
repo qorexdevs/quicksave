@@ -94,7 +94,8 @@ quicksave import backup.tgz    # read a tar archive back into a new snapshot
 quicksave export - -z | ssh host 'cd repo && quicksave import -'  # pipe a gzipped checkpoint to another machine
 quicksave diff 2 3             # see what changed between two snapshots
 quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots
-quicksave diff 3 wt            # what the live tree changed since snapshot 3
+quicksave diff 3               # what the live tree changed since snapshot 3 (second side defaults to wt)
+quicksave diff 3 wt            # same, spelled out
 quicksave diff 3 wt src/app.py # line-by-line diff of one file against the tree
 quicksave diff 2 3 --json      # the changed-file lists as json, add a path for the unified diff
 quicksave pin 4                # protect a snapshot, gc --keep won't rotate it away

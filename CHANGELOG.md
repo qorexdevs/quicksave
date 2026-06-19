@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `diff REF` now defaults its second side to the working tree, so `quicksave diff 3` shows what the
+  live tree changed since snapshot 3. `diff 3 5` still compares two snapshots.
 - `recover --from REF` pulls a file from a snapshot you name instead of the newest one that holds
   a match, for when that newest copy is itself broken. `find` lists the candidates newest first,
   then `recover --from <id>` grabs the one you want; errors if that snapshot has no match.

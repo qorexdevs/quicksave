@@ -845,7 +845,8 @@ def build_parser():
 
     pd = sub.add_parser("diff", help="show what changed between two snapshots, or a snapshot and the working tree", parents=[common])
     pd.add_argument("a", help="snapshot id or number, or 'wt' for the working tree")
-    pd.add_argument("b", help="snapshot id or number, or 'wt' for the working tree")
+    pd.add_argument("b", nargs="?", default="wt",
+                    help="snapshot id or number, or 'wt' for the working tree (default)")
     pd.add_argument("path", nargs="?", help="show a line-by-line diff of just this file")
     pd.add_argument("--json", action="store_true", help="print the diff as json")
     pd.set_defaults(func=cmd_diff)

@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `recover --json` prints which snapshot it pulled from and the recovered file paths, so scripts
+  can act on the result the way `find --json` and the other `--json` commands already allow. When
+  nothing matches it emits an empty result instead of exiting non-zero.
 - `drop <ref>...` removes one or more snapshots by id, number or name and reclaims any blobs they
   were the last to reference, for killing bad checkpoints without a `gc --keep` policy. Refuses a
   pinned snapshot unless `--force`; `--dry-run` previews the blob sweep without deleting.

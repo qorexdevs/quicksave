@@ -82,9 +82,10 @@ quicksave status               # what changed in the tree since the last snapsho
 quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
 quicksave recover app.py       # just bring it back from the newest snapshot that has it
+quicksave recover app.py --json # report which snapshot it pulled from and the recovered files
 quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
-quicksave list --json          # machine-readable output, same for save, status, stats, log and diff --json
+quicksave list --json          # machine-readable output, same for save, status, stats, log, diff and recover --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave show src/app.py      # same, from the newest snapshot that still has it
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched

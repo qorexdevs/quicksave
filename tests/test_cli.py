@@ -121,6 +121,30 @@ def test_recover_no_match_errors(tmp_path, monkeypatch, capsys):
         raise AssertionError("recover should exit non-zero when nothing matches")
 
 
+def test_recover_json_reports_snapshot_and_files(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "gone.txt").write_text("important")
+    main(["init"])
+    main(["save", "-m", "with file"])
+    (tmp_path / "gone.txt").unlink()
+    main(["save", "-m", "after delete"])
+    capsys.readouterr()
+
+    main(["recover", "gone.txt", "--json"])
+    r = json.loads(capsys.readouterr().out)
+    assert r["recovered"] == 1
+    assert r["files"] == ["gone.txt"]
+    assert r["snapshot"]["id"]
+    assert (tmp_path / "gone.txt").read_text() == "important"
+
+    # no match emits an empty result instead of erroring out
+    capsys.readouterr()
+    main(["recover", "nope.txt", "--json"])
+    r = json.loads(capsys.readouterr().out)
+    assert r["snapshot"] is None
+    assert r["recovered"] == 0
+
+
 def test_restore_backs_up_current_tree(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("v1")

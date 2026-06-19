@@ -217,12 +217,18 @@ def cmd_recover(args):
     # which snapshot still has it. find the newest one that does and restore it
     # in one shot. resolve before the backup so it stays the target.
     root = _root_or_die()
+    as_json = getattr(args, "json", False)
     snaps = store.find_file(root, args.path)
     if not snaps:
+        if as_json:
+            print(json.dumps({"path": args.path, "snapshot": None, "recovered": 0, "files": []}))
+            return
         err.print(f"[red]no snapshot holds a file matching '{args.path}'[/]")
         raise SystemExit(1)
     newest = snaps[0]
     paths = [h["path"] for h in newest["files"]]
+    snap = {"seq": newest["seq"], "id": newest["id"], "name": newest.get("name") or "",
+            "created_at": newest["created_at"]}
     label = f"#{newest['seq']} [cyan]{newest['id']}[/]"
     when = _relative_time(newest["created_at"])
     into = getattr(args, "into", None)
@@ -230,12 +236,21 @@ def cmd_recover(args):
         # pull the matches aside into another dir, the live tree is untouched so
         # there's nothing to back up. dry-run previews against the tree, useless here.
         n, _, _ = store.restore(root, newest["id"], paths, dest=into)
+        if as_json:
+            print(json.dumps({"path": args.path, "snapshot": snap, "recovered": n,
+                              "files": paths, "into": into}))
+            return
         console.print(f"recovered [cyan]{n}[/] files matching '{args.path}' from {label} "
                       f"[dim]{when}[/] into [cyan]{into}[/]")
         return
     if args.dry_run:
         p = store.restore_plan(root, newest["id"], paths)
         total = len(p["created"]) + len(p["overwritten"])
+        if as_json:
+            print(json.dumps({"path": args.path, "snapshot": snap, "dry_run": True,
+                              "would_recover": total, "created": p["created"],
+                              "overwritten": p["overwritten"], "missing": p["missing"]}))
+            return
         for path in p["created"]:
             console.print(f"[green]+ {path}[/]")
         for path in p["overwritten"]:
@@ -245,11 +260,18 @@ def cmd_recover(args):
         console.print(f"[dim]would recover {total} matching '{args.path}' from {label} {when}"
                       f" - dry run, nothing touched[/]")
         return
+    backup = None
     if not args.no_backup:
         bid, _, made = store.save(root, message=f"before restore of recover '{args.path}'")
         if made:
-            console.print(f"[dim]backed up current tree as {bid}[/]")
+            backup = bid
+            if not as_json:
+                console.print(f"[dim]backed up current tree as {bid}[/]")
     n, _, _ = store.restore(root, newest["id"], paths)
+    if as_json:
+        print(json.dumps({"path": args.path, "snapshot": snap, "recovered": n,
+                          "files": paths, "backup": backup}))
+        return
     console.print(f"recovered [cyan]{n}[/] files matching '{args.path}' from {label} [dim]{when}[/]")
 
 
@@ -781,6 +803,8 @@ def build_parser():
                      help="don't snapshot the current tree before recovering")
     prc.add_argument("--into", metavar="DIR",
                      help="write the matches into DIR instead of overwriting the tree")
+    prc.add_argument("--json", action="store_true",
+                     help="print which snapshot was used and the recovered files as json")
     prc.set_defaults(func=cmd_recover)
 
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])

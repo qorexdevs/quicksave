@@ -321,6 +321,8 @@ def stats(root):
         "blobs": blobs,
         "logical_bytes": logical,
         "disk_bytes": disk,
+        "saved_bytes": logical - disk,
+        "ratio": logical / disk if disk else 1.0,
         "first": min(times) if times else 0,
         "last": max(times) if times else 0,
     }

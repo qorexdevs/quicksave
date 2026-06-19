@@ -16,6 +16,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 - `save --dry-run` previews what a snapshot would capture - new, modified and removed files since
   the last snapshot, with a file count and total size - without writing blobs or a manifest. Handy
   for catching build artifacts you forgot to ignore before they land in the store.
+- `stats --json` now carries `saved_bytes` and `ratio` so scripts get the dedup numbers straight
+  instead of recomputing logical minus disk themselves.
 
 ## [0.4.0] - 2026-06-14
 

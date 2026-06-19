@@ -1070,7 +1070,17 @@ def test_stats_counts_and_dedup(tmp_path):
     # logical counts every file in every snapshot, disk counts each blob once
     assert s["logical_bytes"] > s["disk_bytes"]
     assert s["disk_bytes"] == store.store_size(tmp_path)
+    assert s["saved_bytes"] == s["logical_bytes"] - s["disk_bytes"]
+    assert s["ratio"] == s["logical_bytes"] / s["disk_bytes"]
     assert s["first"] <= s["last"]
+
+
+def test_stats_ratio_when_empty(tmp_path):
+    store.init(tmp_path)
+    s = store.stats(tmp_path)
+    assert s["disk_bytes"] == 0
+    assert s["saved_bytes"] == 0
+    assert s["ratio"] == 1.0
 
 
 def test_stats_requires_init(tmp_path):

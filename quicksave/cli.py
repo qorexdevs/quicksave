@@ -165,8 +165,8 @@ def cmd_stats(args):
     if not s["snapshots"]:
         console.print("[dim]no snapshots yet, run 'quicksave save'[/]")
         return
-    saved = s["logical_bytes"] - s["disk_bytes"]
-    ratio = s["logical_bytes"] / s["disk_bytes"] if s["disk_bytes"] else 1.0
+    saved = s["saved_bytes"]
+    ratio = s["ratio"]
     if args.markdown:
         # plain print so it survives a copy-paste into a readme or a tweet
         print("| snapshots | blobs | on disk | dedup |")

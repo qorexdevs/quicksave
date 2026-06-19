@@ -668,6 +668,30 @@ def test_drop_removes_one_snapshot_and_its_blobs(tmp_path):
     assert [s["message"] for s in store.list_snapshots(tmp_path)] == ["s0", "s2"]
 
 
+def test_drop_removes_several_snapshots_at_once(tmp_path):
+    store.init(tmp_path)
+    for text in ("one", "two", "three", "four"):
+        (tmp_path / "f.txt").write_text(text)
+        store.save(tmp_path, message=text)
+
+    r = store.drop(tmp_path, ["1", "2"])
+    assert r["blobs"] == 2
+    assert len(r["dropped"]) == 2
+    assert [s["message"] for s in store.list_snapshots(tmp_path)] == ["one", "four"]
+
+
+def test_drop_dedupes_repeated_refs(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a")
+    store.save(tmp_path, message="a")
+    (tmp_path / "f.txt").write_text("b")
+    store.save(tmp_path, message="b")
+
+    r = store.drop(tmp_path, ["0", "0"])
+    assert len(r["dropped"]) == 1
+    assert [s["message"] for s in store.list_snapshots(tmp_path)] == ["b"]
+
+
 def test_drop_dry_run_keeps_everything(tmp_path):
     store.init(tmp_path)
     (tmp_path / "f.txt").write_text("a")

@@ -590,15 +590,16 @@ def cmd_gc(args):
 
 def cmd_drop(args):
     root = _root_or_die()
-    r = store.drop(root, args.ref, force=args.force, dry_run=args.dry_run)
+    r = store.drop(root, args.refs, force=args.force, dry_run=args.dry_run)
     if args.json:
         print(json.dumps(r))
         return
     tag = " [dim](dry run)[/]" if r["dry_run"] else ""
     verb = "would free" if r["dry_run"] else "freed"
-    sid = r["dropped"].partition("-")[2]
+    sids = ", ".join(stem.partition("-")[2] for stem in r["dropped"])
+    noun = "snapshot" if len(r["dropped"]) == 1 else "snapshots"
     console.print(
-        f"dropped snapshot [cyan]{sid}[/], "
+        f"dropped {noun} [cyan]{sids}[/], "
         f"[cyan]{r['blobs']}[/] unreferenced blobs, {verb} [cyan]{_human_size(r['bytes'])}[/]{tag}"
     )
 
@@ -863,8 +864,9 @@ def build_parser():
     pg.add_argument("--json", action="store_true", help="print what gc removed as json")
     pg.set_defaults(func=cmd_gc)
 
-    pdr = sub.add_parser("drop", help="drop one snapshot by ref and reclaim its blobs", parents=[common])
-    pdr.add_argument("ref", help="snapshot id, number or name from 'quicksave list'")
+    pdr = sub.add_parser("drop", help="drop snapshots by ref and reclaim their blobs", parents=[common])
+    pdr.add_argument("refs", nargs="+", metavar="ref",
+                     help="snapshot id, number or name from 'quicksave list', one or more")
     pdr.add_argument("--force", action="store_true", help="drop even if the snapshot is pinned")
     pdr.add_argument("--dry-run", action="store_true",
                      help="show what would be removed without deleting")

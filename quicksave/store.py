@@ -527,20 +527,28 @@ def gc(root, keep=None, refs=None, dry_run=False, older_than=None):
     return {"pruned": pruned, "blobs": removed, "bytes": freed, "dry_run": dry_run}
 
 
-def drop(root, ref, force=False, dry_run=False):
-    # drop one specific snapshot you know you don't want, e.g. a checkpoint that
+def drop(root, refs, force=False, dry_run=False):
+    # drop specific snapshots you know you don't want, e.g. a checkpoint that
     # grabbed a build dir before you fixed the ignore file. gc prunes by policy,
-    # this targets a single ref and then sweeps the blobs it was the last to hold.
+    # this targets refs you name and then sweeps the blobs they were the last to
+    # hold. refs may be a single ref or a list of them.
+    if isinstance(refs, str):
+        refs = [refs]
     store = store_path(root)
     if not store.is_dir():
         raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
-    f = _resolve_snapshot(store, ref)
-    if json.loads(f.read_text()).get("pinned", False) and not force:
-        raise QuicksaveError(f"snapshot '{ref}' is pinned, pass --force to drop it")
+    targets = []
+    for ref in refs:
+        f = _resolve_snapshot(store, ref)
+        if json.loads(f.read_text()).get("pinned", False) and not force:
+            raise QuicksaveError(f"snapshot '{ref}' is pinned, pass --force to drop it")
+        if f not in targets:
+            targets.append(f)
 
-    survivors = [s for s in _snapshot_files(store) if s != f]
+    survivors = [s for s in _snapshot_files(store) if s not in targets]
     if not dry_run:
-        f.unlink()
+        for f in targets:
+            f.unlink()
     refs = _referenced_blobs(survivors)
     removed = 0
     freed = 0
@@ -558,7 +566,8 @@ def drop(root, ref, force=False, dry_run=False):
                 obj.parent.rmdir()
             except OSError:
                 pass
-    return {"dropped": f.stem, "blobs": removed, "bytes": freed, "dry_run": dry_run}
+    return {"dropped": [f.stem for f in targets], "blobs": removed, "bytes": freed,
+            "dry_run": dry_run}
 
 
 def verify(root):

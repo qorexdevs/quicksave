@@ -382,38 +382,59 @@ def diff(root, ref_a, ref_b):
     return {"added": added, "removed": removed, "modified": modified}
 
 
-def find_file(root, query):
-    # which snapshots hold a file matching `query` - the "I deleted foo.py, where
-    # can I get it back" lookup. matches on exact path, a directory prefix, or the
-    # query as a substring of the relpath so a bare basename finds src/foo.py.
-    # if the query has glob chars (* ? [) we match relpaths with a shell glob
-    # instead, so 'quicksave find *.py' or 'src/**/test_*.py' work.
-    store = store_path(root)
+def _match_files(files, query):
+    # files matching `query` inside one manifest. matches on exact path, a
+    # directory prefix, or the query as a substring of the relpath so a bare
+    # basename finds src/foo.py. if the query has glob chars (* ? [) we match
+    # relpaths with a shell glob instead, so '*.py' or 'src/**/test_*.py' work.
     q = Path(query).as_posix()
     glob = any(c in query for c in "*?[")
+    hits = []
+    for rel, meta in files.items():
+        if glob:
+            match = fnmatch.fnmatch(rel, q) or fnmatch.fnmatch(rel, "*/" + q)
+        else:
+            match = rel == q or rel.startswith(q.rstrip("/") + "/") or q in rel
+        if match:
+            hits.append({"path": rel, "size": meta.get("size", 0),
+                         "sha256": meta.get("sha256", "")})
+    return sorted(hits, key=lambda h: h["path"])
+
+
+def _snapshot_match(f, hits):
+    seq, _, snap_id = f.stem.partition("-")
+    m = json.loads(f.read_text())
+    return {
+        "seq": int(seq),
+        "id": snap_id,
+        "name": m.get("name", ""),
+        "message": m.get("message", ""),
+        "created_at": m.get("created_at", 0),
+        "files": hits,
+    }
+
+
+def find_file(root, query):
+    # which snapshots hold a file matching `query` - the "I deleted foo.py, where
+    # can I get it back" lookup, newest first.
+    store = store_path(root)
     out = []
     for f in reversed(_snapshot_files(store)):
-        seq, _, snap_id = f.stem.partition("-")
-        m = json.loads(f.read_text())
-        hits = []
-        for rel, meta in m.get("files", {}).items():
-            if glob:
-                match = fnmatch.fnmatch(rel, q) or fnmatch.fnmatch(rel, "*/" + q)
-            else:
-                match = rel == q or rel.startswith(q.rstrip("/") + "/") or q in rel
-            if match:
-                hits.append({"path": rel, "size": meta.get("size", 0),
-                             "sha256": meta.get("sha256", "")})
+        hits = _match_files(json.loads(f.read_text()).get("files", {}), query)
         if hits:
-            out.append({
-                "seq": int(seq),
-                "id": snap_id,
-                "name": m.get("name", ""),
-                "message": m.get("message", ""),
-                "created_at": m.get("created_at", 0),
-                "files": sorted(hits, key=lambda h: h["path"]),
-            })
+            out.append(_snapshot_match(f, hits))
     return out
+
+
+def find_file_at(root, ref, query):
+    # like find_file but limited to one snapshot: which files in `ref` match
+    # `query`. 'recover --from REF' uses this to pull from a chosen older
+    # snapshot instead of the newest that happens to hold a match. returns None
+    # when that snapshot has no match.
+    store = store_path(root)
+    f = _resolve_snapshot(store, ref)
+    hits = _match_files(json.loads(f.read_text()).get("files", {}), query)
+    return _snapshot_match(f, hits) if hits else None
 
 
 def status(root, ref=None, ignore=DEFAULT_IGNORE):

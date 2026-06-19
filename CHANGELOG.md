@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `recover --from REF` pulls a file from a snapshot you name instead of the newest one that holds
+  a match, for when that newest copy is itself broken. `find` lists the candidates newest first,
+  then `recover --from <id>` grabs the one you want; errors if that snapshot has no match.
 - `recover --json` prints which snapshot it pulled from and the recovered file paths, so scripts
   can act on the result the way `find --json` and the other `--json` commands already allow. When
   nothing matches it emits an empty result instead of exiting non-zero.

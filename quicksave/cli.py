@@ -215,17 +215,23 @@ def cmd_find(args):
 def cmd_recover(args):
     # the panic case: a file got deleted some commands ago and you don't know
     # which snapshot still has it. find the newest one that does and restore it
-    # in one shot. resolve before the backup so it stays the target.
+    # in one shot. --from picks a specific snapshot instead, for when the newest
+    # copy is itself broken. resolve before the backup so it stays the target.
     root = _root_or_die()
     as_json = getattr(args, "json", False)
-    snaps = store.find_file(root, args.path)
-    if not snaps:
+    from_ref = getattr(args, "from_ref", None)
+    if from_ref is not None:
+        newest = store.find_file_at(root, from_ref, args.path)
+    else:
+        snaps = store.find_file(root, args.path)
+        newest = snaps[0] if snaps else None
+    if newest is None:
         if as_json:
             print(json.dumps({"path": args.path, "snapshot": None, "recovered": 0, "files": []}))
             return
-        err.print(f"[red]no snapshot holds a file matching '{args.path}'[/]")
+        where = f" in snapshot '{from_ref}'" if from_ref is not None else ""
+        err.print(f"[red]no snapshot holds a file matching '{args.path}'{where}[/]")
         raise SystemExit(1)
-    newest = snaps[0]
     paths = [h["path"] for h in newest["files"]]
     snap = {"seq": newest["seq"], "id": newest["id"], "name": newest.get("name") or "",
             "created_at": newest["created_at"]}
@@ -797,6 +803,8 @@ def build_parser():
 
     prc = sub.add_parser("recover", help="restore a file from the newest snapshot that still has it", parents=[common])
     prc.add_argument("path", help="file path or part of one to bring back")
+    prc.add_argument("--from", dest="from_ref", metavar="REF",
+                     help="recover from this snapshot instead of the newest one that holds a match")
     prc.add_argument("--dry-run", action="store_true",
                      help="show which files recover would bring back without writing anything")
     prc.add_argument("--no-backup", action="store_true",

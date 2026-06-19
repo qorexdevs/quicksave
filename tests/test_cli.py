@@ -68,6 +68,41 @@ def test_recover_pulls_a_file_from_the_newest_snapshot_that_had_it(tmp_path, mon
     assert not (tmp_path / "gone.txt").exists()
 
 
+def test_recover_from_picks_an_older_snapshot(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "gone.txt").write_text("good")
+    main(["init"])
+    main(["save", "-m", "good copy"])
+    # the file gets clobbered, then a later snapshot captures the bad version
+    (tmp_path / "gone.txt").write_text("broken")
+    main(["save", "-m", "bad copy"])
+    (tmp_path / "gone.txt").unlink()
+    main(["save", "-m", "after delete"])
+    capsys.readouterr()
+
+    # a bare recover grabs the newest copy that has it, which is the broken one
+    main(["recover", "gone.txt", "--from", "0", "--no-backup"])
+    assert (tmp_path / "gone.txt").read_text() == "good"
+    assert "recovered" in capsys.readouterr().out
+
+
+def test_recover_from_no_match_errors(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "b.txt").write_text("v1")
+    main(["save", "-m", "with b"])
+
+    # b.txt isn't in snapshot 0, so --from 0 has nothing to recover
+    try:
+        main(["recover", "b.txt", "--from", "0"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("recover --from should exit non-zero when the ref has no match")
+
+
 def test_recover_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "gone.txt").write_text("important")

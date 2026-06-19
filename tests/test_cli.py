@@ -87,6 +87,26 @@ def test_recover_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
     assert len(store.list_snapshots(tmp_path)) == n_snaps
 
 
+def test_recover_into_pulls_aside_without_touching_tree(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "gone.txt").write_text("important")
+    main(["init"])
+    main(["save", "-m", "with file"])
+    (tmp_path / "gone.txt").unlink()
+    main(["save", "-m", "after delete"])
+    n_snaps = len(store.list_snapshots(tmp_path))
+    capsys.readouterr()
+
+    out_dir = tmp_path / "aside"
+    main(["recover", "gone.txt", "--into", str(out_dir)])
+
+    # the match lands in out_dir, the live tree and snapshot count stay as they were
+    assert (out_dir / "gone.txt").read_text() == "important"
+    assert not (tmp_path / "gone.txt").exists()
+    assert len(store.list_snapshots(tmp_path)) == n_snaps
+    assert "recovered" in capsys.readouterr().out
+
+
 def test_recover_no_match_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

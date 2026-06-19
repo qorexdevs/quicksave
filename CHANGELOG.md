@@ -11,6 +11,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   pinned snapshot unless `--force`; `--dry-run` previews the blob sweep without deleting.
 - `--since`/`--before` and `gc --older-than` now also accept an absolute date like `2026-06-01`
   or `2026-06-01T12:00`, not just relative durations. The date is read as the cutoff directly.
+- `recover --into DIR` writes the matches into another directory instead of overwriting the live
+  tree, so you can inspect a recovered file before clobbering the working copy, the same way
+  `restore --into` already works.
 - `recover --dry-run` shows which files would come back and from which snapshot without writing
   anything or taking a backup, the same preview `restore --dry-run` already gives.
 - `save --dry-run` previews what a snapshot would capture - new, modified and removed files since

@@ -225,6 +225,14 @@ def cmd_recover(args):
     paths = [h["path"] for h in newest["files"]]
     label = f"#{newest['seq']} [cyan]{newest['id']}[/]"
     when = _relative_time(newest["created_at"])
+    into = getattr(args, "into", None)
+    if into:
+        # pull the matches aside into another dir, the live tree is untouched so
+        # there's nothing to back up. dry-run previews against the tree, useless here.
+        n, _, _ = store.restore(root, newest["id"], paths, dest=into)
+        console.print(f"recovered [cyan]{n}[/] files matching '{args.path}' from {label} "
+                      f"[dim]{when}[/] into [cyan]{into}[/]")
+        return
     if args.dry_run:
         p = store.restore_plan(root, newest["id"], paths)
         total = len(p["created"]) + len(p["overwritten"])
@@ -771,6 +779,8 @@ def build_parser():
                      help="show which files recover would bring back without writing anything")
     prc.add_argument("--no-backup", action="store_true",
                      help="don't snapshot the current tree before recovering")
+    prc.add_argument("--into", metavar="DIR",
+                     help="write the matches into DIR instead of overwriting the tree")
     prc.set_defaults(func=cmd_recover)
 
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])

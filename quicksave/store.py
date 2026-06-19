@@ -527,6 +527,40 @@ def gc(root, keep=None, refs=None, dry_run=False, older_than=None):
     return {"pruned": pruned, "blobs": removed, "bytes": freed, "dry_run": dry_run}
 
 
+def drop(root, ref, force=False, dry_run=False):
+    # drop one specific snapshot you know you don't want, e.g. a checkpoint that
+    # grabbed a build dir before you fixed the ignore file. gc prunes by policy,
+    # this targets a single ref and then sweeps the blobs it was the last to hold.
+    store = store_path(root)
+    if not store.is_dir():
+        raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
+    f = _resolve_snapshot(store, ref)
+    if json.loads(f.read_text()).get("pinned", False) and not force:
+        raise QuicksaveError(f"snapshot '{ref}' is pinned, pass --force to drop it")
+
+    survivors = [s for s in _snapshot_files(store) if s != f]
+    if not dry_run:
+        f.unlink()
+    refs = _referenced_blobs(survivors)
+    removed = 0
+    freed = 0
+    for obj, digest in list(_iter_blobs(store)):
+        if digest in refs:
+            continue
+        removed += 1
+        try:
+            freed += obj.stat().st_size
+        except OSError:
+            pass
+        if not dry_run:
+            obj.unlink()
+            try:
+                obj.parent.rmdir()
+            except OSError:
+                pass
+    return {"dropped": f.stem, "blobs": removed, "bytes": freed, "dry_run": dry_run}
+
+
 def verify(root):
     # a backup store is only worth trusting if it isn't quietly rotting. check
     # two things: every blob still hashes to its own name (no bit-flips on disk),

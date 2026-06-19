@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `drop <ref>` removes one snapshot by id, number or name and reclaims any blobs it was the last to
+  reference, for killing a single bad checkpoint without a `gc --keep` policy. Refuses a pinned
+  snapshot unless `--force`; `--dry-run` previews the blob sweep without deleting.
 - `--since`/`--before` and `gc --older-than` now also accept an absolute date like `2026-06-01`
   or `2026-06-01T12:00`, not just relative durations. The date is read as the cutoff directly.
 - `recover --dry-run` shows which files would come back and from which snapshot without writing

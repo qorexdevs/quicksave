@@ -307,6 +307,23 @@ def test_cli_gc_json(tmp_path, monkeypatch, capsys):
     assert out["bytes"] >= 0
 
 
+def test_cli_drop_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    note = tmp_path / "note.md"
+    note.write_text("v1")
+    main(["init"])
+    main(["save", "-m", "one"])
+    note.write_text("v2")
+    main(["save", "-m", "two"])
+    capsys.readouterr()
+
+    main(["drop", "0", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert out["dry_run"] is False
+    assert out["blobs"] == 1
+    assert [s["message"] for s in store.list_snapshots(tmp_path)] == ["two"]
+
+
 def test_cli_list_since_filters_old_snapshots(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

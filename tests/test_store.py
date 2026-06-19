@@ -654,6 +654,53 @@ def test_gc_drops_a_specific_snapshot(tmp_path):
     assert r["blobs"] == 1
 
 
+def test_drop_removes_one_snapshot_and_its_blobs(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path, message="s0")
+    (tmp_path / "f.txt").write_text("two")
+    store.save(tmp_path, message="s1")
+    (tmp_path / "f.txt").write_text("three")
+    store.save(tmp_path, message="s2")
+
+    r = store.drop(tmp_path, "1")
+    assert r["blobs"] == 1
+    assert [s["message"] for s in store.list_snapshots(tmp_path)] == ["s0", "s2"]
+
+
+def test_drop_dry_run_keeps_everything(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a")
+    store.save(tmp_path)
+    (tmp_path / "f.txt").write_text("b")
+    store.save(tmp_path)
+
+    before = store.store_size(tmp_path)
+    r = store.drop(tmp_path, "0", dry_run=True)
+    assert r["blobs"] == 1 and r["bytes"] > 0
+    assert len(store.list_snapshots(tmp_path)) == 2
+    assert store.store_size(tmp_path) == before
+
+
+def test_drop_refuses_pinned_without_force(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a")
+    store.save(tmp_path)
+    store.set_pinned(tmp_path, "0", True)
+    with pytest.raises(store.QuicksaveError):
+        store.drop(tmp_path, "0")
+    store.drop(tmp_path, "0", force=True)
+    assert store.list_snapshots(tmp_path) == []
+
+
+def test_drop_unknown_ref_raises(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("a")
+    store.save(tmp_path)
+    with pytest.raises(store.QuicksaveError):
+        store.drop(tmp_path, "nope")
+
+
 def test_gc_unknown_ref_raises(tmp_path):
     store.init(tmp_path)
     (tmp_path / "f.txt").write_text("a")

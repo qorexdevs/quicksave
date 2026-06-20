@@ -206,9 +206,26 @@ def cmd_stats(args):
     console.print(table)
 
 
+def _change_points(snaps):
+    # snaps is newest-first. keep only the ones where the matched content differs
+    # from the next-older neighbour, so you see when the file actually changed
+    # across checkpoints instead of every snapshot that happens to hold it. the
+    # oldest match is always kept since it's where the content first shows up.
+    out = []
+    prev = None
+    for s in reversed(snaps):
+        sig = frozenset((h["path"], h["sha256"]) for h in s["files"])
+        if sig != prev:
+            out.append(s)
+        prev = sig
+    return out[::-1]
+
+
 def cmd_find(args):
     root = _root_or_die()
     snaps = store.find_file(root, args.path)
+    if getattr(args, "changes", False):
+        snaps = _change_points(snaps)
     if args.limit and args.limit < len(snaps):
         snaps = snaps[:args.limit]
     if args.json:
@@ -857,6 +874,8 @@ def build_parser():
     pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])
     pf.add_argument("path", help="file path, part of one, or a glob like '*.py' to search for")
     pf.add_argument("--json", action="store_true", help="print matches as json")
+    pf.add_argument("--changes", action="store_true",
+                    help="show only snapshots where the matched content changed, skipping repeats")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.set_defaults(func=cmd_find)
 

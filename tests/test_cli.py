@@ -1203,6 +1203,27 @@ def test_cli_find_limit(tmp_path, monkeypatch, capsys):
     assert data[1]["message"] == "two"
 
 
+def test_cli_find_changes(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "keep.txt"
+    other = tmp_path / "other.txt"
+    main(["init"])
+    f.write_text("one")
+    main(["save", "-m", "v1"])
+    other.write_text("x")
+    main(["save", "-m", "touch other"])
+    f.write_text("two")
+    main(["save", "-m", "v2"])
+    capsys.readouterr()
+
+    main(["find", "keep.txt", "--json"])
+    assert len(json.loads(capsys.readouterr().out)) == 3
+
+    main(["find", "keep.txt", "--changes", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in data] == ["v2", "v1"]
+
+
 def test_cli_find_glob(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     src = tmp_path / "src"

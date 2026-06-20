@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `find --changes` collapses snapshots where the matched file's content is the same, so you
+  see only the checkpoints where it actually changed - a real history for a file that was
+  never in git. The oldest match is always kept since that's where the content first appears.
 - `names` lists just the named snapshots, id and name, newest first, with `--json`. Saves
   scanning the full `list` output when you only want to see the labels you've set.
 - `status --short` prints a one-line porcelain summary like `~3 +1 -0` (modified/added/removed),

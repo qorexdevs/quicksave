@@ -16,6 +16,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 - `gc --keep-named` spares named snapshots from `--keep` and `--older-than` rotation, the same
   way pinned ones are spared. An explicit `gc <ref>` still drops a named snapshot when you mean it.
 
+### Fixed
+- `log` now prints file sizes like `4.1K` instead of raw `4200 bytes`, matching `list`, `find`
+  and `stats`.
+
 ### Changed
 - the hook now treats `git rm`, `git stash`, `rsync --delete`, and a noclobber-overriding `>|`
   redirect as risky too, so an agent that reaches for one of those gets a checkpoint first. `>>`

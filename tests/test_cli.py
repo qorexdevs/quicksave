@@ -262,6 +262,37 @@ def test_name_command_labels_and_resolves(tmp_path, monkeypatch, capsys):
     assert (tmp_path / "a.txt").read_text() == "v1"
 
 
+def test_names_lists_only_named_snapshots_newest_first(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base", "-n", "first"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "mid"])  # no name
+    (tmp_path / "a.txt").write_text("v3")
+    main(["save", "-m", "top", "-n", "second"])
+    capsys.readouterr()
+
+    main(["names", "--json"])
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["name"] for r in rows] == ["second", "first"]
+
+    main(["names"])
+    out = capsys.readouterr().out
+    assert "second" in out and "first" in out
+
+
+def test_names_empty_state(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["names"])
+    assert "no named snapshots yet" in capsys.readouterr().out
+
+
 def test_undo_reverts_last_restore(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("v1")

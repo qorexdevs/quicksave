@@ -78,6 +78,7 @@ quicksave restore 3 --no-backup # skip the safety snapshot of the current tree
 quicksave restore 3 --into /tmp/old # pull the snapshot aside, leave the live tree alone
 quicksave undo                 # revert the last restore, back to the pre-restore tree
 quicksave name 3 good-build    # tag an existing snapshot after the fact (empty name clears it)
+quicksave names                # list just the named snapshots, newest first
 quicksave status               # what changed in the tree since the last snapshot
 quicksave status --short       # one line like '~3 +1 -0' (or 'clean') for a prompt or agent
 quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'

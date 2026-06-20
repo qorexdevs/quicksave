@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `names` lists just the named snapshots, id and name, newest first, with `--json`. Saves
+  scanning the full `list` output when you only want to see the labels you've set.
 - `status --short` prints a one-line porcelain summary like `~3 +1 -0` (modified/added/removed),
   or `clean`, instead of the per-file list, so a shell prompt or an agent can read drift at a
   glance. `--json` still wins when both are passed, and `--exit-code` works the same.

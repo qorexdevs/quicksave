@@ -156,6 +156,24 @@ def cmd_list(args):
         console.print(f"[dim]{len(snaps)} snapshots, {_human_size(store.store_size(root))} on disk[/]")
 
 
+def cmd_names(args):
+    root = _root_or_die()
+    named = [s for s in store.list_snapshots(root) if s.get("name")]
+    named.reverse()  # list_snapshots is oldest first, show newest names first
+    if args.json:
+        print(json.dumps([{"id": s["id"], "name": s["name"]} for s in named]))
+        return
+    if not named:
+        console.print("[dim]no named snapshots yet, name one with 'quicksave name <ref> <name>'[/]")
+        return
+    table = Table(box=None, pad_edge=False, show_header=False)
+    table.add_column("id", style="cyan")
+    table.add_column("name", style="magenta")
+    for s in named:
+        table.add_row(s["id"], s["name"])
+    console.print(table)
+
+
 def cmd_stats(args):
     root = _root_or_die()
     s = store.stats(root)
@@ -824,6 +842,10 @@ def build_parser():
                     help="show only snapshots whose message or name contains this text")
     pl.add_argument("--reverse", action="store_true", help="show newest first instead of oldest first")
     pl.set_defaults(func=cmd_list)
+
+    pnm = sub.add_parser("names", help="list named snapshots, newest first", parents=[common])
+    pnm.add_argument("--json", action="store_true", help="print the named snapshots as json")
+    pnm.set_defaults(func=cmd_names)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])
     pst.add_argument("--json", action="store_true", help="print the stats as json")

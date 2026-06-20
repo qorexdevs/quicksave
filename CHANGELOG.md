@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `find -i`/`--ignore-case` matches case-insensitively, so `find readme` finds `README.md`
+  without remembering the exact casing. Works in both substring and glob mode.
 - `find --changes` collapses snapshots where the matched file's content is the same, so you
   see only the checkpoints where it actually changed - a real history for a file that was
   never in git. The oldest match is always kept since that's where the content first appears.

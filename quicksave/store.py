@@ -382,19 +382,24 @@ def diff(root, ref_a, ref_b):
     return {"added": added, "removed": removed, "modified": modified}
 
 
-def _match_files(files, query):
+def _match_files(files, query, ignore_case=False):
     # files matching `query` inside one manifest. matches on exact path, a
     # directory prefix, or the query as a substring of the relpath so a bare
     # basename finds src/foo.py. if the query has glob chars (* ? [) we match
     # relpaths with a shell glob instead, so '*.py' or 'src/**/test_*.py' work.
+    # ignore_case folds both sides to lowercase before comparing, so 'readme'
+    # still finds README.md; the original (cased) relpath is what's returned.
     q = Path(query).as_posix()
     glob = any(c in query for c in "*?[")
+    if ignore_case:
+        q = q.lower()
     hits = []
     for rel, meta in files.items():
+        candidate = rel.lower() if ignore_case else rel
         if glob:
-            match = fnmatch.fnmatch(rel, q) or fnmatch.fnmatch(rel, "*/" + q)
+            match = fnmatch.fnmatch(candidate, q) or fnmatch.fnmatch(candidate, "*/" + q)
         else:
-            match = rel == q or rel.startswith(q.rstrip("/") + "/") or q in rel
+            match = candidate == q or candidate.startswith(q.rstrip("/") + "/") or q in candidate
         if match:
             hits.append({"path": rel, "size": meta.get("size", 0),
                          "sha256": meta.get("sha256", "")})
@@ -414,13 +419,13 @@ def _snapshot_match(f, hits):
     }
 
 
-def find_file(root, query):
+def find_file(root, query, ignore_case=False):
     # which snapshots hold a file matching `query` - the "I deleted foo.py, where
     # can I get it back" lookup, newest first.
     store = store_path(root)
     out = []
     for f in reversed(_snapshot_files(store)):
-        hits = _match_files(json.loads(f.read_text()).get("files", {}), query)
+        hits = _match_files(json.loads(f.read_text()).get("files", {}), query, ignore_case)
         if hits:
             out.append(_snapshot_match(f, hits))
     return out

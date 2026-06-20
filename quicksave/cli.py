@@ -223,7 +223,7 @@ def _change_points(snaps):
 
 def cmd_find(args):
     root = _root_or_die()
-    snaps = store.find_file(root, args.path)
+    snaps = store.find_file(root, args.path, ignore_case=args.ignore_case)
     if getattr(args, "changes", False):
         snaps = _change_points(snaps)
     if args.limit and args.limit < len(snaps):
@@ -877,6 +877,8 @@ def build_parser():
     pf.add_argument("--changes", action="store_true",
                     help="show only snapshots where the matched content changed, skipping repeats")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
+    pf.add_argument("-i", "--ignore-case", action="store_true",
+                    help="match case-insensitively, so 'readme' finds README.md")
     pf.set_defaults(func=cmd_find)
 
     prc = sub.add_parser("recover", help="restore files from the newest snapshot that still has them", parents=[common])

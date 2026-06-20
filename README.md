@@ -83,6 +83,7 @@ quicksave status               # what changed in the tree since the last snapsho
 quicksave status --short       # one line like '~3 +1 -0' (or 'clean') for a prompt or agent
 quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
+quicksave find readme -i       # case-insensitive: a lowercase query still finds README.md
 quicksave recover app.py       # just bring it back from the newest snapshot that has it
 quicksave recover app.py util.py config.json # several at once, each from its own newest snapshot
 quicksave recover app.py --from 3 # pull it from snapshot 3 if the newest copy is already broken
@@ -144,7 +145,8 @@ holding a file whose path matches, newest first, with the size of each match and
 line. The query matches an exact path, a directory prefix, or just part of a name, so a bare basename
 finds it wherever it lived. A query with glob chars matches that way instead, so `quicksave find '*.py'`
 or `quicksave find 'src/**/test_*.py'` work too. `--limit N` keeps only the N newest matches when you
-just want the last few.
+just want the last few. `-i`/`--ignore-case` folds both sides to lowercase first, so `quicksave find
+readme -i` still finds `README.md` when you only half-remember the casing.
 
 When you don't care which checkpoint, `quicksave recover app.py` skips that step: it finds the newest
 snapshot that still holds the file and restores it in one shot, even if it was deleted several commands

@@ -1224,6 +1224,29 @@ def test_cli_find_changes(tmp_path, monkeypatch, capsys):
     assert [s["message"] for s in data] == ["v2", "v1"]
 
 
+def test_cli_find_ignore_case(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "README.md").write_text("docs")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["find", "readme"])
+    assert "no snapshot" in capsys.readouterr().out
+
+    main(["find", "readme", "-i", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data[0]["files"][0]["path"] == "README.md"
+
+    main(["find", "--ignore-case", "ReAdMe.MD", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data[0]["files"][0]["path"] == "README.md"
+
+    main(["find", "*.MD", "-i", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data[0]["files"][0]["path"] == "README.md"
+
+
 def test_cli_find_glob(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     src = tmp_path / "src"

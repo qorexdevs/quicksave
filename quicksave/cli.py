@@ -223,7 +223,20 @@ def _change_points(snaps):
 
 def cmd_find(args):
     root = _root_or_die()
-    snaps = store.find_file(root, args.path, getattr(args, "ignore_case", False))
+    queries = args.path
+    ignore_case = getattr(args, "ignore_case", False)
+
+    if len(queries) == 1:
+        snaps = store.find_file(root, queries[0], ignore_case)
+    else:
+        # union the matches across all queries, merging by snapshot id and
+        # keeping newest-first order (same as a single-path search would).
+        seen = {}
+        for q in queries:
+            for s in store.find_file(root, q, ignore_case):
+                seen[s["id"]] = s
+        snaps = sorted(seen.values(), key=lambda s: s["seq"], reverse=True)
+
     if getattr(args, "changes", False):
         snaps = _change_points(snaps)
     if args.limit and args.limit < len(snaps):
@@ -232,7 +245,8 @@ def cmd_find(args):
         print(json.dumps(snaps))
         return
     if not snaps:
-        console.print(f"[dim]no snapshot holds a file matching '{args.path}'[/]")
+        names = "', '".join(queries)
+        console.print(f"[dim]no snapshot holds a file matching '{names}'[/]")
         return
     now = datetime.now().timestamp()
     for s in snaps:
@@ -244,7 +258,8 @@ def cmd_find(args):
         for h in s["files"]:
             console.print(f"  {h['path']} [dim]{_human_size(h['size'])}[/]")
     newest = snaps[0]
-    console.print(f"[dim]restore with 'quicksave restore {newest['id']} {args.path}'[/]")
+    target = queries[0] if len(queries) == 1 else " ".join(queries)
+    console.print(f"[dim]restore with 'quicksave restore {newest['id']} {target}'[/]")
 
 
 def cmd_recover(args):

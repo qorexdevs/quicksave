@@ -228,6 +228,54 @@ def cmd_find(args):
         snaps = _change_points(snaps)
     if args.limit and args.limit < len(snaps):
         snaps = snaps[:args.limit]
+
+    if getattr(args, "diff", False):
+        import difflib
+        # collect every distinct path matched across all change-point snapshots
+        all_paths = {h["path"] for s in snaps for h in s["files"]}
+        if len(all_paths) != 1:
+            err.print(
+                f"[red]--diff requires the query to match exactly one file path[/] "
+                f"(matched {len(all_paths)}"
+                + (": " + ", ".join(sorted(all_paths)) if all_paths else "") + ")"
+            )
+            raise SystemExit(1)
+        path = next(iter(all_paths))
+        # snaps is newest-first; walk oldest-to-newest for the diff sequence
+        ordered = list(reversed(snaps))
+        prev_lines: list = []
+        prev_ref = "/dev/null"
+        now = datetime.now().timestamp()
+        for s in ordered:
+            lines = _file_text(root, s["id"], path) or []
+            ref = s["id"]
+            when = _relative_time(s["created_at"], now)
+            label = f"#{s['seq']} [cyan]{ref}[/]"
+            if s.get("name"):
+                label += f" [magenta]{s['name']}[/]"
+            console.print(f"{label} [dim]{when}[/]")
+            diff_lines = list(difflib.unified_diff(
+                prev_lines, lines,
+                fromfile=f"{path}@{prev_ref}",
+                tofile=f"{path}@{ref}",
+            ))
+            if diff_lines:
+                for line in diff_lines:
+                    line = line.rstrip("\n")
+                    if line.startswith("+"):
+                        console.print(f"[green]{line}[/]")
+                    elif line.startswith("-"):
+                        console.print(f"[red]{line}[/]")
+                    elif line.startswith("@@"):
+                        console.print(f"[cyan]{line}[/]")
+                    else:
+                        console.print(line)
+            else:
+                console.print("[dim](no textual change)[/]")
+            prev_lines = lines
+            prev_ref = ref
+        return
+
     if args.json:
         print(json.dumps(snaps))
         return
@@ -876,6 +924,8 @@ def build_parser():
     pf.add_argument("--json", action="store_true", help="print matches as json")
     pf.add_argument("--changes", action="store_true",
                     help="show only snapshots where the matched content changed, skipping repeats")
+    pf.add_argument("--diff", action="store_true",
+                    help="with --changes, print a unified diff between each consecutive change point (single-file queries only)")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.set_defaults(func=cmd_find)
 

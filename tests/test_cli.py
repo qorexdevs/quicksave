@@ -1134,6 +1134,54 @@ def test_diff_stat_skips_the_file_list(tmp_path, monkeypatch, capsys):
     assert "a.txt" not in out
 
 
+def test_diff_name_only_between_snapshots(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    (tmp_path / "drop.txt").write_text("gone\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "drop.txt").unlink()
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--name-only"])
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert set(lines) == {"new.txt", "drop.txt", "a.txt"}
+    assert "+" not in out
+    assert "-" not in out
+    assert "~" not in out
+    assert "added" not in out
+
+
+def test_diff_name_only_against_working_tree(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--name-only"])
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert set(lines) == {"new.txt", "a.txt"}
+    assert "+" not in out
+    assert "~" not in out
+
+
+def test_diff_name_only_no_changes(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--name-only"])
+    out = capsys.readouterr().out.strip()
+    assert "working tree matches" in out
+
+
 def test_diff_json_against_working_tree(tmp_path, monkeypatch, capsys):
     import json
 

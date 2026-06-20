@@ -106,6 +106,7 @@ quicksave pin 4                # protect a snapshot, gc --keep won't rotate it a
 quicksave unpin 4              # let gc --keep rotate it again
 quicksave gc --keep 10         # drop old snapshots and blobs nothing points at, reports space freed
 quicksave gc --older-than 7d   # drop snapshots older than a duration (7d, 12h, 30m)
+quicksave gc --keep 10 --keep-named  # rotate, but spare named snapshots like pinned ones
 quicksave gc 4 pre-deploy      # drop specific snapshots by number, id or name
 quicksave gc --keep 10 --json  # report what gc removed as json for a script or hook
 quicksave drop 4 7 pre-deploy  # drop one or more snapshots by ref and reclaim their blobs

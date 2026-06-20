@@ -463,6 +463,26 @@ def test_cli_gc_json(tmp_path, monkeypatch, capsys):
     assert out["bytes"] >= 0
 
 
+def test_cli_gc_keep_named_spares_labels(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    note = tmp_path / "note.md"
+    note.write_text("v1")
+    main(["init"])
+    main(["save", "-m", "one"])
+    main(["name", "0", "milestone"])
+    note.write_text("v2")
+    main(["save", "-m", "two"])
+    note.write_text("v3")
+    main(["save", "-m", "three"])
+    capsys.readouterr()
+
+    main(["gc", "--keep", "1", "--keep-named", "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert len(out["pruned"]) == 1
+    left = [(s["name"], s["message"]) for s in store.list_snapshots(tmp_path)]
+    assert left == [("milestone", "one"), ("", "three")]
+
+
 def test_cli_drop_json(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"

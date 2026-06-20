@@ -13,6 +13,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   glance. `--json` still wins when both are passed, and `--exit-code` works the same.
 - `diff --stat` prints only the summary line (`5 added, 2 removed, 3 modified`) and skips the
   per-file list, for a quick "how much changed" check. Ignored in single-file mode.
+- `gc --keep-named` spares named snapshots from `--keep` and `--older-than` rotation, the same
+  way pinned ones are spared. An explicit `gc <ref>` still drops a named snapshot when you mean it.
 
 ### Changed
 - the hook now treats `git rm`, `git stash`, `rsync --delete`, and a noclobber-overriding `>|`

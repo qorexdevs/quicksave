@@ -502,7 +502,7 @@ def parse_duration(text):
     return time.time() - when.timestamp()
 
 
-def gc(root, keep=None, refs=None, dry_run=False, older_than=None):
+def gc(root, keep=None, refs=None, dry_run=False, older_than=None, keep_named=False):
     store = store_path(root)
     if not store.is_dir():
         raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
@@ -515,6 +515,9 @@ def gc(root, keep=None, refs=None, dry_run=False, older_than=None):
         drop = drop + [f for f in old if f not in drop]
     # pinned snapshots survive --keep rotation; an explicit ref still drops them.
     drop = [f for f in drop if not json.loads(f.read_text()).get("pinned", False)]
+    if keep_named:
+        # a name is an explicit label, so with --keep-named treat it like a pin
+        drop = [f for f in drop if not json.loads(f.read_text()).get("name")]
     for ref in refs or []:
         f = _find_snapshot(store, ref)
         if f is None:

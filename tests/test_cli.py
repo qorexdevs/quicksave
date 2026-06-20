@@ -1221,6 +1221,44 @@ def test_cli_find_limit(tmp_path, monkeypatch, capsys):
     assert data[1]["message"] == "two"
 
 
+def test_cli_find_count(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "keep.txt"
+    main(["init"])
+    for v in ("one", "two", "three"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["find", "keep.txt", "--count"])
+    out = capsys.readouterr().out.strip()
+    assert out == "3"
+
+
+def test_cli_find_count_respects_limit(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "keep.txt"
+    main(["init"])
+    for v in ("one", "two", "three"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["find", "keep.txt", "--limit", "2", "--count"])
+    out = capsys.readouterr().out.strip()
+    assert out == "2"
+
+
+def test_cli_find_count_no_matches(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    capsys.readouterr()
+
+    main(["find", "ghost.txt", "--count"])
+    out = capsys.readouterr().out.strip()
+    assert out == "0"
+
+
 def test_cli_find_changes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "keep.txt"

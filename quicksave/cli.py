@@ -229,6 +229,10 @@ def cmd_find(args):
     if args.limit and args.limit < len(snaps):
         snaps = snaps[:args.limit]
 
+    if getattr(args, "count", False):
+        print(len(snaps))
+        return
+
     if getattr(args, "diff", False):
         import difflib
         # collect every distinct path matched across all change-point snapshots
@@ -935,6 +939,8 @@ def build_parser():
     pf.add_argument("--diff", action="store_true",
                     help="with --changes, print a unified diff between each consecutive change point (single-file queries only)")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
+    pf.add_argument("--count", action="store_true",
+                    help="print only the number of matching snapshots, nothing else")
     pf.set_defaults(func=cmd_find)
 
     prc = sub.add_parser("recover", help="restore files from the newest snapshot that still has them", parents=[common])

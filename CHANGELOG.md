@@ -10,6 +10,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   or `clean`, instead of the per-file list, so a shell prompt or an agent can read drift at a
   glance. `--json` still wins when both are passed, and `--exit-code` works the same.
 
+### Changed
+- the hook now treats `git rm`, `git stash`, `rsync --delete`, and a noclobber-overriding `>|`
+  redirect as risky too, so an agent that reaches for one of those gets a checkpoint first. `>>`
+  appends and a plain `rsync` without `--delete` are still left alone.
+
 ## [0.5.0] - 2026-06-20
 
 batch recover and drop, working-tree diffs, and dry-run previews across save, restore and recover.

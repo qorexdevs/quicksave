@@ -6,6 +6,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `@<time>` snapshot refs point at the tree as it was that long ago: `@10m` is the newest
+  snapshot from at least ten minutes back, so `quicksave restore @10m` rolls you back without
+  hunting for an id. Works anywhere a ref is taken (restore, status, show, diff) and accepts
+  durations like `2h`/`7d` or an absolute date.
 - `find` takes more than one path now, the way `recover` does, so `find app.py config.json`
   lists every snapshot holding either, with the matched files merged per snapshot.
 - `find -i`/`--ignore-case` matches the path case-insensitively, so `find readme` reaches

@@ -506,6 +506,30 @@ def test_relative_refs_count_back_from_newest(tmp_path):
     assert store.resolve_id(tmp_path, "~2") == ids[-3]
 
 
+def test_at_ref_picks_tree_as_of_a_time(tmp_path):
+    import json
+    import time
+    store.init(tmp_path)
+    ids = []
+    for v in ("a", "b", "c"):
+        (tmp_path / "f.txt").write_text(v)
+        sid, _, _ = store.save(tmp_path)
+        ids.append(sid)
+    # stamp them at known ages: 3h, 2h, 1h ago
+    now = time.time()
+    snaps = sorted((store.store_path(tmp_path) / "snapshots").glob("*.json"))
+    for f, hours in zip(snaps, (3, 2, 1)):
+        m = json.loads(f.read_text())
+        m["created_at"] = now - hours * 3600
+        f.write_text(json.dumps(m))
+    # newest snapshot at or before 90m ago is the 2h-old one
+    assert store.resolve_id(tmp_path, "@90m") == ids[1]
+    assert store.resolve_id(tmp_path, "@30m") == ids[2]
+    # nothing is that old
+    with pytest.raises(store.QuicksaveError):
+        store.resolve_id(tmp_path, "@5h")
+
+
 def test_relative_ref_out_of_range(tmp_path):
     store.init(tmp_path)
     (tmp_path / "f.txt").write_text("a")

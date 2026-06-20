@@ -348,6 +348,15 @@ def _find_snapshot(store, ref):
     back = _relative_ref(ref)
     if back is not None:
         return files[-1 - back] if 0 <= back < len(files) else None
+    # '@2h' or '@2026-06-01' picks the tree as it was that long ago: the newest
+    # snapshot taken at or before the cutoff. handy after an agent ran wild and
+    # you just want to go back ten minutes without hunting for the right id.
+    if ref.startswith("@"):
+        cutoff = time.time() - parse_duration(ref[1:])
+        for f in reversed(files):
+            if json.loads(f.read_text()).get("created_at", 0) <= cutoff:
+                return f
+        return None
     # a bare number is a sequence from 'list'; resolve it before any id-prefix
     # match so an id that happens to start with that digit can't shadow it
     for f in files:

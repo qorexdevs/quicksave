@@ -167,7 +167,10 @@ or pass an empty name to clear one.
 
 You can also point at a snapshot by how recent it is. `latest` is the newest one and `latest~1` (or
 just `~1`) is the one before it, counting back, so `quicksave diff ~1 wt` shows what changed since the
-previous checkpoint without looking up an id.
+previous checkpoint without looking up an id. `@<time>` goes back by wall clock instead: `@10m` is the
+newest snapshot from at least ten minutes ago, so `quicksave restore @10m` rolls the tree back to
+before an agent went off the rails without hunting for the right id. Durations like `2h`, `7d` or an
+absolute date (`@2026-06-01`) all work.
 
 `status` compares the working tree to a snapshot (the latest one unless you name another) and shows
 what was added, removed or modified since then, so you can see what a checkpoint would pull you back

@@ -615,7 +615,8 @@ def cmd_log(args):
     console.print(f"Pinned: {'yes' if s['pinned'] else 'no'}")
     console.print(f"Message: {s['message'] or '-'}")
     console.print(f"Time: {when}")
-    console.print(f"Files: {len(s['files'])}")
+    total = sum(h["size"] for h in s["files"])
+    console.print(f"Files: {len(s['files'])} ({_human_size(total)})")
 
     console.print("\nFile List:")
     for h in s["files"]:

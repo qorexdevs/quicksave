@@ -15,6 +15,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   per-file list, for a quick "how much changed" check. Ignored in single-file mode.
 - `gc --keep-named` spares named snapshots from `--keep` and `--older-than` rotation, the same
   way pinned ones are spared. An explicit `gc <ref>` still drops a named snapshot when you mean it.
+- `log` shows the total size next to the file count (`Files: 42 (3.2M)`), so you don't have to
+  add the per-file sizes up by hand.
 
 ### Fixed
 - `log` now prints file sizes like `4.1K` instead of raw `4200 bytes`, matching `list`, `find`

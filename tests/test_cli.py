@@ -809,7 +809,7 @@ def test_log_shows_snapshot_details(tmp_path, monkeypatch, capsys):
     assert "first" in out
     assert "a.txt" in out
     assert "sub/b.txt" in out
-    assert "Files: 2" in out
+    assert "Files: 2 (9B)" in out
 
     main(["log", "0"])
     assert "v1" in capsys.readouterr().out

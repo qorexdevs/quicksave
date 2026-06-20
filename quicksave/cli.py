@@ -245,10 +245,12 @@ def cmd_find(args):
         ordered = list(reversed(snaps))
         prev_lines: list = []
         prev_ref = "/dev/null"
+        prev_ts = ""
         now = datetime.now().timestamp()
         for s in ordered:
             lines = _file_text(root, s["id"], path) or []
             ref = s["id"]
+            ts = datetime.fromtimestamp(s["created_at"]).strftime("%Y-%m-%d %H:%M") if s["created_at"] else ""
             when = _relative_time(s["created_at"], now)
             label = f"#{s['seq']} [cyan]{ref}[/]"
             if s.get("name"):
@@ -256,8 +258,8 @@ def cmd_find(args):
             console.print(f"{label} [dim]{when}[/]")
             diff_lines = list(difflib.unified_diff(
                 prev_lines, lines,
-                fromfile=f"{path}@{prev_ref}",
-                tofile=f"{path}@{ref}",
+                fromfile=f"{path}  {prev_ts}",
+                tofile=f"{path}  {ts}",
             ))
             if diff_lines:
                 for line in diff_lines:
@@ -274,6 +276,7 @@ def cmd_find(args):
                 console.print("[dim](no textual change)[/]")
             prev_lines = lines
             prev_ref = ref
+            prev_ts = ts
         return
 
     if args.json:

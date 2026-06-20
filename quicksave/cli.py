@@ -568,6 +568,14 @@ def cmd_diff(args):
         if not (added or removed or s["modified"]):
             console.print(f"[dim]working tree matches {snap}[/]")
             return
+        if args.name_only:
+            for path in added:
+                print(path)
+            for path in removed:
+                print(path)
+            for path in s["modified"]:
+                print(path)
+            return
         if not args.stat:
             for path in added:
                 console.print(f"[green]+ {path}[/]")
@@ -587,6 +595,14 @@ def cmd_diff(args):
         return
     if not any(d.values()):
         console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
+        return
+    if args.name_only:
+        for path in d["added"]:
+            print(path)
+        for path in d["removed"]:
+            print(path)
+        for path in d["modified"]:
+            print(path)
         return
     if not args.stat:
         for path in d["added"]:
@@ -994,6 +1010,8 @@ def build_parser():
     pd.add_argument("path", nargs="?", help="show a line-by-line diff of just this file")
     pd.add_argument("--json", action="store_true", help="print the diff as json")
     pd.add_argument("--stat", action="store_true", help="print only the summary line, skip the file list")
+    pd.add_argument("--name-only", action="store_true",
+                    help="print just the changed paths, one per line, no markers and no summary")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])

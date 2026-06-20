@@ -619,7 +619,7 @@ def cmd_log(args):
 
     console.print("\nFile List:")
     for h in s["files"]:
-        console.print(f"{h['path']} ({h['size']} bytes)")
+        console.print(f"{h['path']} ({_human_size(h['size'])})")
 
 
 def cmd_verify(args):

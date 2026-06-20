@@ -244,7 +244,6 @@ def cmd_find(args):
         # snaps is newest-first; walk oldest-to-newest for the diff sequence
         ordered = list(reversed(snaps))
         prev_lines: list = []
-        prev_ref = "/dev/null"
         prev_ts = ""
         now = datetime.now().timestamp()
         for s in ordered:
@@ -275,7 +274,6 @@ def cmd_find(args):
             else:
                 console.print("[dim](no textual change)[/]")
             prev_lines = lines
-            prev_ref = ref
             prev_ts = ts
         return
 

@@ -1187,6 +1187,24 @@ def test_cli_find(tmp_path, monkeypatch, capsys):
     assert "no snapshot" in capsys.readouterr().out
 
 
+def test_cli_find_multiple_paths(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("a")
+    (tmp_path / "b.txt").write_text("b")
+    (tmp_path / "c.txt").write_text("c")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["find", "a.txt", "b.txt", "--json"])
+    paths = {h["path"] for h in json.loads(capsys.readouterr().out)[0]["files"]}
+    assert paths == {"a.txt", "b.txt"}
+
+    main(["find", "a.txt", "b.txt"])
+    out = capsys.readouterr().out
+    assert "quicksave recover a.txt b.txt" in out
+
+
 def test_cli_find_limit(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "keep.txt"

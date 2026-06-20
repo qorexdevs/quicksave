@@ -231,8 +231,9 @@ def cmd_find(args):
     if args.json:
         print(json.dumps(snaps))
         return
+    label_q = "', '".join(args.path)
     if not snaps:
-        console.print(f"[dim]no snapshot holds a file matching '{args.path}'[/]")
+        console.print(f"[dim]no snapshot holds a file matching '{label_q}'[/]")
         return
     now = datetime.now().timestamp()
     for s in snaps:
@@ -244,7 +245,10 @@ def cmd_find(args):
         for h in s["files"]:
             console.print(f"  {h['path']} [dim]{_human_size(h['size'])}[/]")
     newest = snaps[0]
-    console.print(f"[dim]restore with 'quicksave restore {newest['id']} {args.path}'[/]")
+    if len(args.path) == 1:
+        console.print(f"[dim]restore with 'quicksave restore {newest['id']} {args.path[0]}'[/]")
+    else:
+        console.print(f"[dim]restore these with 'quicksave recover {' '.join(args.path)}'[/]")
 
 
 def cmd_recover(args):
@@ -872,7 +876,8 @@ def build_parser():
     pst.set_defaults(func=cmd_stats)
 
     pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])
-    pf.add_argument("path", help="file path, part of one, or a glob like '*.py' to search for")
+    pf.add_argument("path", nargs="+",
+                    help="one or more file paths, parts of paths, or globs like '*.py' to search for")
     pf.add_argument("--json", action="store_true", help="print matches as json")
     pf.add_argument("-i", "--ignore-case", action="store_true",
                     help="match the path case-insensitively, so 'readme' finds README.md")

@@ -421,12 +421,22 @@ def _snapshot_match(f, hits):
 
 def find_file(root, query, ignore_case=False):
     # which snapshots hold a file matching `query` - the "I deleted foo.py, where
-    # can I get it back" lookup, newest first.
+    # can I get it back" lookup, newest first. `query` is one path or a list of
+    # them; a snapshot is listed if it holds a match for any of them, with the
+    # matched files merged and deduped, like recover takes several paths at once.
+    queries = [query] if isinstance(query, str) else list(query)
     store = store_path(root)
     out = []
     for f in reversed(_snapshot_files(store)):
-        hits = _match_files(json.loads(f.read_text()).get("files", {}), query, ignore_case)
+        files = json.loads(f.read_text()).get("files", {})
+        hits, seen = [], set()
+        for q in queries:
+            for h in _match_files(files, q, ignore_case):
+                if h["path"] not in seen:
+                    seen.add(h["path"])
+                    hits.append(h)
         if hits:
+            hits.sort(key=lambda h: h["path"])
             out.append(_snapshot_match(f, hits))
     return out
 

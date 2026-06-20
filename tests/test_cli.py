@@ -859,6 +859,19 @@ def test_log_json_emits_files(tmp_path, monkeypatch, capsys):
     assert data["files"][0]["size"] == 5
 
 
+def test_log_shows_total_size(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "b.txt").write_text("world")
+    main(["init"])
+    main(["save", "-m", "two files"])
+    capsys.readouterr()
+
+    main(["log", "0"])
+    out = capsys.readouterr().out
+    assert "Files: 2 (10B)" in out
+
+
 def test_log_missing_snapshot_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

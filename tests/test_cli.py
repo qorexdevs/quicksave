@@ -1357,3 +1357,58 @@ def test_completion_powershell_registers_completer(capsys):
     out = capsys.readouterr().out
     assert "Register-ArgumentCompleter -Native -CommandName quicksave" in out
     assert "restore" in out
+
+# ---------------------------------------------------------------------------
+# find --changes --diff
+# ---------------------------------------------------------------------------
+
+def test_find_changes_diff_shows_unified_diff(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "notes.txt"
+    main(["init"])
+    f.write_text("version one\n")
+    main(["save", "-m", "v1"])
+    f.write_text("version two\n")
+    main(["save", "-m", "v2"])
+    f.write_text("version three\n")
+    main(["save", "-m", "v3"])
+    capsys.readouterr()
+
+    main(["find", "notes.txt", "--changes", "--diff"])
+    out = capsys.readouterr().out
+
+    # diffs from v1→v2 and v2→v3 should both appear
+    assert "-version one" in out
+    assert "+version two" in out
+    assert "-version two" in out
+    assert "+version three" in out
+
+
+def test_find_changes_diff_first_snapshot_from_empty(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "hello.txt"
+    main(["init"])
+    f.write_text("hello\n")
+    main(["save", "-m", "init"])
+    capsys.readouterr()
+
+    main(["find", "hello.txt", "--changes", "--diff"])
+    out = capsys.readouterr().out
+
+    # first snapshot diffs from empty, so the line should appear as added
+    assert "+hello" in out
+
+
+def test_find_changes_diff_multi_path_bails(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("a")
+    (tmp_path / "b.py").write_text("b")
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    import pytest
+    with pytest.raises(SystemExit):
+        main(["find", "*.py", "--changes", "--diff"])
+    err_out = capsys.readouterr().err
+    assert "exactly one file path" in err_out

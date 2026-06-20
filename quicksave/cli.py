@@ -476,12 +476,13 @@ def cmd_diff(args):
         if not (added or removed or s["modified"]):
             console.print(f"[dim]working tree matches {snap}[/]")
             return
-        for path in added:
-            console.print(f"[green]+ {path}[/]")
-        for path in removed:
-            console.print(f"[red]- {path}[/]")
-        for path in s["modified"]:
-            console.print(f"[yellow]~ {path}[/]")
+        if not args.stat:
+            for path in added:
+                console.print(f"[green]+ {path}[/]")
+            for path in removed:
+                console.print(f"[red]- {path}[/]")
+            for path in s["modified"]:
+                console.print(f"[yellow]~ {path}[/]")
         console.print(
             f"[dim]{len(added)} added, {len(removed)} removed, "
             f"{len(s['modified'])} modified[/]"
@@ -495,12 +496,13 @@ def cmd_diff(args):
     if not any(d.values()):
         console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
         return
-    for path in d["added"]:
-        console.print(f"[green]+ {path}[/]")
-    for path in d["removed"]:
-        console.print(f"[red]- {path}[/]")
-    for path in d["modified"]:
-        console.print(f"[yellow]~ {path}[/]")
+    if not args.stat:
+        for path in d["added"]:
+            console.print(f"[green]+ {path}[/]")
+        for path in d["removed"]:
+            console.print(f"[red]- {path}[/]")
+        for path in d["modified"]:
+            console.print(f"[yellow]~ {path}[/]")
     console.print(
         f"[dim]{len(d['added'])} added, {len(d['removed'])} removed, "
         f"{len(d['modified'])} modified[/]"
@@ -884,6 +886,7 @@ def build_parser():
                     help="snapshot id or number, or 'wt' for the working tree (default)")
     pd.add_argument("path", nargs="?", help="show a line-by-line diff of just this file")
     pd.add_argument("--json", action="store_true", help="print the diff as json")
+    pd.add_argument("--stat", action="store_true", help="print only the summary line, skip the file list")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])

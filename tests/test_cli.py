@@ -1054,6 +1054,22 @@ def test_diff_json_between_snapshots(tmp_path, monkeypatch, capsys):
     assert d["modified"] == ["a.txt"]
 
 
+def test_diff_stat_skips_the_file_list(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--stat"])
+    out = capsys.readouterr().out
+    assert "1 added, 0 removed, 1 modified" in out
+    assert "new.txt" not in out
+    assert "a.txt" not in out
+
+
 def test_diff_json_against_working_tree(tmp_path, monkeypatch, capsys):
     import json
 

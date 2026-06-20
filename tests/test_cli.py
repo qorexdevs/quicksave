@@ -1243,6 +1243,25 @@ def test_cli_find_glob(tmp_path, monkeypatch, capsys):
     assert "no snapshot" in capsys.readouterr().out
 
 
+def test_cli_find_ignore_case(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "README.md").write_text("r")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["find", "readme"])
+    assert "no snapshot" in capsys.readouterr().out
+
+    main(["find", "readme", "-i", "--json"])
+    paths = {h["path"] for h in json.loads(capsys.readouterr().out)[0]["files"]}
+    assert paths == {"README.md"}
+
+    main(["find", "*.MD", "-i", "--json"])
+    paths = {h["path"] for h in json.loads(capsys.readouterr().out)[0]["files"]}
+    assert paths == {"README.md"}
+
+
 def test_cli_stats(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("same")

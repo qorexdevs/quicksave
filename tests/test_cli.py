@@ -1269,6 +1269,29 @@ def test_cli_find_limit(tmp_path, monkeypatch, capsys):
     assert data[1]["message"] == "two"
 
 
+def test_cli_find_since_and_before_window(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "keep.txt"
+    main(["init"])
+    for v in ("one", "two"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    snap_files = sorted((tmp_path / ".quicksave" / "snapshots").glob("*.json"))
+    oldest = json.loads(snap_files[0].read_text())
+    oldest["created_at"] = time.time() - 3 * 3600
+    snap_files[0].write_text(json.dumps(oldest))
+
+    main(["find", "keep.txt", "--since", "1h", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in data] == ["two"]
+
+    main(["find", "keep.txt", "--before", "1h", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in data] == ["one"]
+
+
 def test_cli_find_count(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "keep.txt"

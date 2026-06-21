@@ -14,6 +14,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   lists every snapshot holding either, with the matched files merged per snapshot.
 - `find -i`/`--ignore-case` matches the path case-insensitively, so `find readme` reaches
   `README.md`. Works for substring, prefix, and glob queries; the default stays case-sensitive.
+- `find --since`/`--before` scope the search to a time window, the same way `list` does, so
+  `find config.json --since 2h` only lists recent snapshots holding it. Both take a duration
+  (`30m`, `7d`) or an absolute date and combine with `--changes`, `--limit` and `--count`.
 - `find --changes` collapses snapshots where the matched file's content is the same, so you
   see only the checkpoints where it actually changed - a real history for a file that was
   never in git. The oldest match is always kept since that's where the content first appears.

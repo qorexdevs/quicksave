@@ -224,6 +224,14 @@ def _change_points(snaps):
 def cmd_find(args):
     root = _root_or_die()
     snaps = store.find_file(root, args.path, getattr(args, "ignore_case", False))
+    since = getattr(args, "since", None)
+    if since:
+        cutoff = datetime.now().timestamp() - store.parse_duration(since)
+        snaps = [s for s in snaps if s["created_at"] and s["created_at"] >= cutoff]
+    before = getattr(args, "before", None)
+    if before:
+        cutoff = datetime.now().timestamp() - store.parse_duration(before)
+        snaps = [s for s in snaps if s["created_at"] and s["created_at"] <= cutoff]
     if getattr(args, "changes", False):
         snaps = _change_points(snaps)
     if args.limit and args.limit < len(snaps):
@@ -950,6 +958,10 @@ def build_parser():
     pf.add_argument("--json", action="store_true", help="print matches as json")
     pf.add_argument("-i", "--ignore-case", action="store_true",
                     help="match the path case-insensitively, so 'readme' finds README.md")
+    pf.add_argument("--since", default=None, metavar="DUR",
+                    help="only snapshots newer than a duration (1h, 7d) or date (2026-06-01)")
+    pf.add_argument("--before", default=None, metavar="DUR",
+                    help="only snapshots older than a duration (1h, 7d) or date (2026-06-01)")
     pf.add_argument("--changes", action="store_true",
                     help="show only snapshots where the matched content changed, skipping repeats")
     pf.add_argument("--diff", action="store_true",

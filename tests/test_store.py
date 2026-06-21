@@ -312,6 +312,32 @@ def test_import_roundtrips_an_export(tmp_path):
     assert (tmp_path / "a.txt").read_text() == "hello"
 
 
+def test_import_dry_run_previews_without_writing(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "b.txt").write_text("world")
+    store.save(tmp_path, name="golden")
+
+    dest = tmp_path / "out.tar"
+    store.export_snapshot(tmp_path, None, dest)
+
+    sp = store.store_path(tmp_path)
+    snaps_before = sorted((sp / "snapshots").glob("*.json"))
+    blobs_before = sum(1 for _ in (sp / "blobs").rglob("*") if _.is_file())
+
+    r = store.import_archive(tmp_path, dest, dry_run=True)
+    assert r["dry_run"] is True
+    assert r["files"] == 2
+    assert r["bytes"] == len("hello") + len("world")
+    assert r["name"] == "golden"
+    assert r["paths"] == ["a.txt", "sub/b.txt"]
+
+    # nothing landed: no new snapshot manifest, no new blobs
+    assert sorted((sp / "snapshots").glob("*.json")) == snaps_before
+    assert sum(1 for _ in (sp / "blobs").rglob("*") if _.is_file()) == blobs_before
+
+
 def test_export_import_keeps_the_name(tmp_path):
     store.init(tmp_path)
     (tmp_path / "a.txt").write_text("hello")

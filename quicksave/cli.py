@@ -653,13 +653,23 @@ def cmd_export(args):
 
 def cmd_import(args):
     root = _root_or_die()
-    if args.src == "-":
-        snap_id, n = store.import_archive(root, args.src, args.message, args.name,
-                                          fileobj=sys.stdin.buffer)
-        label_src = "stdin"
-    else:
-        snap_id, n = store.import_archive(root, args.src, args.message, args.name)
-        label_src = args.src
+    fileobj = sys.stdin.buffer if args.src == "-" else None
+    label_src = "stdin" if args.src == "-" else args.src
+    if args.dry_run:
+        r = store.import_archive(root, args.src, args.message, args.name,
+                                 fileobj=fileobj, dry_run=True)
+        label = f" as [magenta]{r['name']}[/]" if r["name"] else ""
+        console.print(
+            f"[dim](dry run)[/] [cyan]{r['files']}[/] files, "
+            f"[cyan]{_human_size(r['bytes'])}[/] from [dim]{label_src}[/]{label}"
+        )
+        for p in r["paths"][:10]:
+            console.print(f"  [dim]{p}[/]")
+        if r["files"] > 10:
+            console.print(f"  [dim]... and {r['files'] - 10} more[/]")
+        return
+    snap_id, n = store.import_archive(root, args.src, args.message, args.name,
+                                      fileobj=fileobj)
     label = f" [magenta]{args.name}[/]" if args.name else ""
     console.print(f"imported [cyan]{n}[/] files from [dim]{label_src}[/] as [cyan]{snap_id}[/]{label}")
 
@@ -1042,6 +1052,8 @@ def build_parser():
     pi.add_argument("src", help="archive to read (.tar/.tar.gz/.tgz), or - for stdin")
     pi.add_argument("-m", "--message", default="", help="snapshot message")
     pi.add_argument("--name", default="", help="label for the new snapshot")
+    pi.add_argument("--dry-run", action="store_true",
+                    help="show what the archive holds without writing a snapshot")
     pi.set_defaults(func=cmd_import)
 
     plog = sub.add_parser("log", help="show one snapshot's details (default latest)", parents=[common])

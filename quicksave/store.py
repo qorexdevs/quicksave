@@ -792,11 +792,12 @@ def _open_archive(src):
     return tarfile.open(fileobj=src)
 
 
-def import_archive(root, src, message="", name="", fileobj=None):
+def import_archive(root, src, message="", name="", fileobj=None, dry_run=False):
     # turn a tar archive (from 'export' or any plain tarball) into a fresh
     # snapshot: every regular file becomes a blob and lands in a new manifest,
     # without touching the live tree. restore it later to materialize the files.
     # pass fileobj to read the archive from an open binary stream (e.g. stdin).
+    # dry_run walks the archive and returns a preview dict without writing blobs.
     root = Path(root)
     store = store_path(root)
     if not store.is_dir():
@@ -831,7 +832,7 @@ def import_archive(root, src, message="", name="", fileobj=None):
                 if f is None:
                     continue
                 data = f.read()
-                digest = _write_blob(store, data)
+                digest = "" if dry_run else _write_blob(store, data)
                 files[Path(rel).as_posix()] = {
                     "sha256": digest,
                     "size": len(data),
@@ -846,6 +847,14 @@ def import_archive(root, src, message="", name="", fileobj=None):
 
     # keep the name from the archive unless the caller overrides it on import
     name = name or stored_name
+    if dry_run:
+        return {
+            "files": len(files),
+            "bytes": sum(f["size"] for f in files.values()),
+            "name": name,
+            "paths": sorted(files),
+            "dry_run": True,
+        }
     snaps = _snapshot_files(store)
     # export stamps members with the snapshot's created_at, so the newest mtime
     # carries the original timestamp through an export/import round trip

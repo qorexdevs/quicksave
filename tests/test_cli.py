@@ -1038,6 +1038,25 @@ def test_cli_import_after_export(tmp_path, monkeypatch, capsys):
     assert (tmp_path / "a.txt").read_text() == "hi"
 
 
+def test_cli_import_dry_run_previews(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hi")
+    main(["init"])
+    main(["save", "-m", "base", "--name", "golden"])
+    dest = tmp_path / "snap.tgz"
+    main(["export", str(dest)])
+    n_snaps = len(list((tmp_path / ".quicksave" / "snapshots").glob("*.json")))
+    capsys.readouterr()
+
+    main(["import", str(dest), "--dry-run"])
+    out = capsys.readouterr().out
+    assert "dry run" in out
+    assert "golden" in out
+    assert "a.txt" in out
+    # preview must not add a snapshot
+    assert len(list((tmp_path / ".quicksave" / "snapshots").glob("*.json"))) == n_snaps
+
+
 def test_diff_file_shows_line_changes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\ntwo\n")

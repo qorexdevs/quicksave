@@ -195,7 +195,9 @@ there's no filename to infer from: `quicksave export - -z | ssh host 'cd repo &&
 into a fresh snapshot without touching the live tree. Restore it later to materialize the files:
 `quicksave import backup.tar.gz --name recovered`. Archives with absolute or `..` paths are rejected.
 Use `-` as the source to read from stdin, so you can pipe a checkpoint straight to another machine:
-`quicksave export - | ssh host 'cd repo && quicksave import -'`.
+`quicksave export - | ssh host 'cd repo && quicksave import -'`. Peek before it lands with
+`quicksave import backup.tgz --dry-run`: it prints the file count, total size, the name the archive
+carries and the first paths, without writing any blobs or a snapshot.
 
 ## Auto-save before an agent's risky commands
 

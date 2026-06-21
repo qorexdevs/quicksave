@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `import --dry-run` previews an archive before it lands: file count, total size, the name it
+  would carry and the first paths, without writing any blobs or a snapshot. Handy for peeking at
+  a tarball someone handed you before it turns into a checkpoint.
 - `@<time>` snapshot refs point at the tree as it was that long ago: `@10m` is the newest
   snapshot from at least ten minutes back, so `quicksave restore @10m` rolls you back without
   hunting for an id. Works anywhere a ref is taken (restore, status, show, diff) and accepts

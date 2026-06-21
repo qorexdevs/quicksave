@@ -95,6 +95,7 @@ part of a name, or a glob (`*.py`, `src/**/test_*.py`). Pass several paths to ma
   file actually changed. The oldest match is always kept.
 - `--diff` - with `--changes`, print a unified diff between each consecutive change point
   (single-file queries only).
+- `--reverse` - oldest match first, to read a file's history forward.
 - `--limit N` - only the N newest matches.
 - `--count` - print only the number of matching snapshots.
 - `--json` - matches as json.

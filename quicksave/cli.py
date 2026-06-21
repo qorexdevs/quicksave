@@ -161,7 +161,8 @@ def cmd_list(args):
 def cmd_names(args):
     root = _root_or_die()
     named = [s for s in store.list_snapshots(root) if s.get("name")]
-    named.reverse()  # list_snapshots is oldest first, show newest names first
+    if not getattr(args, "reverse", False):
+        named.reverse()  # list_snapshots is oldest first, show newest names first
     if args.json:
         print(json.dumps([{"id": s["id"], "name": s["name"]} for s in named]))
         return
@@ -252,10 +253,11 @@ def cmd_find(args):
         snaps = [s for s in snaps if s["created_at"] and s["created_at"] <= cutoff]
     if getattr(args, "changes", False):
         snaps = _change_points(snaps)
-    if getattr(args, "reverse", False):
-        snaps = snaps[::-1]
     if args.limit and args.limit < len(snaps):
         snaps = snaps[:args.limit]
+
+    if getattr(args, "reverse", False):
+        snaps = snaps[::-1]
 
     if getattr(args, "count", False):
         print(len(snaps))
@@ -991,6 +993,7 @@ def build_parser():
 
     pnm = sub.add_parser("names", help="list named snapshots, newest first", parents=[common])
     pnm.add_argument("--json", action="store_true", help="print the named snapshots as json")
+    pnm.add_argument("--reverse", action="store_true", help="show oldest first instead of newest first")
     pnm.set_defaults(func=cmd_names)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])
@@ -1014,6 +1017,8 @@ def build_parser():
                     help="show only snapshots where the matched content changed, skipping repeats")
     pf.add_argument("--diff", action="store_true",
                     help="with --changes, print a unified diff between each consecutive change point (single-file queries only)")
+    pf.add_argument("--reverse", action="store_true",
+                    help="show oldest match first instead of newest, to read a file's history forward")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.add_argument("--count", action="store_true",
                     help="print only the number of matching snapshots, nothing else")

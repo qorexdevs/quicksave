@@ -149,7 +149,8 @@ finds it wherever it lived. A query with glob chars matches that way instead, so
 or `quicksave find 'src/**/test_*.py'` work too. `-i`/`--ignore-case` matches the path without regard
 to case, so `quicksave find -i readme` reaches `README.md`. `--limit N` keeps only the N newest matches
 when you just want the last few, and `--since 2h`/`--before 7d` scope the search to a time window
-(a duration or a date), the same way `list` filters. You can pass several paths at once, like `recover`
+(a duration or a date), the same way `list` filters. `--reverse` flips the order to oldest first so you
+can read a file's history forward. You can pass several paths at once, like `recover`
 does, so `quicksave find app.py config.json` lists snapshots holding either.
 
 When you don't care which checkpoint, `quicksave recover app.py` skips that step: it finds the newest

@@ -5,7 +5,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-21
+
 ### Added
+- `find --reverse` lists matches oldest first instead of newest, so you can read a file's history
+  forward. Mirrors the `--reverse` flag `list` already has.
 - `docs/commands.md` - a full per-command reference with every flag and a short example each, plus
   a refs and ignore-rules section. Linked from the README so the usage block stays the quick list.
 - `save -m -` reads the snapshot message from stdin, so you can pipe one in
@@ -164,6 +168,8 @@ you can roll back files an agent deleted or overwrote, even ones git never track
 - a `PreToolUse` hook (`quicksave hook`) plus `hook install` for Claude Code and Codex, to
   auto-checkpoint before a risky command.
 
+[0.6.0]: https://github.com/qorexdevs/quicksave/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/qorexdevs/quicksave/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/qorexdevs/quicksave/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/qorexdevs/quicksave/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/qorexdevs/quicksave/releases/tag/v0.2.0

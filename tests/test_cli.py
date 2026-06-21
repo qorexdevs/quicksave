@@ -281,6 +281,24 @@ def test_names_lists_only_named_snapshots_newest_first(tmp_path, monkeypatch, ca
     out = capsys.readouterr().out
     assert "second" in out and "first" in out
 
+def test_names_reverse_shows_oldest_first(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base", "-n", "first"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "mid"])  # no name
+    (tmp_path / "a.txt").write_text("v3")
+    main(["save", "-m", "top", "-n", "second"])
+    capsys.readouterr()
+
+    main(["names", "--json"])
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["name"] for r in rows] == ["second", "first"]
+
+    main(["names", "--reverse", "--json"])
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["name"] for r in rows] == ["first", "second"]
 
 def test_names_empty_state(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
@@ -1331,6 +1349,20 @@ def test_cli_find_reverse_with_limit_keeps_oldest(tmp_path, monkeypatch, capsys)
     main(["find", "keep.txt", "--limit", "2", "--reverse", "--json"])
     data = json.loads(capsys.readouterr().out)
     assert [s["message"] for s in data] == ["one", "two"]
+
+def test_cli_find_reverse(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "keep.txt"
+    main(["init"])
+    for v in ("one", "two", "three"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["find", "keep.txt", "--reverse", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in data] == ["one", "two", "three"]
+
 
 def test_cli_find_since_and_before_window(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)

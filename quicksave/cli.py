@@ -518,6 +518,23 @@ def cmd_undo(args):
     console.print(f"undid last restore, [cyan]{n}[/] files back to [cyan]{backup}[/]{extra}")
 
 
+def cmd_check_ignore(args):
+    root = _root_or_die()
+    results = [store.check_ignore(root, p) for p in args.paths]
+    if args.json:
+        print(json.dumps(results))
+    else:
+        for r in results:
+            if r["ignored"]:
+                where = r["source"] if r["source"] == "built-in" else f"{r['source']}:{r['line']}"
+                console.print(f"[red]ignored[/] {r['path']} [dim]({where}: {r['rule']})[/]")
+            else:
+                console.print(f"[green]kept[/]    {r['path']}")
+    # like 'git check-ignore --quiet': non-zero unless every path is ignored
+    if args.exit_code and not all(r["ignored"] for r in results):
+        raise SystemExit(1)
+
+
 def cmd_status(args):
     root = _root_or_die()
     s = store.status(root, args.ref)
@@ -1077,6 +1094,15 @@ def build_parser():
     pt.add_argument("--exit-code", action="store_true",
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.set_defaults(func=cmd_status)
+
+    pci = sub.add_parser("check-ignore",
+                         help="show whether paths would be captured or ignored, and which rule decided",
+                         parents=[common])
+    pci.add_argument("paths", nargs="+", metavar="path", help="paths to test against the ignore rules")
+    pci.add_argument("--json", action="store_true", help="print the verdicts as json")
+    pci.add_argument("--exit-code", action="store_true",
+                     help="exit non-zero unless every listed path is ignored")
+    pci.set_defaults(func=cmd_check_ignore)
 
     pd = sub.add_parser("diff", help="show what changed between two snapshots, or a snapshot and the working tree", parents=[common])
     pd.add_argument("a", help="snapshot id or number, or 'wt' for the working tree")

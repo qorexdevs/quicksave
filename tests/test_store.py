@@ -131,6 +131,28 @@ def test_negation_reincludes_glob_match(tmp_path):
     assert "debug.log" not in files
 
 
+def test_check_ignore_reports_rule_and_source(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / ".gitignore").write_text(".env\n*.log\n")
+    (tmp_path / ".quicksaveignore").write_text("!.env\n")
+
+    kept = store.check_ignore(tmp_path, "main.py")
+    assert kept["ignored"] is False and kept["rule"] is None
+
+    logged = store.check_ignore(tmp_path, "run.log")
+    assert logged["ignored"] is True
+    assert logged["source"] == ".gitignore" and logged["line"] == 2
+
+    # .quicksaveignore runs last, so '!.env' wins over the .gitignore ignore
+    env = store.check_ignore(tmp_path, ".env")
+    assert env["ignored"] is False
+    assert env["source"] == ".quicksaveignore" and env["negated"] is True
+
+    # built-in dir names report as such and can't be un-ignored
+    built = store.check_ignore(tmp_path, "node_modules/pkg/index.js")
+    assert built["ignored"] is True and built["source"] == "built-in"
+
+
 def test_dedup_same_content(tmp_path):
     store.init(tmp_path)
     (tmp_path / "a.txt").write_text("same")

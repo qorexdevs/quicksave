@@ -53,16 +53,18 @@ def init(path=None):
     return root, True
 
 
-def load_patterns(root):
+def load_patterns_sourced(root):
     # gitignore-style globs, comments and blanks dropped. each rule is (pattern,
-    # negated); a leading '!' re-includes a path an earlier rule ignored, so a
-    # gitignored .env can be kept with '!.env' in .quicksaveignore.
+    # negated, source file, line number); a leading '!' re-includes a path an
+    # earlier rule ignored, so a gitignored .env can be kept with '!.env' in
+    # .quicksaveignore. the source/line ride along so check-ignore can say which
+    # rule decided a path.
     pats = []
     for name in IGNORE_FILES:
         f = Path(root) / name
         if not f.is_file():
             continue
-        for line in f.read_text(encoding="utf-8", errors="replace").splitlines():
+        for i, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -70,8 +72,33 @@ def load_patterns(root):
             if neg:
                 line = line[1:].strip()
             if line:
-                pats.append((line.rstrip("/"), neg))
+                pats.append((line.rstrip("/"), neg, name, i))
     return pats
+
+
+def load_patterns(root):
+    return [(pat, neg) for pat, neg, _, _ in load_patterns_sourced(root)]
+
+
+def check_ignore(root, relpath, ignore=DEFAULT_IGNORE):
+    # explain whether a path would be captured or ignored, and which rule said
+    # so. built-in dir names win first (they can't be un-ignored), then the
+    # ignore files with last-match-wins, same order iter_files uses.
+    relpath = relpath.replace("\\", "/").strip("/")
+    parts = relpath.split("/")
+    for seg in parts:
+        if seg in ignore:
+            return {"path": relpath, "ignored": True, "rule": seg,
+                    "source": "built-in", "line": None, "negated": False}
+    base = parts[-1]
+    verdict = {"path": relpath, "ignored": False, "rule": None,
+               "source": None, "line": None, "negated": False}
+    for pat, neg, src, ln in load_patterns_sourced(root):
+        if pat and _pat_hits(relpath, parts, base, pat):
+            verdict = {"path": relpath, "ignored": not neg,
+                       "rule": ("!" + pat) if neg else pat,
+                       "source": src, "line": ln, "negated": neg}
+    return verdict
 
 
 def _pat_hits(relpath, parts, base, pat):

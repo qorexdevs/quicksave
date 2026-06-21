@@ -85,6 +85,7 @@ quicksave names                # list just the named snapshots, newest first
 quicksave status               # what changed in the tree since the last snapshot
 quicksave status --short       # one line like '~3 +1 -0' (or 'clean') for a prompt or agent
 quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'
+quicksave check-ignore .env    # is a path captured or ignored, and which rule decided (git check-ignore -v style)
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
 quicksave recover app.py       # just bring it back from the newest snapshot that has it
 quicksave recover app.py util.py config.json # several at once, each from its own newest snapshot

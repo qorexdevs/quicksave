@@ -513,6 +513,28 @@ def test_save_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
     assert "nothing changed" in capsys.readouterr().out
 
 
+def test_cli_check_ignore(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".gitignore").write_text(".env\n")
+    (tmp_path / ".quicksaveignore").write_text("!.env\n*.log\n")
+    main(["init"])
+    capsys.readouterr()
+
+    main(["check-ignore", "--json", ".env", "run.log", "app.py"])
+    out = json.loads(capsys.readouterr().out)
+    assert out[0]["ignored"] is False and out[0]["source"] == ".quicksaveignore"
+    assert out[1]["ignored"] is True
+    assert out[2]["ignored"] is False
+
+    # --exit-code is non-zero because app.py is kept, not ignored
+    code = 0
+    try:
+        main(["check-ignore", "--exit-code", "run.log", "app.py"])
+    except SystemExit as e:
+        code = e.code
+    assert code == 1
+
+
 def test_cli_gc_json(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"

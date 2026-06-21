@@ -6,6 +6,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `check-ignore PATH...` tells you whether a path would be captured or ignored and which rule
+  decided it, like `git check-ignore -v`. It reports the source file and line (or `built-in` for the
+  baked-in dir names), so when `.env` won't save you can see which `.gitignore` line caught it and
+  whether a `!.env` in `.quicksaveignore` overrode it. `--json` and `--exit-code` too.
 - `names --grep TEXT` lists only named snapshots whose name contains the text, case-insensitive,
   the same way `list --grep` filters. Handy once you've labeled a lot of checkpoints.
 - `names --reverse` shows named snapshots oldest first instead of newest first, mirroring the

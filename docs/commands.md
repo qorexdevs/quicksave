@@ -175,6 +175,24 @@ quicksave status --short
 quicksave status --exit-code
 ```
 
+## check-ignore
+
+Test paths against the ignore rules and show which rule decided each one, like `git check-ignore -v`.
+Use it when a file you expected to be saved isn't showing up (or one you wanted skipped is).
+
+- `path...` - one or more paths to test.
+- `--exit-code` - exit non-zero unless every listed path is ignored.
+- `--json` - print the verdicts as json, with `ignored`, `rule`, `source` and `line` per path.
+
+The `source` is the ignore file the matching rule came from (`.gitignore` or `.quicksaveignore`), or
+`built-in` for the baked-in dir names like `node_modules`. Last match wins, and `.quicksaveignore` is
+read after `.gitignore`, so a `!.env` there overrides a `.env` ignore upstream.
+
+```
+quicksave check-ignore .env build/out.js src/app.py
+quicksave check-ignore --json secrets.txt
+```
+
 ## diff
 
 Show what changed between two snapshots, or a snapshot and the working tree. The ref `wt` stands in

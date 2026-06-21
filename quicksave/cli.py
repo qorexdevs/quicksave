@@ -161,7 +161,8 @@ def cmd_list(args):
 def cmd_names(args):
     root = _root_or_die()
     named = [s for s in store.list_snapshots(root) if s.get("name")]
-    named.reverse()  # list_snapshots is oldest first, show newest names first
+    if not getattr(args, "reverse", False):
+        named.reverse()  # list_snapshots is oldest first, show newest names first
     if args.json:
         print(json.dumps([{"id": s["id"], "name": s["name"]} for s in named]))
         return
@@ -991,6 +992,7 @@ def build_parser():
 
     pnm = sub.add_parser("names", help="list named snapshots, newest first", parents=[common])
     pnm.add_argument("--json", action="store_true", help="print the named snapshots as json")
+    pnm.add_argument("--reverse", action="store_true", help="show oldest first instead of newest first")
     pnm.set_defaults(func=cmd_names)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])

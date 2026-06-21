@@ -253,10 +253,11 @@ def cmd_find(args):
         snaps = [s for s in snaps if s["created_at"] and s["created_at"] <= cutoff]
     if getattr(args, "changes", False):
         snaps = _change_points(snaps)
-    if getattr(args, "reverse", False):
-        snaps = list(reversed(snaps))
     if args.limit and args.limit < len(snaps):
         snaps = snaps[:args.limit]
+
+    if getattr(args, "reverse", False):
+        snaps = snaps[::-1]
 
     if getattr(args, "count", False):
         print(len(snaps))

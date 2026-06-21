@@ -161,13 +161,20 @@ def cmd_list(args):
 def cmd_names(args):
     root = _root_or_die()
     named = [s for s in store.list_snapshots(root) if s.get("name")]
+    grep = getattr(args, "grep", None)
+    if grep:
+        needle = grep.lower()
+        named = [s for s in named if needle in s["name"].lower()]
     if not getattr(args, "reverse", False):
         named.reverse()  # list_snapshots is oldest first, show newest names first
     if args.json:
         print(json.dumps([{"id": s["id"], "name": s["name"]} for s in named]))
         return
     if not named:
-        console.print("[dim]no named snapshots yet, name one with 'quicksave name <ref> <name>'[/]")
+        if grep:
+            console.print(f"[dim]no named snapshots match '{grep}'[/]")
+        else:
+            console.print("[dim]no named snapshots yet, name one with 'quicksave name <ref> <name>'[/]")
         return
     table = Table(box=None, pad_edge=False, show_header=False)
     table.add_column("id", style="cyan")
@@ -993,6 +1000,8 @@ def build_parser():
 
     pnm = sub.add_parser("names", help="list named snapshots, newest first", parents=[common])
     pnm.add_argument("--json", action="store_true", help="print the named snapshots as json")
+    pnm.add_argument("--grep", default=None, metavar="TEXT",
+                     help="show only named snapshots whose name contains this text")
     pnm.add_argument("--reverse", action="store_true", help="show oldest first instead of newest first")
     pnm.set_defaults(func=cmd_names)
 

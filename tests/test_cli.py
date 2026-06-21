@@ -300,6 +300,24 @@ def test_names_reverse_shows_oldest_first(tmp_path, monkeypatch, capsys):
     rows = json.loads(capsys.readouterr().out)
     assert [r["name"] for r in rows] == ["first", "second"]
 
+def test_names_grep_filters_by_name(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base", "-n", "release-1"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "mid", "-n", "wip"])
+    (tmp_path / "a.txt").write_text("v3")
+    main(["save", "-m", "top", "-n", "release-2"])
+    capsys.readouterr()
+
+    main(["names", "--grep", "RELEASE", "--json"])
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["name"] for r in rows] == ["release-2", "release-1"]
+
+    main(["names", "--grep", "nope"])
+    assert "no named snapshots match 'nope'" in capsys.readouterr().out
+
 def test_names_empty_state(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

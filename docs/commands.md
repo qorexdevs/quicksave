@@ -63,6 +63,8 @@ quicksave list --grep "rm -rf"
 
 List just the named snapshots, id and name, newest first.
 
+- `--grep TEXT` - show only names containing the text, case-insensitive.
+- `--reverse` - oldest first instead of newest first.
 - `--json` - same as a json list.
 
 ```

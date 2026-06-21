@@ -10,6 +10,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   the same way `list --grep` filters. Handy once you've labeled a lot of checkpoints.
 - `names --reverse` shows named snapshots oldest first instead of newest first, mirroring the
   `--reverse` flag `list` and `find` already have.
+- ignore rules now honor `!` negation with gitignore-style last-match-wins. `.quicksaveignore` is
+  read after `.gitignore` so it can override it - if `.env` is gitignored, `!.env` in
+  `.quicksaveignore` keeps quicksave capturing it, which is the whole point of the tool.
 
 ## [0.6.0] - 2026-06-21
 

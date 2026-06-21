@@ -354,5 +354,10 @@ Anywhere a command takes a snapshot ref you can use:
 
 Caches and vendored deps are skipped by default (`.git`, `node_modules`, `__pycache__`, `venv`,
 `.venv`, `dist`, `build`). Drop a `.quicksaveignore` with gitignore-style globs in the project root to
-skip more; an existing `.gitignore` is read too. `.env` is intentionally not ignored, keeping it safe
-is the point.
+skip more; an existing `.gitignore` is read too.
+
+Rules follow gitignore's last-match-wins order, and a leading `!` re-includes a path an earlier rule
+ignored. `.quicksaveignore` is read after `.gitignore`, so it can override it. That matters for files
+git ignores but you still want to recover: if `.env` is in your `.gitignore`, add `!.env` to
+`.quicksaveignore` and quicksave will keep capturing it. As with git, a `!` rule can't re-include a
+file whose parent directory is already ignored.

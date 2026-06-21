@@ -11,8 +11,9 @@ from pathlib import Path
 
 STORE_DIR = ".quicksave"
 
-# extra ignore patterns are read from these, gitignore-style globs
-IGNORE_FILES = (".quicksaveignore", ".gitignore")
+# extra ignore patterns are read from these, gitignore-style globs. order matters:
+# .quicksaveignore is read last so its rules (e.g. '!.env') override .gitignore
+IGNORE_FILES = (".gitignore", ".quicksaveignore")
 
 # dirs we never want in a snapshot: vcs metadata, caches, vendored deps, envs
 DEFAULT_IGNORE = {
@@ -53,7 +54,9 @@ def init(path=None):
 
 
 def load_patterns(root):
-    # gitignore-style globs, comments and blanks dropped, no full gitignore semantics
+    # gitignore-style globs, comments and blanks dropped. each rule is (pattern,
+    # negated); a leading '!' re-includes a path an earlier rule ignored, so a
+    # gitignored .env can be kept with '!.env' in .quicksaveignore.
     pats = []
     for name in IGNORE_FILES:
         f = Path(root) / name
@@ -63,30 +66,37 @@ def load_patterns(root):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            # no full gitignore semantics here, so a negation can't re-include an
-            # already-ignored path. stripping the '!' would flip it into an ignore
-            # rule, the opposite of what was meant, so skip the line instead.
-            if line.startswith("!"):
-                continue
-            pats.append(line.rstrip("/"))
+            neg = line.startswith("!")
+            if neg:
+                line = line[1:].strip()
+            if line:
+                pats.append((line.rstrip("/"), neg))
     return pats
 
 
+def _pat_hits(relpath, parts, base, pat):
+    if fnmatch.fnmatch(relpath, pat) or fnmatch.fnmatch(base, pat):
+        return True
+    # a bare name like "logs" ignores it at any depth
+    if "/" not in pat and any(fnmatch.fnmatch(seg, pat) for seg in parts):
+        return True
+    # a path like "build/out" ignores everything under it
+    if relpath == pat or relpath.startswith(pat + "/"):
+        return True
+    return False
+
+
 def _matches(relpath, patterns):
+    # last matching rule wins, like gitignore: a later '!pat' un-ignores a path
     parts = relpath.split("/")
     base = parts[-1]
-    for pat in patterns:
+    ignored = False
+    for pat, neg in patterns:
         if not pat:
             continue
-        if fnmatch.fnmatch(relpath, pat) or fnmatch.fnmatch(base, pat):
-            return True
-        # a bare name like "logs" ignores it at any depth
-        if "/" not in pat and any(fnmatch.fnmatch(seg, pat) for seg in parts):
-            return True
-        # a path like "build/out" ignores everything under it
-        if relpath == pat or relpath.startswith(pat + "/"):
-            return True
-    return False
+        if _pat_hits(relpath, parts, base, pat):
+            ignored = not neg
+    return ignored
 
 
 def iter_files(root, ignore=DEFAULT_IGNORE, patterns=None):

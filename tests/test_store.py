@@ -109,6 +109,28 @@ def test_negation_line_does_not_ignore(tmp_path):
     assert "keep.log" in files
 
 
+def test_negation_reincludes_gitignored_file(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / ".env").write_text("API_KEY=secret")
+    (tmp_path / "out.tmp").write_text("nope")
+    # git ignores .env, but we still want quicksave to capture it
+    (tmp_path / ".gitignore").write_text(".env\n*.tmp\n")
+    (tmp_path / ".quicksaveignore").write_text("!.env\n")
+    files = {p.as_posix() for p in store.iter_files(tmp_path)}
+    assert ".env" in files
+    assert "out.tmp" not in files
+
+
+def test_negation_reincludes_glob_match(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "debug.log").write_text("noise")
+    (tmp_path / "audit.log").write_text("keep me")
+    (tmp_path / ".quicksaveignore").write_text("*.log\n!audit.log\n")
+    files = {p.as_posix() for p in store.iter_files(tmp_path)}
+    assert "audit.log" in files
+    assert "debug.log" not in files
+
+
 def test_dedup_same_content(tmp_path):
     store.init(tmp_path)
     (tmp_path / "a.txt").write_text("same")

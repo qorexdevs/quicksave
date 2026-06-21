@@ -6,6 +6,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `restore --json` prints the result instead of the styled line: the ref, how many files came
+  back, the removed count and the safety-backup id, so a hook can roll back and then check what
+  happened. With `--dry-run --json` it emits the plan (created/overwritten/removed/missing) and
+  writes nothing, matching `recover --json`.
 - `import --dry-run` previews an archive before it lands: file count, total size, the name it
   would carry and the first paths, without writing any blobs or a snapshot. Handy for peeking at
   a tarball someone handed you before it turns into a checkpoint.

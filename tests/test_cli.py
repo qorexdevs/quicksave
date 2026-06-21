@@ -384,6 +384,38 @@ def test_cli_restore_dry_run_changes_nothing(tmp_path, monkeypatch, capsys):
     assert (tmp_path / "note.md").read_text() == "edited"
 
 
+def test_restore_json_reports_result(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "note.md").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    (tmp_path / "note.md").write_text("v2")
+    main(["restore", "0", "--json"])
+    res = json.loads(capsys.readouterr().out)
+    assert res["ref"] == "0"
+    assert res["restored"] == 1
+    assert res["backup"]  # pre-restore tree was snapshotted
+    assert (tmp_path / "note.md").read_text() == "v1"
+
+
+def test_restore_dry_run_json_writes_nothing(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "note.md").write_text("draft")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    (tmp_path / "note.md").write_text("edited")
+    main(["restore", "0", "--dry-run", "--json"])
+    res = json.loads(capsys.readouterr().out)
+    assert res["dry_run"] is True
+    assert res["overwritten"] == ["note.md"]
+    assert res["would_write"] == 1
+    assert (tmp_path / "note.md").read_text() == "edited"
+
+
 def test_cli_list_json(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

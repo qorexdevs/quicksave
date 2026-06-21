@@ -76,6 +76,7 @@ quicksave restore 3 --clean    # exact rewind: also delete files added after the
 quicksave restore 3 --dry-run  # preview what restore would write or delete, no changes
 quicksave restore 3 --no-backup # skip the safety snapshot of the current tree
 quicksave restore 3 --into /tmp/old # pull the snapshot aside, leave the live tree alone
+quicksave restore 3 --json     # report the files restored and the safety backup id, for a hook
 quicksave undo                 # revert the last restore, back to the pre-restore tree
 quicksave name 3 good-build    # tag an existing snapshot after the fact (empty name clears it)
 quicksave names                # list just the named snapshots, newest first
@@ -89,7 +90,7 @@ quicksave recover app.py --from 3 # pull it from snapshot 3 if the newest copy i
 quicksave recover app.py --json # report which snapshot it pulled from and the recovered files
 quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
-quicksave list --json          # machine-readable output, same for save, status, stats, log, diff and recover --json
+quicksave list --json          # machine-readable output, same for save, status, stats, log, diff, restore and recover --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave show src/app.py      # same, from the newest snapshot that still has it
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched

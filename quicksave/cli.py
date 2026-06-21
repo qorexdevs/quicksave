@@ -409,12 +409,16 @@ def cmd_recover(args):
 def cmd_restore(args):
     root = _root_or_die()
     into = getattr(args, "into", None)
+    as_json = getattr(args, "json", False)
+    ref = args.ref or "latest"
     if into:
         # pulling a snapshot aside, the live tree is untouched so no backup and
         # no clean. dry-run previews against the tree, which is meaningless here.
         target = store.resolve_id(root, args.ref)
         n, _, _ = store.restore(root, target, args.paths, dest=into)
-        ref = args.ref or "latest"
+        if as_json:
+            print(json.dumps({"ref": ref, "restored": n, "into": into, "paths": args.paths}))
+            return
         scope = f" [dim]({', '.join(args.paths)})[/]" if args.paths else ""
         console.print(f"restored [cyan]{n}[/] files from [cyan]{ref}[/] into [cyan]{into}[/]{scope}")
         return
@@ -425,12 +429,18 @@ def cmd_restore(args):
     # restore is itself reversible. resolve the target before the backup so it
     # doesn't become the new "latest" and shadow a bare 'restore' ref.
     target = store.resolve_id(root, args.ref)
+    backup = None
     if not args.no_backup:
         bid, _, made = store.save(root, message=f"before restore of {args.ref or 'latest'}")
         if made:
-            console.print(f"[dim]backed up current tree as {bid}[/]")
+            backup = bid
+            if not as_json:
+                console.print(f"[dim]backed up current tree as {bid}[/]")
     n, removed, manifest = store.restore(root, target, args.paths, clean=args.clean)
-    ref = args.ref or "latest"
+    if as_json:
+        print(json.dumps({"ref": ref, "restored": n, "removed": removed,
+                          "backup": backup, "paths": args.paths}))
+        return
     when = manifest.get("message") or ref
     scope = f" [dim]({', '.join(args.paths)})[/]" if args.paths else ""
     extra = f" [red](removed {removed})[/]" if removed else ""
@@ -441,6 +451,11 @@ def cmd_restore_preview(args, root):
     p = store.restore_plan(root, args.ref, args.paths, clean=args.clean)
     ref = args.ref or "latest"
     total = len(p["created"]) + len(p["overwritten"])
+    if getattr(args, "json", False):
+        print(json.dumps({"ref": ref, "dry_run": True, "would_write": total,
+                          "created": p["created"], "overwritten": p["overwritten"],
+                          "removed": p["removed"], "missing": p["missing"]}))
+        return
     if not total and not p["removed"] and not p["missing"]:
         console.print(f"[dim]nothing to restore from {ref}[/]")
         return
@@ -1007,6 +1022,7 @@ def build_parser():
                     help="don't snapshot the current tree before restoring")
     pr.add_argument("--into", metavar="DIR",
                     help="write the snapshot into DIR instead of overwriting the tree")
+    pr.add_argument("--json", action="store_true", help="print the result as json")
     pr.set_defaults(func=cmd_restore)
 
     pu = sub.add_parser("undo", help="revert the last restore, back to the pre-restore tree", parents=[common])

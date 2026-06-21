@@ -52,6 +52,8 @@ def cmd_init(args):
 
 def cmd_save(args):
     root = _root_or_die()
+    if args.message == "-":
+        args.message = sys.stdin.read().rstrip("\n")
     if getattr(args, "dry_run", False):
         p = store.save_preview(root)
         if getattr(args, "json", False):

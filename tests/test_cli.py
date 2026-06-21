@@ -1592,3 +1592,24 @@ def test_find_changes_diff_multi_path_bails(tmp_path, monkeypatch, capsys):
         main(["find", "*.py", "--changes", "--diff"])
     err_out = capsys.readouterr().err
     assert "exactly one file path" in err_out
+
+
+def test_save_message_from_stdin(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "file.txt").write_text("content")
+    main(["init"])
+    monkeypatch.setattr("sys.stdin", io.StringIO("message from stdin\n"))
+    main(["save", "-m", "-"])
+    out = capsys.readouterr().out
+    assert "message from stdin" in out
+
+
+def test_save_message_from_stdin_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "file.txt").write_text("content")
+    main(["init"])
+    capsys.readouterr()
+    monkeypatch.setattr("sys.stdin", io.StringIO("piped message"))
+    main(["save", "-m", "-", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data["message"] == "piped message"

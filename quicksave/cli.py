@@ -1022,8 +1022,6 @@ def build_parser():
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.add_argument("--count", action="store_true",
                     help="print only the number of matching snapshots, nothing else")
-    pf.add_argument("--reverse", action="store_true",
-                    help="show oldest first instead of newest first")
     pf.set_defaults(func=cmd_find)
 
     prc = sub.add_parser("recover", help="restore files from the newest snapshot that still has them", parents=[common])

@@ -1183,6 +1183,39 @@ def test_stats_counts_and_dedup(tmp_path):
     assert s["first"] <= s["last"]
 
 
+def test_stats_top_snapshots_unique_bytes(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("same")
+    (tmp_path / "b.txt").write_text("same")
+    store.save(tmp_path, message="first", name="base")
+    (tmp_path / "c.txt").write_text("other")
+    store.save(tmp_path, message="second", name="extra")
+
+    s = store.stats(tmp_path, top=5)
+    by_name = {r["name"]: r for r in s["top_snapshots"]}
+    assert by_name["base"]["unique_bytes"] == 0
+    assert by_name["extra"]["unique_bytes"] == len("other")
+    assert s["top_snapshots"][0]["name"] == "extra"
+    assert s["top_snapshots"][0]["unique_bytes"] >= s["top_snapshots"][1]["unique_bytes"]
+
+    one = store.stats(tmp_path, top=1)
+    assert len(one["top_snapshots"]) == 1
+    assert one["top_snapshots"][0]["name"] == "extra"
+
+    assert store.stats(tmp_path, top=0)["top_snapshots"] == []
+    assert store.stats(tmp_path, top=-1)["top_snapshots"] == []
+
+    root = tmp_path / "tie"
+    root.mkdir()
+    store.init(root)
+    for text in ("one", "two", "three"):
+        (root / "f.txt").write_text(text)
+        store.save(root, message=text)
+    tied = store.stats(root, top=3)["top_snapshots"]
+    assert len(tied) == 3
+    assert tied[0]["seq"] > tied[1]["seq"] > tied[2]["seq"]
+
+
 def test_stats_ratio_when_empty(tmp_path):
     store.init(tmp_path)
     s = store.stats(tmp_path)

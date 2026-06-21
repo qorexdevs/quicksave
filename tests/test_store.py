@@ -449,6 +449,97 @@ def test_import_from_stream_rejects_non_tar(tmp_path):
         store.import_archive(tmp_path, "-", fileobj=io.BytesIO(b"not a tar at all"))
 
 
+def test_import_dry_run_reports_files_size_and_name_without_writing(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "b.txt").write_text("world")
+    store.save(tmp_path, name="golden")
+
+    dest = tmp_path / "out.tar.gz"
+    store.export_snapshot(tmp_path, None, dest)
+
+    store_dir = store.store_path(tmp_path)
+    blobs_before = sorted(store._iter_blobs(store_dir))
+    snaps_before = sorted(store._snapshot_files(store_dir))
+
+    p = store.import_preview(tmp_path, dest)
+    assert p["files"] == 2
+    assert p["size"] == len(b"hello") + len(b"world")
+    assert p["name"] == "golden"
+    assert p["paths"] == ["a.txt", "sub/b.txt"]
+
+    assert sorted(store._iter_blobs(store_dir)) == blobs_before
+    assert sorted(store._snapshot_files(store_dir)) == snaps_before
+
+
+def test_import_dry_run_unnamed_archive_reports_empty_name(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    store.save(tmp_path)
+
+    dest = tmp_path / "out.tar"
+    store.export_snapshot(tmp_path, None, dest)
+
+    p = store.import_preview(tmp_path, dest)
+    assert p["name"] == ""
+
+
+def test_import_dry_run_from_stream(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    store.save(tmp_path, name="piped")
+
+    buf = io.BytesIO()
+    store.export_snapshot(tmp_path, None, "-", out=buf)
+    buf.seek(0)
+
+    p = store.import_preview(tmp_path, "-", fileobj=buf)
+    assert p["files"] == 1
+    assert p["name"] == "piped"
+    assert p["paths"] == ["a.txt"]
+
+
+def test_import_dry_run_rejects_path_escape(tmp_path):
+    import tarfile
+
+    store.init(tmp_path)
+    bad = tmp_path / "evil.tar"
+    with tarfile.open(bad, "w") as tar:
+        info = tarfile.TarInfo("../escape.txt")
+        data = b"x"
+        info.size = len(data)
+        tar.addfile(info, io.BytesIO(data))
+    with pytest.raises(store.QuicksaveError):
+        store.import_preview(tmp_path, bad)
+
+
+def test_import_dry_run_empty_archive_raises(tmp_path):
+    import tarfile
+
+    store.init(tmp_path)
+    empty = tmp_path / "empty.tar"
+    with tarfile.open(empty, "w"):
+        pass
+    with pytest.raises(store.QuicksaveError):
+        store.import_preview(tmp_path, empty)
+
+
+def test_import_dry_run_not_a_tar_raises(tmp_path):
+    store.init(tmp_path)
+    bogus = tmp_path / "bogus.tar"
+    bogus.write_text("plain text, not a tar")
+    with pytest.raises(store.QuicksaveError):
+        store.import_preview(tmp_path, bogus)
+
+
+def test_import_dry_run_requires_quicksave_project(tmp_path):
+    # no store.init() here
+    dest = tmp_path / "out.tar"
+    with pytest.raises(store.QuicksaveError):
+        store.import_preview(tmp_path, dest)
+
+
 def test_diff_between_snapshots(tmp_path):
     store.init(tmp_path)
     (tmp_path / "keep.txt").write_text("same")

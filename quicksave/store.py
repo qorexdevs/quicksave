@@ -857,6 +857,49 @@ def import_archive(root, src, message="", name="", fileobj=None):
     return snap_id, len(files)
 
 
+def import_preview(root, src, fileobj=None):
+    # what 'import' would capture from the archive, without writing any blobs
+    # or a manifest. shares the member-walking logic with import_archive, but
+    # only reads sizes and paths instead of calling _write_blob.
+    root = Path(root)
+    store = store_path(root)
+    if not store.is_dir():
+        raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
+    if fileobj is not None:
+        src = io.BytesIO(fileobj.read())
+    else:
+        src = Path(src)
+        if not src.is_file():
+            raise QuicksaveError(f"archive '{src}' not found")
+
+    paths = []
+    total = 0
+    stored_name = ""
+    try:
+        with _open_archive(src) as tar:
+            for member in tar.getmembers():
+                if not member.isfile():
+                    continue
+                rel = member.name[2:] if member.name.startswith("./") else member.name
+                if rel == _META_NAME:
+                    f = tar.extractfile(member)
+                    if f is not None:
+                        stored_name = f.read().decode().strip()
+                    continue
+                if not rel or rel.startswith("/") or ".." in Path(rel).parts:
+                    raise QuicksaveError(f"unsafe path in archive: {member.name}")
+                paths.append(Path(rel).as_posix())
+                total += member.size
+    except tarfile.TarError as e:
+        label = "stdin" if fileobj is not None else src
+        raise QuicksaveError(f"can't read '{label}' as a tar archive: {e}")
+    if not paths:
+        raise QuicksaveError("no files in archive")
+
+    paths.sort()
+    return {"files": len(paths), "size": total, "name": stored_name, "paths": paths}
+
+
 # commands worth a checkpoint before an agent runs them: deletes, overwrites,
 # in-place edits and history rewrites. not exhaustive, just the usual footguns.
 _RISKY = [

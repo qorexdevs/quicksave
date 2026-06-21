@@ -94,6 +94,7 @@ quicksave show 3 src/app.py    # print one file from a snapshot without touching
 quicksave show src/app.py      # same, from the newest snapshot that still has it
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave import backup.tgz    # read a tar archive back into a new snapshot
+quicksave import backup.tgz --dry-run # preview file count, size and the name it would carry, no changes
 quicksave export - -z | ssh host 'cd repo && quicksave import -'  # pipe a gzipped checkpoint to another machine
 quicksave diff 2 3             # see what changed between two snapshots
 quicksave diff 2 3 src/app.py # line-by-line diff of one file between snapshots

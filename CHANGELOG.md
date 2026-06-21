@@ -13,6 +13,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 - `export` stashes the snapshot name in the archive and `import` restores it, so a labeled
   checkpoint keeps its name across the round trip. Pass `--name` on import to override it.
   The name rides under the always-ignored `.quicksave/` prefix, so it never shows up as a file.
+- `import --dry-run` previews an archive before it lands as a snapshot: file count, total
+  size, the name it would carry, and the file paths, without writing any blobs or a manifest.
 - `find` takes more than one path now, the way `recover` does, so `find app.py config.json`
   lists every snapshot holding either, with the matched files merged per snapshot.
 - `find -i`/`--ignore-case` matches the path case-insensitively, so `find readme` reaches

@@ -653,6 +653,23 @@ def cmd_export(args):
 
 def cmd_import(args):
     root = _root_or_die()
+    if getattr(args, "dry_run", False):
+        if args.src == "-":
+            p = store.import_preview(root, args.src, fileobj=sys.stdin.buffer)
+            label_src = "stdin"
+        else:
+            p = store.import_preview(root, args.src)
+            label_src = args.src
+        name = f" [magenta]{p['name']}[/]" if p["name"] else ""
+        console.print(f"[dim]would import {p['files']} files ({_human_size(p['size'])}) "
+                      f"from {label_src} as[/]{name or ' [dim]unnamed[/]'}")
+        shown = p["paths"][:10]
+        for path in shown:
+            console.print(f"[dim]  {path}[/]")
+        if len(p["paths"]) > len(shown):
+            console.print(f"[dim]  ... and {len(p['paths']) - len(shown)} more[/]")
+        console.print("[dim]nothing written[/]")
+        return
     if args.src == "-":
         snap_id, n = store.import_archive(root, args.src, args.message, args.name,
                                           fileobj=sys.stdin.buffer)
@@ -1042,6 +1059,8 @@ def build_parser():
     pi.add_argument("src", help="archive to read (.tar/.tar.gz/.tgz), or - for stdin")
     pi.add_argument("-m", "--message", default="", help="snapshot message")
     pi.add_argument("--name", default="", help="label for the new snapshot")
+    pi.add_argument("--dry-run", action="store_true",
+                     help="preview file count, size and paths without writing anything")
     pi.set_defaults(func=cmd_import)
 
     plog = sub.add_parser("log", help="show one snapshot's details (default latest)", parents=[common])

@@ -1320,6 +1320,20 @@ def test_cli_find_limit(tmp_path, monkeypatch, capsys):
     assert data[1]["message"] == "two"
 
 
+def test_cli_find_reverse(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "keep.txt"
+    main(["init"])
+    for v in ("one", "two", "three"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["find", "keep.txt", "--reverse", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert [s["message"] for s in data] == ["one", "two", "three"]
+
+
 def test_cli_find_since_and_before_window(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "keep.txt"

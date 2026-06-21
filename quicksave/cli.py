@@ -252,6 +252,8 @@ def cmd_find(args):
         snaps = [s for s in snaps if s["created_at"] and s["created_at"] <= cutoff]
     if getattr(args, "changes", False):
         snaps = _change_points(snaps)
+    if getattr(args, "reverse", False):
+        snaps = list(reversed(snaps))
     if args.limit and args.limit < len(snaps):
         snaps = snaps[:args.limit]
 
@@ -1012,6 +1014,8 @@ def build_parser():
                     help="show only snapshots where the matched content changed, skipping repeats")
     pf.add_argument("--diff", action="store_true",
                     help="with --changes, print a unified diff between each consecutive change point (single-file queries only)")
+    pf.add_argument("--reverse", action="store_true",
+                    help="show oldest match first instead of newest, to read a file's history forward")
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.add_argument("--count", action="store_true",
                     help="print only the number of matching snapshots, nothing else")

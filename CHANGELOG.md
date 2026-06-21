@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `find --reverse` lists matches oldest first instead of newest, so you can read a file's history
+  forward. Mirrors the `--reverse` flag `list` already has.
 - `docs/commands.md` - a full per-command reference with every flag and a short example each, plus
   a refs and ignore-rules section. Linked from the README so the usage block stays the quick list.
 - `save -m -` reads the snapshot message from stdin, so you can pipe one in

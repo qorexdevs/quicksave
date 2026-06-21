@@ -312,6 +312,36 @@ def test_import_roundtrips_an_export(tmp_path):
     assert (tmp_path / "a.txt").read_text() == "hello"
 
 
+def test_export_import_keeps_the_name(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    store.save(tmp_path, name="golden")
+
+    dest = tmp_path / "out.tar"
+    store.export_snapshot(tmp_path, None, dest)
+    snap_id, _ = store.import_archive(tmp_path, dest)
+
+    f = store._resolve_snapshot(store.store_path(tmp_path), snap_id)
+    m = json.loads(f.read_text())
+    assert m["name"] == "golden"
+    # the carried name must not show up as a restorable file
+    assert sorted(m["files"]) == ["a.txt"]
+
+
+def test_import_name_overrides_the_carried_one(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    store.save(tmp_path, name="golden")
+
+    dest = tmp_path / "out.tar"
+    store.export_snapshot(tmp_path, None, dest)
+    snap_id, _ = store.import_archive(tmp_path, dest, name="override")
+
+    f = store._resolve_snapshot(store.store_path(tmp_path), snap_id)
+    m = json.loads(f.read_text())
+    assert m["name"] == "override"
+
+
 def test_import_rejects_path_escape(tmp_path):
     import tarfile
 

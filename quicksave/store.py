@@ -739,13 +739,33 @@ def export_snapshot(root, ref, dest, paths=None, out=None, gzip=False):
     if out is not None:
         with tarfile.open(fileobj=out, mode="w|gz" if gzip else "w|") as tar:
             written = _add_to_tar(tar, store, manifest, files)
+            _add_meta(tar, manifest)
         return written, "-"
 
     dest = Path(dest)
     mode = "w:gz" if gzip or dest.suffix in (".gz", ".tgz") else "w"
     with tarfile.open(dest, mode) as tar:
         written = _add_to_tar(tar, store, manifest, files)
+        _add_meta(tar, manifest)
     return written, dest
+
+
+# stash the snapshot name under .quicksave/ so it survives a round trip. that
+# prefix is always ignored, so it never clashes with a real tracked file and
+# import knows to read it as metadata instead of restoring it.
+_META_NAME = STORE_DIR + "/name"
+
+
+def _add_meta(tar, manifest):
+    name = manifest.get("name")
+    if not name:
+        return
+    data = name.encode()
+    info = tarfile.TarInfo(_META_NAME)
+    info.size = len(data)
+    if manifest.get("created_at"):
+        info.mtime = int(manifest["created_at"])
+    tar.addfile(info, io.BytesIO(data))
 
 
 def _add_to_tar(tar, store, manifest, files):
@@ -793,12 +813,18 @@ def import_archive(root, src, message="", name="", fileobj=None):
 
     files = {}
     newest = 0
+    stored_name = ""
     try:
         with _open_archive(src) as tar:
             for member in tar.getmembers():
                 if not member.isfile():
                     continue
                 rel = member.name[2:] if member.name.startswith("./") else member.name
+                if rel == _META_NAME:
+                    f = tar.extractfile(member)
+                    if f is not None:
+                        stored_name = f.read().decode().strip()
+                    continue
                 if not rel or rel.startswith("/") or ".." in Path(rel).parts:
                     raise QuicksaveError(f"unsafe path in archive: {member.name}")
                 f = tar.extractfile(member)
@@ -818,6 +844,8 @@ def import_archive(root, src, message="", name="", fileobj=None):
     if not files:
         raise QuicksaveError("no files in archive")
 
+    # keep the name from the archive unless the caller overrides it on import
+    name = name or stored_name
     snaps = _snapshot_files(store)
     # export stamps members with the snapshot's created_at, so the newest mtime
     # carries the original timestamp through an export/import round trip

@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `docs/commands.md` - a full per-command reference with every flag and a short example each, plus
+  a refs and ignore-rules section. Linked from the README so the usage block stays the quick list.
 - `save -m -` reads the snapshot message from stdin, so you can pipe one in
   (`git log -1 --format=%s | quicksave save -m -`) instead of quoting it on the command line.
   The trailing newline is stripped. Mirrors the `-` convention `import` already uses for its source.

@@ -54,6 +54,8 @@ Needs Python 3.10+.
 
 ## Usage
 
+Full per-command reference with every flag in [docs/commands.md](docs/commands.md). The common ones:
+
 ```
 quicksave init                 # start tracking this directory
 quicksave save -m "before refactor"

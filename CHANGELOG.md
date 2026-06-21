@@ -6,6 +6,12 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `save -m -` reads the snapshot message from stdin, so you can pipe one in
+  (`git log -1 --format=%s | quicksave save -m -`) instead of quoting it on the command line.
+  The trailing newline is stripped. Mirrors the `-` convention `import` already uses for its source.
+- `stats --top N` lists the N snapshots holding the most uniquely-owned bytes (blobs no other
+  snapshot references), so you can see what `drop` would actually reclaim. Defaults to 5, `0` hides
+  the table, and `--json` includes the same list.
 - `gc --keep-within <duration>` spares snapshots newer than the window from `--keep` rotation, so
   `gc --keep 5 --keep-within 2h` trims down to five but never drops a checkpoint from the last two
   hours. Takes the usual `2h`/`30m`/date forms and stacks with `--keep-named` and `--older-than`.

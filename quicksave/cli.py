@@ -963,7 +963,7 @@ def build_parser():
     pi.set_defaults(func=cmd_init)
 
     ps = sub.add_parser("save", help="snapshot the working tree", parents=[common])
-    ps.add_argument("-m", "--message", default="")
+    ps.add_argument("-m", "--message", default="", help="snapshot message, or - to read it from stdin")
     ps.add_argument("-n", "--name", default="",
                     help="label the snapshot so you can restore it by name later")
     ps.add_argument("-f", "--force", action="store_true",

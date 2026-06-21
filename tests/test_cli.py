@@ -282,6 +282,26 @@ def test_names_lists_only_named_snapshots_newest_first(tmp_path, monkeypatch, ca
     assert "second" in out and "first" in out
 
 
+def test_names_reverse_shows_oldest_first(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base", "-n", "first"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "mid"])  # no name
+    (tmp_path / "a.txt").write_text("v3")
+    main(["save", "-m", "top", "-n", "second"])
+    capsys.readouterr()
+
+    main(["names", "--reverse", "--json"])
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["name"] for r in rows] == ["first", "second"]
+
+    main(["names", "--reverse"])
+    out = capsys.readouterr().out
+    assert out.index("first") < out.index("second")
+
+
 def test_names_empty_state(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

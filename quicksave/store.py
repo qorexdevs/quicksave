@@ -292,7 +292,7 @@ def store_size(root):
     return total
 
 
-def stats(root):
+def stats(root, top=5):
     # store health and how much dedup is buying you: logical size is what naive
     # copies of every snapshot would cost, disk is what content-addressed storage
     # actually uses, so logical/disk is the dedup ratio.
@@ -310,10 +310,13 @@ def stats(root):
             logical += meta.get("size", 0)
     blobs = 0
     disk = 0
-    for obj, _ in _iter_blobs(store):
+    sizes = {}
+    for obj, digest in _iter_blobs(store):
         blobs += 1
         try:
-            disk += obj.stat().st_size
+            sz = obj.stat().st_size
+            disk += sz
+            sizes[digest] = sz
         except OSError:
             continue
     return {
@@ -325,6 +328,7 @@ def stats(root):
         "ratio": logical / disk if disk else 1.0,
         "first": min(times) if times else 0,
         "last": max(times) if times else 0,
+        "top_snapshots": _top_snapshots_by_unique_bytes(snaps, sizes, max(0, top)),
     }
 
 
@@ -494,6 +498,24 @@ def _referenced_blobs(snap_files):
         for meta in json.loads(f.read_text())["files"].values():
             refs.add(meta["sha256"])
     return refs
+
+
+def _top_snapshots_by_unique_bytes(snap_files, sizes, n):
+    owners = {}
+    rows = []
+    for f in snap_files:
+        m = json.loads(f.read_text())
+        seq, _, snap_id = f.stem.partition("-")
+        blobs = {meta["sha256"] for meta in m.get("files", {}).values()}
+        for h in blobs:
+            owners[h] = owners.get(h, 0) + 1
+        rows.append((int(seq), snap_id, m.get("name", ""), blobs))
+    out = []
+    for seq, snap_id, name, blobs in rows:
+        unique_bytes = sum(sizes.get(h, 0) for h in blobs if owners[h] == 1)
+        out.append({"seq": seq, "id": snap_id, "name": name, "unique_bytes": unique_bytes})
+    out.sort(key=lambda r: (-r["unique_bytes"], -r["seq"]))
+    return out[:n] if n > 0 else []
 
 
 def _iter_blobs(store):

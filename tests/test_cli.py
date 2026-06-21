@@ -1445,24 +1445,44 @@ def test_cli_stats(tmp_path, monkeypatch, capsys):
     (tmp_path / "a.txt").write_text("same")
     (tmp_path / "b.txt").write_text("same")
     main(["init"])
-    main(["save", "-m", "base"])
+    main(["save", "-m", "base", "-n", "base"])
+    (tmp_path / "c.txt").write_text("other")
+    main(["save", "-m", "extra", "-n", "extra"])
     capsys.readouterr()
 
     main(["stats"])
     out = capsys.readouterr().out
     assert "snapshots" in out
     assert "dedup" in out
+    assert "unique" in out
+    assert "extra" in out
+
+    main(["stats", "--top", "1"])
+    out = capsys.readouterr().out
+    assert "unique" in out
+    assert out.count("extra") == 1
+    assert "base" not in out
+
+    main(["stats", "--top", "0"])
+    out = capsys.readouterr().out
+    assert "snapshots" in out
+    assert "| id | name | unique |" not in out
 
     main(["stats", "--json"])
     data = json.loads(capsys.readouterr().out)
-    assert data["snapshots"] == 1
-    assert data["blobs"] == 1
+    assert data["snapshots"] == 2
+    assert data["blobs"] == 2
+    assert len(data["top_snapshots"]) == 2
+    assert data["top_snapshots"][0]["name"] == "extra"
+    assert data["top_snapshots"][0]["unique_bytes"] == len("other")
 
     main(["stats", "--markdown"])
     out = capsys.readouterr().out
     assert "| snapshots | blobs | on disk | dedup |" in out
     assert "| --- | --- | --- | --- |" in out
-    assert "| 1 | 1 |" in out
+    assert "| 2 | 2 |" in out
+    assert "| id | name | unique |" in out
+    assert "| extra |" in out
 
 
 def test_no_color_env_strips_styling(tmp_path, monkeypatch, capsys):

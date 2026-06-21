@@ -176,7 +176,7 @@ def cmd_names(args):
 
 def cmd_stats(args):
     root = _root_or_die()
-    s = store.stats(root)
+    s = store.stats(root, top=args.top)
     if args.json:
         print(json.dumps(s))
         return
@@ -190,6 +190,13 @@ def cmd_stats(args):
         print("| snapshots | blobs | on disk | dedup |")
         print("| --- | --- | --- | --- |")
         print(f"| {s['snapshots']} | {s['blobs']} | {_human_size(s['disk_bytes'])} | {ratio:.1f}x |")
+        if s["top_snapshots"]:
+            print()
+            print("| id | name | unique |")
+            print("| --- | --- | --- |")
+            for row in s["top_snapshots"]:
+                name = row["name"] or "-"
+                print(f"| {row['id']} | {name} | {_human_size(row['unique_bytes'])} |")
         return
     table = Table(box=None, pad_edge=False, show_header=False)
     table.add_column(style="dim")
@@ -204,6 +211,15 @@ def cmd_stats(args):
         last = datetime.fromtimestamp(s["last"]).strftime("%Y-%m-%d %H:%M")
         table.add_row("span", first if first == last else f"{first} -> {last}")
     console.print(table)
+    if s["top_snapshots"]:
+        console.print()
+        top = Table(box=None, pad_edge=False)
+        top.add_column("id", style="cyan")
+        top.add_column("name", style="magenta")
+        top.add_column("unique", justify="right")
+        for row in s["top_snapshots"]:
+            top.add_row(row["id"], row["name"] or "[dim]-[/]", _human_size(row["unique_bytes"]))
+        console.print(top)
 
 
 def _change_points(snaps):
@@ -976,6 +992,8 @@ def build_parser():
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])
     pst.add_argument("--json", action="store_true", help="print the stats as json")
     pst.add_argument("--markdown", action="store_true", help="print a small markdown table to paste into a readme or tweet")
+    pst.add_argument("--top", type=int, default=5, metavar="N",
+                     help="show the N snapshots with the most uniquely-owned bytes (0 to hide)")
     pst.set_defaults(func=cmd_stats)
 
     pf = sub.add_parser("find", help="find which snapshots hold a file, newest first", parents=[common])

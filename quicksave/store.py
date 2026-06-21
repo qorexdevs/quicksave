@@ -526,7 +526,8 @@ def parse_duration(text):
     return time.time() - when.timestamp()
 
 
-def gc(root, keep=None, refs=None, dry_run=False, older_than=None, keep_named=False):
+def gc(root, keep=None, refs=None, dry_run=False, older_than=None, keep_named=False,
+       keep_within=None):
     store = store_path(root)
     if not store.is_dir():
         raise QuicksaveError("not a quicksave project, run 'quicksave init' first")
@@ -542,6 +543,11 @@ def gc(root, keep=None, refs=None, dry_run=False, older_than=None, keep_named=Fa
     if keep_named:
         # a name is an explicit label, so with --keep-named treat it like a pin
         drop = [f for f in drop if not json.loads(f.read_text()).get("name")]
+    if keep_within is not None:
+        # spare anything created inside the window, so a tight --keep never throws
+        # away a checkpoint from the last few minutes
+        fresh = time.time() - keep_within
+        drop = [f for f in drop if json.loads(f.read_text()).get("created_at", 0) < fresh]
     for ref in refs or []:
         f = _find_snapshot(store, ref)
         if f is None:

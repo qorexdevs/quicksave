@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `gc --keep-within <duration>` spares snapshots newer than the window from `--keep` rotation, so
+  `gc --keep 5 --keep-within 2h` trims down to five but never drops a checkpoint from the last two
+  hours. Takes the usual `2h`/`30m`/date forms and stacks with `--keep-named` and `--older-than`.
 - `restore --json` prints the result instead of the styled line: the ref, how many files came
   back, the removed count and the safety-backup id, so a hook can roll back and then check what
   happened. With `--dry-run --json` it emits the plan (created/overwritten/removed/missing) and

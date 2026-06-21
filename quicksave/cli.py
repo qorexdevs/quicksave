@@ -782,8 +782,9 @@ def cmd_verify(args):
 def cmd_gc(args):
     root = _root_or_die()
     older = store.parse_duration(args.older_than) if args.older_than else None
+    within = store.parse_duration(args.keep_within) if args.keep_within else None
     r = store.gc(root, keep=args.keep, refs=args.refs, dry_run=args.dry_run, older_than=older,
-                 keep_named=args.keep_named)
+                 keep_named=args.keep_named, keep_within=within)
     if args.json:
         print(json.dumps(r))
         return
@@ -1107,6 +1108,8 @@ def build_parser():
                     help="drop snapshots older than a duration (7d, 12h) or date (2026-06-01)")
     pg.add_argument("--keep-named", action="store_true",
                     help="spare named snapshots from --keep and --older-than rotation, like pinned ones")
+    pg.add_argument("--keep-within", default=None, metavar="DUR",
+                    help="spare snapshots newer than a duration (2h, 30m) from --keep rotation")
     pg.add_argument("--dry-run", action="store_true",
                     help="show what would be removed without deleting")
     pg.add_argument("--json", action="store_true", help="print what gc removed as json")

@@ -897,6 +897,32 @@ def test_gc_older_than_drops_aged_snapshots(tmp_path):
     assert r["pruned"] and r["blobs"] == 1
 
 
+def test_gc_keep_within_spares_recent(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path, message="s0")
+    (tmp_path / "f.txt").write_text("two")
+    store.save(tmp_path, message="s1")
+
+    _age_snapshot(tmp_path, 0, 3 * 3600)
+    r = store.gc(tmp_path, keep=1, keep_within=store.parse_duration("1h"))
+    msgs = [s["message"] for s in store.list_snapshots(tmp_path)]
+    assert msgs == ["s1"]
+    assert len(r["pruned"]) == 1
+
+
+def test_gc_keep_within_keeps_all_inside_window(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "f.txt").write_text("one")
+    store.save(tmp_path, message="s0")
+    (tmp_path / "f.txt").write_text("two")
+    store.save(tmp_path, message="s1")
+
+    r = store.gc(tmp_path, keep=1, keep_within=store.parse_duration("1h"))
+    assert r["pruned"] == []
+    assert [s["message"] for s in store.list_snapshots(tmp_path)] == ["s0", "s1"]
+
+
 def test_gc_older_than_spares_pinned(tmp_path):
     store.init(tmp_path)
     (tmp_path / "f.txt").write_text("one")

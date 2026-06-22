@@ -632,22 +632,29 @@ def _file_text(root, ref, path):
         return None
 
 
-def _emit_patch(root, a, b, paths):
-    # print a unified diff for every changed path, oldest side a, newer side b.
+def _patch_entries(root, a, b, paths):
+    # for each changed path, the unified diff oldest side a, newer side b.
     # added/removed/modified all fall out of unified_diff once the missing side
-    # is an empty list. binary files have no text on either side, so we just say
-    # so instead of dumping bytes.
+    # is an empty list. binary files have no text on either side, so diff is None.
     import difflib
     for path in paths:
         ta = _file_text(root, a, path)
         tb = _file_text(root, b, path)
         if ta is None and tb is None:
+            yield path, None
+            continue
+        text = "".join(difflib.unified_diff(ta or [], tb or [],
+                                            fromfile=f"{path}@{a}",
+                                            tofile=f"{path}@{b}"))
+        yield path, text
+
+
+def _emit_patch(root, a, b, paths):
+    for path, text in _patch_entries(root, a, b, paths):
+        if text is None:
             console.print(f"[dim]Binary file {path} differs[/]")
             continue
-        for line in difflib.unified_diff(ta or [], tb or [],
-                                         fromfile=f"{path}@{a}",
-                                         tofile=f"{path}@{b}"):
-            line = line.rstrip("\n")
+        for line in text.splitlines():
             if line.startswith("+"):
                 console.print(f"[green]{line}[/]")
             elif line.startswith("-"):
@@ -656,6 +663,12 @@ def _emit_patch(root, a, b, paths):
                 console.print(f"[cyan]{line}[/]")
             else:
                 console.print(line)
+
+
+def _patch_json(root, a, b, paths):
+    files = [{"path": path, "diff": text or None}
+             for path, text in _patch_entries(root, a, b, paths)]
+    print(json.dumps({"a": a, "b": b, "files": files}))
 
 
 def cmd_diff(args):
@@ -701,6 +714,9 @@ def cmd_diff(args):
         if args.a == "wt":
             added, removed = removed, added
         if args.json:
+            if args.patch:
+                _patch_json(root, args.a, args.b, added + removed + s["modified"])
+                return
             print(json.dumps({"a": args.a, "b": args.b, "added": added,
                               "removed": removed, "modified": s["modified"]}))
             return
@@ -740,6 +756,10 @@ def cmd_diff(args):
         return
     d = store.diff(root, args.a, args.b)
     if args.json:
+        if args.patch:
+            _patch_json(root, args.a, args.b,
+                        d["added"] + d["removed"] + d["modified"])
+            return
         print(json.dumps({"a": args.a, "b": args.b, "added": d["added"],
                           "removed": d["removed"], "modified": d["modified"]}))
         return

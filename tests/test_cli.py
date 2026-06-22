@@ -1479,6 +1479,40 @@ def test_diff_patch_binary_file_noted(tmp_path, monkeypatch, capsys):
     assert "Binary file blob.bin differs" in out
 
 
+def test_diff_patch_json_between_snapshots(tmp_path, monkeypatch, capsys):
+    import json
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "-p", "--json"])
+    d = json.loads(capsys.readouterr().out)
+    assert d["a"] == "0" and d["b"] == "1"
+    by_path = {f["path"]: f["diff"] for f in d["files"]}
+    assert "+two" in by_path["a.txt"] and "-one" in by_path["a.txt"]
+    assert "+fresh" in by_path["new.txt"]
+
+
+def test_diff_patch_json_marks_binary_null(tmp_path, monkeypatch, capsys):
+    import json
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "blob.bin").write_bytes(b"\xff\xfe\x00")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "blob.bin").write_bytes(b"\xff\xfe\x09")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "-p", "--json"])
+    d = json.loads(capsys.readouterr().out)
+    by_path = {f["path"]: f["diff"] for f in d["files"]}
+    assert by_path["blob.bin"] is None
+
+
 def test_status_name_status(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

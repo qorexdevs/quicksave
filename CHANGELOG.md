@@ -10,6 +10,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   snapshot and the working tree, like `git diff`. Until now the whole-tree `diff` only listed paths
   and you had to name a single file to see line changes; now `quicksave diff 0 1 -p` shows the full
   content delta in one go, with binary files noted instead of dumped.
+- `diff -p --json` now emits the patch as `{"a","b","files":[{"path","diff"}]}` instead of falling
+  back to the path-list json, mirroring the single-file `diff a b path --json`. Binary files come
+  through as `"diff": null`.
 - `status --name-status` and `diff --name-status` prefix each changed path with `A`, `D` or `M`
   and a tab, like `git diff --name-status`, so a script can tell added/removed/modified apart that
   `--name-only` flattens together, e.g. `quicksave diff 0 wt --name-status | grep '^M'`.

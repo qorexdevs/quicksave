@@ -558,6 +558,16 @@ def cmd_status(args):
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
+    if args.name_only:
+        for path in s["added"]:
+            print(path)
+        for path in s["removed"]:
+            print(path)
+        for path in s["modified"]:
+            print(path)
+        if args.exit_code and dirty:
+            raise SystemExit(1)
+        return
     label = f"#{s['seq']} {s['id']}"
     if not dirty:
         console.print(f"[green]clean[/] [dim]working tree matches snapshot {label}[/]")
@@ -1109,6 +1119,8 @@ def build_parser():
     pt.add_argument("--json", action="store_true", help="print the diff as json")
     pt.add_argument("--short", action="store_true",
                     help="print a one-line porcelain summary like '~3 +1 -0', or 'clean'")
+    pt.add_argument("--name-only", action="store_true",
+                    help="print just the changed paths, one per line, no markers and no summary")
     pt.add_argument("--exit-code", action="store_true",
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.set_defaults(func=cmd_status)

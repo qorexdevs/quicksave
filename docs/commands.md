@@ -172,6 +172,7 @@ Show what changed in the working tree since a snapshot (latest by default).
 - `--short` - one line like `~3 +1 -0`, or `clean`.
 - `--stat` - only the summary line (`N added, N removed, N modified`), or `clean`.
 - `--name-only` - just the changed paths, one per line, no markers and no summary.
+- `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
 - `--exit-code` - exit 1 if the tree changed, 0 if clean, like `git diff --exit-code`.
 - `--json` - the diff as json.
 
@@ -180,6 +181,7 @@ quicksave status
 quicksave status --short
 quicksave status --stat
 quicksave status --name-only
+quicksave status --name-status
 quicksave status --exit-code
 ```
 
@@ -211,6 +213,7 @@ for the live tree on either side. Add a path for a line-by-line diff of one file
 - `path` - line-by-line diff of just this file.
 - `--stat` - only the summary line, skip the file list.
 - `--name-only` - just the changed paths, one per line.
+- `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
 - `--json` - the diff as json.
 
 ```
@@ -218,6 +221,7 @@ quicksave diff 2 3
 quicksave diff 3            # tree vs snapshot 3
 quicksave diff 2 3 src/app.py
 quicksave diff 2 3 --stat
+quicksave diff 0 wt --name-status | grep '^M'
 ```
 
 ## show

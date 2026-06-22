@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `status --name-status` and `diff --name-status` prefix each changed path with `A`, `D` or `M`
+  and a tab, like `git diff --name-status`, so a script can tell added/removed/modified apart that
+  `--name-only` flattens together, e.g. `quicksave diff 0 wt --name-status | grep '^M'`.
 - `log --name-only` prints just the file paths in a snapshot, one per line, no sizes or header,
   matching the `--name-only` flag `status` and `diff` already have. Pipes straight into other
   tools, e.g. `quicksave log v1 --name-only | xargs wc -l`.

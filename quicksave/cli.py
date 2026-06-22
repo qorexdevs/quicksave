@@ -586,6 +586,16 @@ def cmd_status(args):
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
+    if args.name_status:
+        for path in s["added"]:
+            print(f"A\t{path}")
+        for path in s["removed"]:
+            print(f"D\t{path}")
+        for path in s["modified"]:
+            print(f"M\t{path}")
+        if args.exit_code and dirty:
+            raise SystemExit(1)
+        return
     label = f"#{s['seq']} {s['id']}"
     if not dirty:
         console.print(f"[green]clean[/] [dim]working tree matches snapshot {label}[/]")
@@ -679,6 +689,14 @@ def cmd_diff(args):
             for path in s["modified"]:
                 print(path)
             return
+        if args.name_status:
+            for path in added:
+                print(f"A\t{path}")
+            for path in removed:
+                print(f"D\t{path}")
+            for path in s["modified"]:
+                print(f"M\t{path}")
+            return
         if not args.stat:
             for path in added:
                 console.print(f"[green]+ {path}[/]")
@@ -706,6 +724,14 @@ def cmd_diff(args):
             print(path)
         for path in d["modified"]:
             print(path)
+        return
+    if args.name_status:
+        for path in d["added"]:
+            print(f"A\t{path}")
+        for path in d["removed"]:
+            print(f"D\t{path}")
+        for path in d["modified"]:
+            print(f"M\t{path}")
         return
     if not args.stat:
         for path in d["added"]:
@@ -1146,6 +1172,8 @@ def build_parser():
                     help="print only the summary line, like 'diff --stat', or 'clean'")
     pt.add_argument("--name-only", action="store_true",
                     help="print just the changed paths, one per line, no markers and no summary")
+    pt.add_argument("--name-status", action="store_true",
+                    help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
     pt.add_argument("--exit-code", action="store_true",
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.set_defaults(func=cmd_status)
@@ -1168,6 +1196,8 @@ def build_parser():
     pd.add_argument("--stat", action="store_true", help="print only the summary line, skip the file list")
     pd.add_argument("--name-only", action="store_true",
                     help="print just the changed paths, one per line, no markers and no summary")
+    pd.add_argument("--name-status", action="store_true",
+                    help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])

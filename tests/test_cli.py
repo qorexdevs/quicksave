@@ -1407,6 +1407,50 @@ def test_diff_name_only_against_working_tree(tmp_path, monkeypatch, capsys):
     assert "~" not in out
 
 
+def test_diff_name_status_between_snapshots(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    (tmp_path / "drop.txt").write_text("gone\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "drop.txt").unlink()
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--name-status"])
+    lines = capsys.readouterr().out.splitlines()
+    assert set(lines) == {"A\tnew.txt", "D\tdrop.txt", "M\ta.txt"}
+
+
+def test_diff_name_status_against_working_tree(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--name-status"])
+    lines = capsys.readouterr().out.splitlines()
+    assert set(lines) == {"A\tnew.txt", "M\ta.txt"}
+
+
+def test_status_name_status(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "gone.txt").write_text("bye")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("v2")
+    (tmp_path / "b.txt").write_text("new")
+    (tmp_path / "gone.txt").unlink()
+    capsys.readouterr()
+    main(["status", "--name-status"])
+    lines = capsys.readouterr().out.splitlines()
+    assert set(lines) == {"A\tb.txt", "D\tgone.txt", "M\ta.txt"}
+
+
 def test_diff_name_only_no_changes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\n")

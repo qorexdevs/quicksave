@@ -50,11 +50,13 @@ List snapshots, oldest first, with file count, size and relative time.
 - `--since DUR`, `--before DUR` - only snapshots newer / older than a duration (`1h`, `7d`) or date.
 - `--grep TEXT` - only snapshots whose message or name contains TEXT.
 - `--reverse` - newest first; pairs with `--limit` for the last few.
+- `--count` - print only the number of matching snapshots, after the filters above.
 - `--json` - machine-readable output.
 
 ```
 quicksave list
 quicksave list --limit 5 --reverse
+quicksave list --grep wip --count
 quicksave list --since 1h
 quicksave list --grep "rm -rf"
 ```

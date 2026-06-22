@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `list --count` prints just the number of matching snapshots, nothing else, the same way
+  `find --count` already does. It honors the `--pinned`, `--since`, `--before` and `--grep` filters,
+  so `quicksave list --grep wip --count` answers "how many wip checkpoints do I have" in a script.
 - shell completions now offer the shared flags (`--json`, `--dry-run`, `--quiet`, `--help`) after a
   subcommand, not just the subcommand name, before falling back to file paths. Covers bash, zsh,
   fish and powershell.

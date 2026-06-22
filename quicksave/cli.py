@@ -111,6 +111,9 @@ def cmd_list(args):
         needle = grep.lower()
         snaps = [s for s in snaps
                  if needle in (s["message"] or "").lower() or needle in (s.get("name") or "").lower()]
+    if getattr(args, "count", False):
+        print(len(snaps))
+        return
     if args.json:
         print(json.dumps(snaps))
         return
@@ -1021,6 +1024,8 @@ def build_parser():
     pl.add_argument("--grep", default=None, metavar="TEXT",
                     help="show only snapshots whose message or name contains this text")
     pl.add_argument("--reverse", action="store_true", help="show newest first instead of oldest first")
+    pl.add_argument("--count", action="store_true",
+                    help="print only the number of matching snapshots, nothing else")
     pl.set_defaults(func=cmd_list)
 
     pnm = sub.add_parser("names", help="list named snapshots, newest first", parents=[common])

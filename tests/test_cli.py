@@ -1465,6 +1465,44 @@ def test_cli_find_count_no_matches(tmp_path, monkeypatch, capsys):
     assert out == "0"
 
 
+def test_cli_list_count(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "a.txt"
+    main(["init"])
+    for v in ("one", "two", "three"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["list", "--count"])
+    out = capsys.readouterr().out.strip()
+    assert out == "3"
+
+
+def test_cli_list_count_respects_grep(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "a.txt"
+    main(["init"])
+    for v in ("alpha", "beta", "alpha again"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["list", "--grep", "alpha", "--count"])
+    out = capsys.readouterr().out.strip()
+    assert out == "2"
+
+
+def test_cli_list_count_no_snapshots(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    capsys.readouterr()
+
+    main(["list", "--count"])
+    out = capsys.readouterr().out.strip()
+    assert out == "0"
+
+
 def test_cli_find_changes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "keep.txt"

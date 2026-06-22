@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- shell completions now offer the shared flags (`--json`, `--dry-run`, `--quiet`, `--help`) after a
+  subcommand, not just the subcommand name, before falling back to file paths. Covers bash, zsh,
+  fish and powershell.
 - the auto-save hook now treats `tee` (writing, not `-a`/`--append`) and `git switch` with
   `-f`/`--force`/`--discard-changes` as risky, so a checkpoint lands before either can overwrite a
   file or throw away uncommitted work.

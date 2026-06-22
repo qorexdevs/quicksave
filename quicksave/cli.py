@@ -908,7 +908,7 @@ _quicksave() {
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
     elif [[ "$cur" == -* ]]; then
-        COMPREPLY=( $(compgen -W "-q --quiet --json --help" -- "$cur") )
+        COMPREPLY=( $(compgen -W "-q --quiet --json --dry-run --help" -- "$cur") )
     else
         COMPREPLY=( $(compgen -f -- "$cur") )
     fi
@@ -923,6 +923,8 @@ _quicksave() {
     cmds=(__CMDS__)
     if (( CURRENT == 2 )); then
         compadd -- $cmds
+    elif [[ $words[CURRENT] == -* ]]; then
+        compadd -- -q --quiet --json --dry-run --help
     else
         _files
     fi
@@ -931,7 +933,7 @@ compdef _quicksave quicksave
 """
 _FISH_COMPLETION = """\
 complete -c quicksave -f -n __fish_use_subcommand -a "__CMDS__"
-complete -c quicksave -n __fish_use_subcommand -l help -l json -l quiet -s q
+complete -c quicksave -l help -l json -l dry-run -l quiet -s q
 complete -c quicksave -n 'not __fish_use_subcommand' -F
 """
 _PWSH_COMPLETION = """\
@@ -944,7 +946,13 @@ Register-ArgumentCompleter -Native -CommandName quicksave -ScriptBlock {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
-    # past the subcommand we return nothing, so PowerShell falls back to file paths
+    # past the subcommand, offer the common flags when a dash is typed,
+    # otherwise return nothing so PowerShell falls back to file paths
+    elseif ($wordToComplete -like '-*') {
+        '-q', '--quiet', '--json', '--dry-run', '--help' | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $_)
+        }
+    }
 }
 """
 

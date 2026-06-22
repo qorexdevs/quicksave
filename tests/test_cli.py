@@ -1599,6 +1599,8 @@ def test_completion_bash_lists_subcommands(capsys):
     # the command list comes straight from the parser, so a real subcommand is in it
     assert "restore" in out
     assert "completion" in out
+    # past the subcommand it offers the shared flags before file completion
+    assert "--dry-run" in out
 
 
 def test_completion_zsh_wires_compdef(capsys):
@@ -1607,6 +1609,7 @@ def test_completion_zsh_wires_compdef(capsys):
     assert out.startswith("#compdef quicksave")
     assert "compdef _quicksave quicksave" in out
     assert "restore" in out
+    assert "--dry-run" in out
 
 def test_completion_fish_lists_subcommands(capsys):
     main(["completion", "fish"])
@@ -1614,6 +1617,7 @@ def test_completion_fish_lists_subcommands(capsys):
     assert "complete -c quicksave" in out
     assert "__fish_use_subcommand" in out
     assert "restore" in out
+    assert "-l dry-run" in out
 
 
 def test_completion_powershell_registers_completer(capsys):
@@ -1621,6 +1625,7 @@ def test_completion_powershell_registers_completer(capsys):
     out = capsys.readouterr().out
     assert "Register-ArgumentCompleter -Native -CommandName quicksave" in out
     assert "restore" in out
+    assert "--dry-run" in out
 
 # ---------------------------------------------------------------------------
 # find --changes --diff

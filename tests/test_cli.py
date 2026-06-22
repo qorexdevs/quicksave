@@ -345,6 +345,32 @@ def test_names_count_prints_number(tmp_path, monkeypatch, capsys):
     main(["names", "--grep", "release-1", "--count"])
     assert capsys.readouterr().out.strip() == "1"
 
+def test_names_limit_keeps_most_recent(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base", "-n", "first"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "mid", "-n", "second"])
+    (tmp_path / "a.txt").write_text("v3")
+    main(["save", "-m", "top", "-n", "third"])
+    capsys.readouterr()
+
+    main(["names", "--limit", "2"])
+    out = capsys.readouterr().out
+    assert "third" in out and "second" in out and "first" not in out
+    assert "showing 2 of 3" in out
+
+    # most recent two, but ordered oldest first
+    main(["names", "--limit", "2", "--reverse"])
+    out = capsys.readouterr().out
+    assert "second" in out and "third" in out and "first" not in out
+
+    # --json ignores the limit, like list does
+    main(["names", "--limit", "2", "--json"])
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["name"] for r in rows] == ["third", "second", "first"]
+
 def test_names_count_no_named(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

@@ -8,6 +8,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ### Added
 - `status --stat` prints only the summary line (`N added, N removed, N modified`), or `clean`,
   matching the `--stat` flag `diff` already has. Works with `--exit-code` too.
+- `names --limit N` shows only the N most recent named snapshots, the same way `list` and `find`
+  already cap their output. It keeps the newest N regardless of `--reverse`, and like `list` it
+  leaves `--json` and `--count` unbounded, printing a `showing N of M` footer when it trims.
 - `status --name-only` prints just the changed paths, one per line, no markers and no summary,
   matching the flag `diff` already has. Pipes straight into other tools, e.g.
   `quicksave status --name-only | xargs ruff check`. Works with `--exit-code` too.

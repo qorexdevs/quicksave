@@ -171,10 +171,10 @@ def cmd_names(args):
     if getattr(args, "count", False):
         print(len(named))
         return
-    if not getattr(args, "reverse", False):
-        named.reverse()  # list_snapshots is oldest first, show newest names first
     if args.json:
-        print(json.dumps([{"id": s["id"], "name": s["name"]} for s in named]))
+        # list_snapshots is oldest first; show newest names first unless --reverse
+        ordered = named if getattr(args, "reverse", False) else list(reversed(named))
+        print(json.dumps([{"id": s["id"], "name": s["name"]} for s in ordered]))
         return
     if not named:
         if grep:
@@ -182,12 +182,19 @@ def cmd_names(args):
         else:
             console.print("[dim]no named snapshots yet, name one with 'quicksave name <ref> <name>'[/]")
         return
+    total = len(named)
+    if getattr(args, "limit", None) and args.limit < total:
+        named = named[-args.limit:]  # keep the n most recent, named is oldest first
+    if not getattr(args, "reverse", False):
+        named.reverse()  # show newest names first
     table = Table(box=None, pad_edge=False, show_header=False)
     table.add_column("id", style="cyan")
     table.add_column("name", style="magenta")
     for s in named:
         table.add_row(s["id"], s["name"])
     console.print(table)
+    if len(named) < total:
+        console.print(f"[dim]showing {len(named)} of {total} named snapshots[/]")
 
 
 def cmd_stats(args):
@@ -1057,6 +1064,7 @@ def build_parser():
     pnm.add_argument("--grep", default=None, metavar="TEXT",
                      help="show only named snapshots whose name contains this text")
     pnm.add_argument("--reverse", action="store_true", help="show oldest first instead of newest first")
+    pnm.add_argument("--limit", type=int, help="show only the n most recent named snapshots")
     pnm.add_argument("--count", action="store_true",
                      help="print only the number of matching named snapshots, nothing else")
     pnm.set_defaults(func=cmd_names)

@@ -717,6 +717,35 @@ def test_cli_status_short(tmp_path, monkeypatch, capsys):
     assert capsys.readouterr().out.strip() == "~1 +1 -1"
 
 
+def test_cli_status_stat(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "gone.txt").write_text("bye")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["status", "--stat"])
+    assert capsys.readouterr().out.strip() == "clean"
+
+    (tmp_path / "a.txt").write_text("v2")
+    (tmp_path / "b.txt").write_text("new")
+    (tmp_path / "gone.txt").unlink()
+    main(["status", "--stat"])
+    out = capsys.readouterr().out
+    assert "1 added, 1 removed, 1 modified" in out
+    assert "a.txt" not in out
+
+    # plays with --exit-code like the other modes
+    try:
+        main(["status", "--stat", "--exit-code"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("dirty tree should exit 1")
+    capsys.readouterr()
+
+
 def test_cli_status_name_only(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

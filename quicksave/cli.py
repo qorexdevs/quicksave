@@ -558,6 +558,17 @@ def cmd_status(args):
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
+    if args.stat:
+        if dirty:
+            print(
+                f"{len(s['added'])} added, {len(s['removed'])} removed, "
+                f"{len(s['modified'])} modified"
+            )
+        else:
+            print("clean")
+        if args.exit_code and dirty:
+            raise SystemExit(1)
+        return
     if args.name_only:
         for path in s["added"]:
             print(path)
@@ -1119,6 +1130,8 @@ def build_parser():
     pt.add_argument("--json", action="store_true", help="print the diff as json")
     pt.add_argument("--short", action="store_true",
                     help="print a one-line porcelain summary like '~3 +1 -0', or 'clean'")
+    pt.add_argument("--stat", action="store_true",
+                    help="print only the summary line, like 'diff --stat', or 'clean'")
     pt.add_argument("--name-only", action="store_true",
                     help="print just the changed paths, one per line, no markers and no summary")
     pt.add_argument("--exit-code", action="store_true",

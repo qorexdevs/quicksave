@@ -169,6 +169,7 @@ Show what changed in the working tree since a snapshot (latest by default).
 
 - `ref` - snapshot to compare against (default latest).
 - `--short` - one line like `~3 +1 -0`, or `clean`.
+- `--stat` - only the summary line (`N added, N removed, N modified`), or `clean`.
 - `--name-only` - just the changed paths, one per line, no markers and no summary.
 - `--exit-code` - exit 1 if the tree changed, 0 if clean, like `git diff --exit-code`.
 - `--json` - the diff as json.
@@ -176,6 +177,7 @@ Show what changed in the working tree since a snapshot (latest by default).
 ```
 quicksave status
 quicksave status --short
+quicksave status --stat
 quicksave status --name-only
 quicksave status --exit-code
 ```

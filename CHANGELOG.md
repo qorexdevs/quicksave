@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `status --stat` prints only the summary line (`N added, N removed, N modified`), or `clean`,
+  matching the `--stat` flag `diff` already has. Works with `--exit-code` too.
 - `status --name-only` prints just the changed paths, one per line, no markers and no summary,
   matching the flag `diff` already has. Pipes straight into other tools, e.g.
   `quicksave status --name-only | xargs ruff check`. Works with `--exit-code` too.

@@ -1601,12 +1601,41 @@ def test_completion_bash_lists_subcommands(capsys):
     assert "completion" in out
 
 
+def test_completion_bash_per_subcommand_flags(capsys):
+    main(["completion", "bash"])
+    out = capsys.readouterr().out
+    assert 'save) flags=' in out
+    assert '--json' in out
+    assert '--dry-run' in out
+    assert '-m' in out
+    assert 'restore) flags=' in out
+    assert '--clean' in out
+    assert 'list) flags=' in out
+    assert '--since' in out
+    assert '--pinned' in out
+    assert '*) flags="-h --help -q --quiet"' in out
+    assert 'case "$sub" in' in out
+
+
 def test_completion_zsh_wires_compdef(capsys):
     main(["completion", "zsh"])
     out = capsys.readouterr().out
     assert out.startswith("#compdef quicksave")
     assert "compdef _quicksave quicksave" in out
     assert "restore" in out
+
+
+def test_completion_zsh_per_subcommand_flags(capsys):
+    main(["completion", "zsh"])
+    out = capsys.readouterr().out
+    assert 'save) flags=(' in out
+    assert '--json' in out
+    assert '--dry-run' in out
+    assert 'restore) flags=(' in out
+    assert '--clean' in out
+    assert '*) flags=(-h --help -q --quiet)' in out
+    assert '$words[CURRENT] == -*' in out
+
 
 def test_completion_fish_lists_subcommands(capsys):
     main(["completion", "fish"])
@@ -1616,11 +1645,36 @@ def test_completion_fish_lists_subcommands(capsys):
     assert "restore" in out
 
 
+def test_completion_fish_per_subcommand_flags(capsys):
+    main(["completion", "fish"])
+    out = capsys.readouterr().out
+    assert "__fish_seen_subcommand_from save" in out
+    assert "__fish_seen_subcommand_from restore" in out
+    assert "-l json" in out
+    assert "-l dry-run" in out
+    assert "complete -c quicksave -n 'not __fish_use_subcommand' -F" in out
+    assert "complete -c quicksave -n __fish_use_subcommand -l json" not in out
+
+
 def test_completion_powershell_registers_completer(capsys):
     main(["completion", "powershell"])
     out = capsys.readouterr().out
     assert "Register-ArgumentCompleter -Native -CommandName quicksave" in out
     assert "restore" in out
+
+
+def test_completion_powershell_per_subcommand_flags(capsys):
+    """PowerShell script should include a hashtable and a -like '-*' branch."""
+    main(["completion", "powershell"])
+    out = capsys.readouterr().out
+    # hashtable entries exist for subcommands that have interesting flags
+    assert "'save'" in out
+    assert "'restore'" in out
+    assert "'list'" in out
+    # the flag-completion branch is present
+    assert "$wordToComplete -like '-*'" in out
+    # $sub is extracted from the command AST
+    assert "$commandAst.CommandElements[1]" in out
 
 # ---------------------------------------------------------------------------
 # find --changes --diff

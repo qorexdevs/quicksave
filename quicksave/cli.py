@@ -902,13 +902,20 @@ def cmd_hook(args):
 
 _BASH_COMPLETION = """\
 _quicksave() {
-    local cur cmds
+    local cur sub cmds flags
     cur="${COMP_WORDS[COMP_CWORD]}"
     cmds="__CMDS__"
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
-    elif [[ "$cur" == -* ]]; then
-        COMPREPLY=( $(compgen -W "-q --quiet --json --help" -- "$cur") )
+        return
+    fi
+    if [[ "$cur" == -* ]]; then
+        sub="${COMP_WORDS[1]}"
+        case "$sub" in
+__FLAGS_BASH__
+            *) flags="-h --help -q --quiet" ;;
+        esac
+        COMPREPLY=( $(compgen -W "$flags" -- "$cur") )
     else
         COMPREPLY=( $(compgen -f -- "$cur") )
     fi
@@ -923,6 +930,16 @@ _quicksave() {
     cmds=(__CMDS__)
     if (( CURRENT == 2 )); then
         compadd -- $cmds
+        return
+    fi
+    if [[ $words[CURRENT] == -* ]]; then
+        local sub=$words[2]
+        local -a flags
+        case "$sub" in
+__FLAGS_ZSH__
+            *) flags=(-h --help -q --quiet) ;;
+        esac
+        compadd -- $flags
     else
         _files
     fi
@@ -931,22 +948,89 @@ compdef _quicksave quicksave
 """
 _FISH_COMPLETION = """\
 complete -c quicksave -f -n __fish_use_subcommand -a "__CMDS__"
-complete -c quicksave -n __fish_use_subcommand -l help -l json -l quiet -s q
+complete -c quicksave -n 'not __fish_use_subcommand' -l help -s h
+complete -c quicksave -n 'not __fish_use_subcommand' -l quiet -s q
+__FLAGS_FISH__
 complete -c quicksave -n 'not __fish_use_subcommand' -F
 """
 _PWSH_COMPLETION = """\
 Register-ArgumentCompleter -Native -CommandName quicksave -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $cmds = '__CMDS__'.Split(' ')
-    # element 0 is 'quicksave' itself, so <= 2 elements means we're on the subcommand
+    $flags = @{
+__FLAGS_PWSH__
+    }
+    # element 0 is 'quicksave' itself, so <= 2 elements means we're still on the subcommand
     if ($commandAst.CommandElements.Count -le 2) {
         $cmds | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
+    } elseif ($wordToComplete -like '-*') {
+        $sub = [string]$commandAst.CommandElements[1]
+        $subcmdFlags = if ($flags.ContainsKey($sub)) { $flags[$sub] } else { '-h --help -q --quiet' }
+        $subcmdFlags -split ' ' |
+            Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
     }
-    # past the subcommand we return nothing, so PowerShell falls back to file paths
+    # non-flag argument: fall through so PowerShell provides its default file path completion
 }
 """
+
+
+def _flags_per_subcommand():
+    parser = build_parser()
+    result = {}
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            for name, sp in action.choices.items():
+                result[name] = [a.option_strings for a in sp._actions if a.option_strings]
+            break
+    return result
+
+
+def _bash_flags_block(flags_map):
+    lines = []
+    for sub in sorted(flags_map):
+        flat = sorted({opt for opts in flags_map[sub] for opt in opts})
+        lines.append(f'            {sub}) flags="{" ".join(flat)}" ;;')
+    return "\n".join(lines)
+
+
+def _zsh_flags_block(flags_map):
+    lines = []
+    for sub in sorted(flags_map):
+        flat = sorted({opt for opts in flags_map[sub] for opt in opts})
+        lines.append(f'            {sub}) flags=({" ".join(flat)}) ;;')
+    return "\n".join(lines)
+
+
+def _fish_flags_block(flags_map):
+    lines = []
+    for sub in sorted(flags_map):
+        for opts in flags_map[sub]:
+            shorts = [o[1:] for o in opts if o.startswith("-") and not o.startswith("--")]
+            longs = [o[2:] for o in opts if o.startswith("--")]
+            longs = [l for l in longs if l not in ("help", "quiet")]
+            shorts = [s for s in shorts if s not in ("h", "q")]
+            if not longs and not shorts:
+                continue
+            parts = [f"-n '__fish_seen_subcommand_from {sub}'"]
+            for s in shorts:
+                parts.append(f"-s {s}")
+            for l in longs:
+                parts.append(f"-l {l}")
+            lines.append("complete -c quicksave " + " ".join(parts))
+    return "\n".join(lines)
+
+
+def _pwsh_flags_block(flags_map):
+    lines = []
+    for sub in sorted(flags_map):
+        flat = sorted({opt for opts in flags_map[sub] for opt in opts})
+        lines.append(f"        '{sub}' = '{' '.join(flat)}'")
+    return "\n".join(lines)
+
 
 def _subcommands():
     parser = build_parser()
@@ -958,8 +1042,13 @@ def _subcommands():
 
 def cmd_completion(args):
     cmds = " ".join(_subcommands())
-    scripts = {"bash": _BASH_COMPLETION, "zsh": _ZSH_COMPLETION, "fish": _FISH_COMPLETION,
-               "powershell": _PWSH_COMPLETION}
+    flags_map = _flags_per_subcommand()
+    scripts = {
+        "bash": _BASH_COMPLETION.replace("__FLAGS_BASH__", _bash_flags_block(flags_map)),
+        "zsh": _ZSH_COMPLETION.replace("__FLAGS_ZSH__", _zsh_flags_block(flags_map)),
+        "fish": _FISH_COMPLETION.replace("__FLAGS_FISH__", _fish_flags_block(flags_map)),
+        "powershell": _PWSH_COMPLETION.replace("__FLAGS_PWSH__", _pwsh_flags_block(flags_map)),
+    }
     # plain print so 'eval "$(quicksave completion bash)"' gets a clean script
     print(scripts[args.shell].replace("__CMDS__", cmds), end="")
 

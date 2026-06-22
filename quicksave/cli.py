@@ -752,7 +752,7 @@ def cmd_diff(args):
                                                      fromfile=f"{p}@{args.a}",
                                                      tofile=f"{p}@{args.b}")) if not (ta is None and tb is None) else None
                 patches.append({"path": p, "diff": diff_text})
-            print(json.dumps({"a": args.a, "b": args.b, "patches": patches}))
+            print(json.dumps({"a": args.a, "b": args.b, "files": patches}))
             return
         if args.json:
             if args.patch:
@@ -811,7 +811,7 @@ def cmd_diff(args):
                                                  fromfile=f"{p}@{args.a}",
                                                  tofile=f"{p}@{args.b}")) if not (ta is None and tb is None) else None
             patches.append({"path": p, "diff": diff_text})
-        print(json.dumps({"a": args.a, "b": args.b, "patches": patches}))
+        print(json.dumps({"a": args.a, "b": args.b, "files": patches}))
         return
     if args.json:
         if args.patch:

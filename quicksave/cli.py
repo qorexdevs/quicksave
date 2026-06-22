@@ -808,6 +808,10 @@ def cmd_log(args):
     if args.json:
         print(json.dumps(s))
         return
+    if args.name_only:
+        for h in s["files"]:
+            print(h["path"])
+        return
 
     when = "-"
     if s["created_at"]:
@@ -1189,6 +1193,7 @@ def build_parser():
     plog = sub.add_parser("log", help="show one snapshot's details (default latest)", parents=[common])
     plog.add_argument("ref", nargs="?", default=None, help="snapshot id, number or name, defaults to latest")
     plog.add_argument("--json", action="store_true", help="print the snapshot details as json")
+    plog.add_argument("--name-only", action="store_true", help="print only the file paths, one per line")
     plog.set_defaults(func=cmd_log)
 
     pn = sub.add_parser("name", help="label a snapshot, or clear its name with an empty value", parents=[common])

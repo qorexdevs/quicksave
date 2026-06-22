@@ -269,10 +269,12 @@ Show one snapshot's details: id, name, pinned flag, message, time, and the file 
 
 - `ref` - snapshot id, number or name (default latest).
 - `--json` - the details as json.
+- `--name-only` - just the file paths, one per line, no sizes or header.
 
 ```
 quicksave log
 quicksave log pre-deploy --json
+quicksave log v1 --name-only | xargs wc -l
 ```
 
 ## name

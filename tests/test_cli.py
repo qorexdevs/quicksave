@@ -1061,6 +1061,21 @@ def test_log_json_emits_files(tmp_path, monkeypatch, capsys):
     assert data["files"][0]["size"] == 5
 
 
+def test_log_name_only_lists_paths(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "b.txt").write_text("world")
+    main(["init"])
+    main(["save", "-n", "v1"])
+    capsys.readouterr()
+
+    main(["log", "v1", "--name-only"])
+    out = capsys.readouterr().out
+    assert sorted(out.split()) == ["a.txt", "b.txt"]
+    # nothing but the bare paths, no sizes or headers
+    assert "(" not in out and "Snapshot" not in out
+
+
 def test_log_missing_snapshot_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `log --name-only` prints just the file paths in a snapshot, one per line, no sizes or header,
+  matching the `--name-only` flag `status` and `diff` already have. Pipes straight into other
+  tools, e.g. `quicksave log v1 --name-only | xargs wc -l`.
 - `status --stat` prints only the summary line (`N added, N removed, N modified`), or `clean`,
   matching the `--stat` flag `diff` already has. Works with `--exit-code` too.
 - `names --limit N` shows only the N most recent named snapshots, the same way `list` and `find`

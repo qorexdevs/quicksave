@@ -632,6 +632,32 @@ def _file_text(root, ref, path):
         return None
 
 
+def _emit_patch(root, a, b, paths):
+    # print a unified diff for every changed path, oldest side a, newer side b.
+    # added/removed/modified all fall out of unified_diff once the missing side
+    # is an empty list. binary files have no text on either side, so we just say
+    # so instead of dumping bytes.
+    import difflib
+    for path in paths:
+        ta = _file_text(root, a, path)
+        tb = _file_text(root, b, path)
+        if ta is None and tb is None:
+            console.print(f"[dim]Binary file {path} differs[/]")
+            continue
+        for line in difflib.unified_diff(ta or [], tb or [],
+                                         fromfile=f"{path}@{a}",
+                                         tofile=f"{path}@{b}"):
+            line = line.rstrip("\n")
+            if line.startswith("+"):
+                console.print(f"[green]{line}[/]")
+            elif line.startswith("-"):
+                console.print(f"[red]{line}[/]")
+            elif line.startswith("@@"):
+                console.print(f"[cyan]{line}[/]")
+            else:
+                console.print(line)
+
+
 def cmd_diff(args):
     root = _root_or_die()
     if args.path:
@@ -681,6 +707,9 @@ def cmd_diff(args):
         if not (added or removed or s["modified"]):
             console.print(f"[dim]working tree matches {snap}[/]")
             return
+        if args.patch:
+            _emit_patch(root, args.a, args.b, added + removed + s["modified"])
+            return
         if args.name_only:
             for path in added:
                 print(path)
@@ -716,6 +745,9 @@ def cmd_diff(args):
         return
     if not any(d.values()):
         console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
+        return
+    if args.patch:
+        _emit_patch(root, args.a, args.b, d["added"] + d["removed"] + d["modified"])
         return
     if args.name_only:
         for path in d["added"]:
@@ -1198,6 +1230,8 @@ def build_parser():
                     help="print just the changed paths, one per line, no markers and no summary")
     pd.add_argument("--name-status", action="store_true",
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
+    pd.add_argument("-p", "--patch", action="store_true",
+                    help="print a unified diff of every changed file, like 'git diff'")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])

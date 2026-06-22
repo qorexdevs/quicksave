@@ -6,6 +6,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `diff -p`/`--patch` prints a unified diff of every changed file between two snapshots, or a
+  snapshot and the working tree, like `git diff`. Until now the whole-tree `diff` only listed paths
+  and you had to name a single file to see line changes; now `quicksave diff 0 1 -p` shows the full
+  content delta in one go, with binary files noted instead of dumped.
 - `status --name-status` and `diff --name-status` prefix each changed path with `A`, `D` or `M`
   and a tab, like `git diff --name-status`, so a script can tell added/removed/modified apart that
   `--name-only` flattens together, e.g. `quicksave diff 0 wt --name-status | grep '^M'`.

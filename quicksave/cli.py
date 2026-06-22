@@ -735,15 +735,31 @@ def cmd_diff(args):
         added, removed = s["added"], s["removed"]
         if args.a == "wt":
             added, removed = removed, added
+        if not (added or removed or s["modified"]):
+            if args.json:
+                print(json.dumps({"a": args.a, "b": args.b, "added": added,
+                                  "removed": removed, "modified": s["modified"], "patches": []}))
+                return
+            console.print(f"[dim]working tree matches {snap}[/]")
+            return
+        if args.patch and args.json:
+            import difflib as _dl
+            patches = []
+            for p in added + removed + s["modified"]:
+                ta = _file_text(root, args.a, p)
+                tb = _file_text(root, args.b, p)
+                diff_text = "".join(_dl.unified_diff(ta or [], tb or [],
+                                                     fromfile=f"{p}@{args.a}",
+                                                     tofile=f"{p}@{args.b}")) if not (ta is None and tb is None) else None
+                patches.append({"path": p, "diff": diff_text})
+            print(json.dumps({"a": args.a, "b": args.b, "patches": patches}))
+            return
         if args.json:
             if args.patch:
                 _patch_json(root, args.a, args.b, added + removed + s["modified"])
                 return
             print(json.dumps({"a": args.a, "b": args.b, "added": added,
                               "removed": removed, "modified": s["modified"]}))
-            return
-        if not (added or removed or s["modified"]):
-            console.print(f"[dim]working tree matches {snap}[/]")
             return
         if args.patch:
             _emit_patch(root, args.a, args.b, added + removed + s["modified"],
@@ -778,6 +794,25 @@ def cmd_diff(args):
         )
         return
     d = store.diff(root, args.a, args.b)
+    if not any(d.values()):
+        if args.json:
+            print(json.dumps({"a": args.a, "b": args.b, "added": d["added"],
+                              "removed": d["removed"], "modified": d["modified"], "patches": []}))
+            return
+        console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
+        return
+    if args.patch and args.json:
+        import difflib as _dl
+        patches = []
+        for p in d["added"] + d["removed"] + d["modified"]:
+            ta = _file_text(root, args.a, p)
+            tb = _file_text(root, args.b, p)
+            diff_text = "".join(_dl.unified_diff(ta or [], tb or [],
+                                                 fromfile=f"{p}@{args.a}",
+                                                 tofile=f"{p}@{args.b}")) if not (ta is None and tb is None) else None
+            patches.append({"path": p, "diff": diff_text})
+        print(json.dumps({"a": args.a, "b": args.b, "patches": patches}))
+        return
     if args.json:
         if args.patch:
             _patch_json(root, args.a, args.b,
@@ -785,9 +820,6 @@ def cmd_diff(args):
             return
         print(json.dumps({"a": args.a, "b": args.b, "added": d["added"],
                           "removed": d["removed"], "modified": d["modified"]}))
-        return
-    if not any(d.values()):
-        console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
         return
     if args.patch:
         _emit_patch(root, args.a, args.b, d["added"] + d["removed"] + d["modified"],

@@ -947,8 +947,10 @@ _RISKY = [
     r"\bgit\s+restore\b",
     r"\bgit\s+rm\b",
     r"\bgit\s+stash\b",
+    r"\bgit\s+switch\b[^|]*(?:--discard-changes|--force|-f\b)",
     r"\bfind\b.*\s-delete\b",
     r"\brsync\b[^|]*--delete\b",
+    r"\btee\b(?![^|]*(?:-a\b|--append))",
     r"(?:^|\s)>(?!>)\|?\s*\S",
 ]
 _RISKY_RE = [re.compile(p) for p in _RISKY]

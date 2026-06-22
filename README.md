@@ -208,8 +208,8 @@ carries and the first paths, without writing any blobs or a snapshot.
 
 Claude Code can fire a hook before it runs a tool. Point its `PreToolUse` Bash hook at
 `quicksave hook` and it will checkpoint the tree right before the agent runs anything destructive
-(`rm`, `mv`, `git reset`, `git rm`, `git stash`, `rsync --delete`, `sed -i`, an overwriting `>`, and
-friends). Safe commands like `ls` or
+(`rm`, `mv`, `git reset`, `git rm`, `git stash`, `git switch -f`, `rsync --delete`, `sed -i`, an
+overwriting `>` or `tee`, and friends). Safe commands like `ls` or
 `git status` are ignored, and it stays quiet if the directory isn't a quicksave project, so it never
 blocks the agent.
 

@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- the auto-save hook now treats `tee` (writing, not `-a`/`--append`) and `git switch` with
+  `-f`/`--force`/`--discard-changes` as risky, so a checkpoint lands before either can overwrite a
+  file or throw away uncommitted work.
 - `check-ignore PATH...` tells you whether a path would be captured or ignored and which rule
   decided it, like `git check-ignore -v`. It reports the source file and line (or `built-in` for the
   baked-in dir names), so when `.env` won't save you can see which `.gitignore` line caught it and

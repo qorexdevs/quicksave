@@ -23,9 +23,11 @@ def test_looks_risky():
     risky = ["rm -rf build", "mv a b", "git reset --hard", "sed -i 's/a/b/' f",
              "echo x > config.yml", "git clean -fd", "find . -name '*.tmp' -delete",
              "git rm cached.txt", "git stash", "rsync -a --delete src/ dst/",
-             "echo x >| config.yml"]
+             "echo x >| config.yml", "echo x | tee config.yml", "git switch -f main",
+             "git switch --discard-changes -"]
     safe = ["ls -la", "git status", "cat file >> log.txt", "grep -r foo .",
-            "python -m pytest", "echo hi", "rsync -a src/ dst/", "git stashed"]
+            "python -m pytest", "echo hi", "rsync -a src/ dst/", "git stashed",
+            "echo x | tee -a log.txt", "git switch feature", "committee notes"]
     for c in risky:
         assert store.looks_risky(c), c
     for c in safe:

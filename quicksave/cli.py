@@ -168,6 +168,9 @@ def cmd_names(args):
     if grep:
         needle = grep.lower()
         named = [s for s in named if needle in s["name"].lower()]
+    if getattr(args, "count", False):
+        print(len(named))
+        return
     if not getattr(args, "reverse", False):
         named.reverse()  # list_snapshots is oldest first, show newest names first
     if args.json:
@@ -1033,6 +1036,8 @@ def build_parser():
     pnm.add_argument("--grep", default=None, metavar="TEXT",
                      help="show only named snapshots whose name contains this text")
     pnm.add_argument("--reverse", action="store_true", help="show oldest first instead of newest first")
+    pnm.add_argument("--count", action="store_true",
+                     help="print only the number of matching named snapshots, nothing else")
     pnm.set_defaults(func=cmd_names)
 
     pst = sub.add_parser("stats", help="show store size and how much dedup is saving", parents=[common])

@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `names --count` prints just the number of named snapshots, nothing else, honoring `--grep`,
+  matching the `--count` flag `list` and `find` already have.
 - `list --count` prints just the number of matching snapshots, nothing else, the same way
   `find --count` already does. It honors the `--pinned`, `--since`, `--before` and `--grep` filters,
   so `quicksave list --grep wip --count` answers "how many wip checkpoints do I have" in a script.

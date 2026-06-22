@@ -328,6 +328,33 @@ def test_names_empty_state(tmp_path, monkeypatch, capsys):
     main(["names"])
     assert "no named snapshots yet" in capsys.readouterr().out
 
+def test_names_count_prints_number(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base", "-n", "release-1"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "mid"])  # no name
+    (tmp_path / "a.txt").write_text("v3")
+    main(["save", "-m", "top", "-n", "release-2"])
+    capsys.readouterr()
+
+    main(["names", "--count"])
+    assert capsys.readouterr().out.strip() == "2"
+
+    main(["names", "--grep", "release-1", "--count"])
+    assert capsys.readouterr().out.strip() == "1"
+
+def test_names_count_no_named(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    main(["names", "--count"])
+    assert capsys.readouterr().out.strip() == "0"
+
 
 def test_undo_reverts_last_restore(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)

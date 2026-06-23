@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-23
+
 ### Added
 - `QUICKSAVE_RISKY` lets you add your own risky-command patterns, one regex per line, appended to the
   builtin list so project footguns like `terraform destroy`, `make clean` or `docker compose down -v`
@@ -231,6 +233,7 @@ you can roll back files an agent deleted or overwrote, even ones git never track
 - a `PreToolUse` hook (`quicksave hook`) plus `hook install` for Claude Code and Codex, to
   auto-checkpoint before a risky command.
 
+[0.7.0]: https://github.com/qorexdevs/quicksave/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/qorexdevs/quicksave/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/qorexdevs/quicksave/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/qorexdevs/quicksave/compare/v0.3.0...v0.4.0

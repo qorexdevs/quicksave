@@ -1513,6 +1513,55 @@ def test_diff_patch_json_marks_binary_null(tmp_path, monkeypatch, capsys):
     assert by_path["blob.bin"] is None
 
 
+def test_diff_patch_git_uses_apply_friendly_headers(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    (tmp_path / "drop.txt").write_text("gone\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "drop.txt").unlink()
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "-p", "--git"])
+    out = capsys.readouterr().out
+    assert "diff --git a/a.txt b/a.txt" in out
+    assert "--- a/a.txt" in out and "+++ b/a.txt" in out
+    assert "+++ b/new.txt" in out and "--- /dev/null" in out
+    assert "--- a/drop.txt" in out and "+++ /dev/null" in out
+    assert "@0" not in out and "@1" not in out
+
+
+def test_diff_patch_git_applies_cleanly(tmp_path, monkeypatch, capsys):
+    import shutil
+    import subprocess
+
+    if not shutil.which("git"):
+        import pytest
+        pytest.skip("git not available")
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\nthree\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\nTWO\nthree\n")
+    (tmp_path / "new.txt").write_text("brand new\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "-p", "--git"])
+    patch = capsys.readouterr().out
+
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "a.txt").write_text("one\ntwo\nthree\n")
+    subprocess.run(["git", "init", "-q"], cwd=work, check=True)
+    (work / "patch.diff").write_text(patch, newline="\n")
+    subprocess.run(["git", "apply", "patch.diff"], cwd=work, check=True)
+    assert (work / "a.txt").read_text() == "one\nTWO\nthree\n"
+    assert (work / "new.txt").read_text() == "brand new\n"
+
+
 def test_status_name_status(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

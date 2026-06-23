@@ -632,10 +632,12 @@ def _file_text(root, ref, path):
         return None
 
 
-def _patch_entries(root, a, b, paths):
+def _patch_entries(root, a, b, paths, git=False):
     # for each changed path, the unified diff oldest side a, newer side b.
     # added/removed/modified all fall out of unified_diff once the missing side
     # is an empty list. binary files have no text on either side, so diff is None.
+    # git mode emits a/ b/ headers and /dev/null for the missing side so the
+    # output applies with 'git apply' or 'patch -p1'.
     import difflib
     for path in paths:
         ta = _file_text(root, a, path)
@@ -643,16 +645,36 @@ def _patch_entries(root, a, b, paths):
         if ta is None and tb is None:
             yield path, None
             continue
-        text = "".join(difflib.unified_diff(ta or [], tb or [],
-                                            fromfile=f"{path}@{a}",
-                                            tofile=f"{path}@{b}"))
+        if git:
+            fromfile = "/dev/null" if ta is None else f"a/{path}"
+            tofile = "/dev/null" if tb is None else f"b/{path}"
+            body = "".join(difflib.unified_diff(ta or [], tb or [],
+                                                fromfile=fromfile, tofile=tofile))
+            if not body:
+                yield path, ""
+                continue
+            head = f"diff --git a/{path} b/{path}\n"
+            if ta is None:
+                head += "new file mode 100644\n"
+            elif tb is None:
+                head += "deleted file mode 100644\n"
+            text = head + body
+        else:
+            text = "".join(difflib.unified_diff(ta or [], tb or [],
+                                                fromfile=f"{path}@{a}",
+                                                tofile=f"{path}@{b}"))
         yield path, text
 
 
-def _emit_patch(root, a, b, paths):
-    for path, text in _patch_entries(root, a, b, paths):
+def _emit_patch(root, a, b, paths, git=False):
+    for path, text in _patch_entries(root, a, b, paths, git=git):
         if text is None:
-            console.print(f"[dim]Binary file {path} differs[/]")
+            # keep the patch stream clean so it pipes into git apply
+            (err if git else console).print(f"[dim]Binary file {path} differs[/]")
+            continue
+        if git:
+            for line in text.splitlines():
+                print(line)
             continue
         for line in text.splitlines():
             if line.startswith("+"):
@@ -724,7 +746,8 @@ def cmd_diff(args):
             console.print(f"[dim]working tree matches {snap}[/]")
             return
         if args.patch:
-            _emit_patch(root, args.a, args.b, added + removed + s["modified"])
+            _emit_patch(root, args.a, args.b, added + removed + s["modified"],
+                        git=args.git)
             return
         if args.name_only:
             for path in added:
@@ -767,7 +790,8 @@ def cmd_diff(args):
         console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
         return
     if args.patch:
-        _emit_patch(root, args.a, args.b, d["added"] + d["removed"] + d["modified"])
+        _emit_patch(root, args.a, args.b, d["added"] + d["removed"] + d["modified"],
+                    git=args.git)
         return
     if args.name_only:
         for path in d["added"]:
@@ -1252,6 +1276,8 @@ def build_parser():
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
     pd.add_argument("-p", "--patch", action="store_true",
                     help="print a unified diff of every changed file, like 'git diff'")
+    pd.add_argument("--git", action="store_true",
+                    help="with -p, emit a 'git apply'/'patch -p1' compatible diff (a/ b/ headers, no color)")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])

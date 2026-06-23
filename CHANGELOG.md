@@ -6,6 +6,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `diff -p --git` emits a `git apply`/`patch -p1` compatible patch: `a/`/`b/` path headers,
+  `new file mode`/`deleted file mode` with `/dev/null` for added and removed files, and no color, so
+  you can replay the change between two checkpoints elsewhere with `quicksave diff 0 wt -p --git | git apply`.
+  Binary-file notes go to stderr so the patch stream stays clean. Plain `-p` keeps its annotated,
+  colored output for reading.
 - `diff -p`/`--patch` prints a unified diff of every changed file between two snapshots, or a
   snapshot and the working tree, like `git diff`. Until now the whole-tree `diff` only listed paths
   and you had to name a single file to see line changes; now `quicksave diff 0 1 -p` shows the full

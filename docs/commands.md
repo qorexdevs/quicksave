@@ -215,6 +215,7 @@ for the live tree on either side. Add a path for a line-by-line diff of one file
 - `--name-only` - just the changed paths, one per line.
 - `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
 - `-p`, `--patch` - a unified diff of every changed file, like `git diff`. Binary files are noted, not dumped.
+- `--git` - with `-p`, emit a `git apply`/`patch -p1` compatible diff: `a/`/`b/` headers, `/dev/null` for added or removed files, and no color. Binary notes go to stderr so the stream stays clean.
 - `--json` - the diff as json.
 
 ```
@@ -223,6 +224,7 @@ quicksave diff 3            # tree vs snapshot 3
 quicksave diff 2 3 src/app.py
 quicksave diff 2 3 --stat
 quicksave diff 2 3 -p
+quicksave diff 0 wt -p --git | git apply   # replay the change somewhere else
 quicksave diff 0 wt --name-status | grep '^M'
 ```
 

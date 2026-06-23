@@ -36,6 +36,21 @@ def test_looks_risky():
         assert not store.looks_risky(c), c
 
 
+def test_looks_risky_custom_patterns(monkeypatch):
+    assert not store.looks_risky("terraform destroy -auto-approve")
+    monkeypatch.setenv("QUICKSAVE_RISKY", "\n".join([r"terraform\s+destroy", r"make\s+clean"]))
+    assert store.looks_risky("terraform destroy -auto-approve")
+    assert store.looks_risky("make clean")
+    assert not store.looks_risky("terraform plan")
+
+
+def test_looks_risky_skips_invalid_pattern(monkeypatch):
+    # a broken regex must not blow up looks_risky, the valid one still applies
+    monkeypatch.setenv("QUICKSAVE_RISKY", "make clean\n[unclosed")
+    assert store.looks_risky("make clean")
+    assert not store.looks_risky("ls")
+
+
 def test_save_requires_init(tmp_path):
     with pytest.raises(store.QuicksaveError):
         store.save(tmp_path)

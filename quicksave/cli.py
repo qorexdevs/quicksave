@@ -1042,6 +1042,16 @@ def _env_keep():
 def cmd_hook(args):
     # reads a Claude Code PreToolUse payload on stdin and snapshots before a
     # risky bash command. stays quiet and exits 0 so it never blocks the agent.
+    check = getattr(args, "check", None)
+    if check is not None:
+        # tune QUICKSAVE_RISKY patterns without an agent: exit 0 on a match,
+        # 1 otherwise, so it composes in scripts the way grep does.
+        if store.looks_risky(check):
+            print("risky")
+        else:
+            print("safe")
+            raise SystemExit(1)
+        return
     try:
         payload = json.loads(sys.stdin.read())
     except ValueError:
@@ -1393,6 +1403,8 @@ def build_parser():
     pcomp.set_defaults(func=cmd_completion)
 
     phook = sub.add_parser("hook", help="PreToolUse hook: auto-save before a risky bash command", parents=[common])
+    phook.add_argument("--check", metavar="CMD",
+                       help="print whether CMD would trigger a snapshot, then exit (0 risky, 1 safe)")
     phook.set_defaults(func=cmd_hook)
     hsub = phook.add_subparsers(dest="hook_action")
     hin = hsub.add_parser("install", help="wire the hook into an agent runner's config", parents=[common])

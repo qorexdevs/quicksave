@@ -983,10 +983,34 @@ _RISKY = [
     r"(?:^|\s)>(?!>)\|?\s*\S",
 ]
 _RISKY_RE = [re.compile(p) for p in _RISKY]
+_extra_cache = (None, [])
+
+
+def _extra_risky_re():
+    # extra patterns from QUICKSAVE_RISKY, one regex per line, appended to the
+    # builtin list so each project can flag its own footguns (make clean,
+    # terraform destroy, ...). invalid patterns are skipped quietly. cached by
+    # the raw env value so we don't recompile on every hook call.
+    global _extra_cache
+    raw = os.environ.get("QUICKSAVE_RISKY", "")
+    if raw == _extra_cache[0]:
+        return _extra_cache[1]
+    out = []
+    for line in raw.splitlines():
+        pat = line.strip()
+        if not pat:
+            continue
+        try:
+            out.append(re.compile(pat))
+        except re.error:
+            continue
+    _extra_cache = (raw, out)
+    return out
 
 
 def looks_risky(command):
-    return any(r.search(command) for r in _RISKY_RE)
+    return (any(r.search(command) for r in _RISKY_RE)
+            or any(r.search(command) for r in _extra_risky_re()))
 
 
 # where each runner keeps its hook config. both Claude Code and Codex nest the

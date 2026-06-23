@@ -3,6 +3,8 @@ import io
 import json
 import time
 
+import pytest
+
 
 from quicksave.cli import main
 
@@ -914,6 +916,24 @@ def test_hook_skips_safe_command(tmp_path, monkeypatch):
     main(["hook"])
 
     assert not list((tmp_path / ".quicksave" / "snapshots").glob("*.json"))
+
+
+def test_hook_check_risky(capsys):
+    main(["hook", "--check", "rm -rf build"])
+    assert capsys.readouterr().out.strip() == "risky"
+
+
+def test_hook_check_safe_exits_nonzero(capsys):
+    with pytest.raises(SystemExit) as e:
+        main(["hook", "--check", "ls -la"])
+    assert e.value.code == 1
+    assert capsys.readouterr().out.strip() == "safe"
+
+
+def test_hook_check_honors_custom_pattern(capsys, monkeypatch):
+    monkeypatch.setenv("QUICKSAVE_RISKY", r"terraform\s+destroy")
+    main(["hook", "--check", "terraform destroy"])
+    assert capsys.readouterr().out.strip() == "risky"
 
 
 def test_hook_noop_outside_project(tmp_path, monkeypatch):

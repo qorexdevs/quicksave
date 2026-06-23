@@ -258,6 +258,18 @@ If a checkpoint matters, `quicksave pin <ref>` keeps it out of that rotation so 
 reap the one good state you wanted to keep. `quicksave unpin <ref>` lets it rotate again, and an
 explicit `quicksave gc <ref>` still drops it when you mean it.
 
+The builtin list catches the usual footguns (`rm`, `mv`, `git reset`, redirects, ...), but every
+project has its own. Add more with `QUICKSAVE_RISKY`, one regex per line:
+
+```
+export QUICKSAVE_RISKY='terraform\s+destroy
+make\s+clean
+docker\s+compose\s+down\s+-v'
+```
+
+To check whether a command would trigger a save without running anything, `quicksave hook --check
+'terraform destroy'` prints `risky` or `safe` (and exits 0 or 1), so you can tune the patterns.
+
 ## Shell completion
 
 There are a lot of subcommands now, so tab completion helps. `quicksave completion bash|zsh|fish|powershell`

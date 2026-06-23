@@ -385,14 +385,28 @@ quicksave completion powershell | Out-String | Invoke-Expression   # powershell
 staying quiet so it never blocks the agent. `quicksave hook install` writes the config for you.
 
 - `hook install --tool {claude,codex}` - which runner to wire up (default claude).
+- `hook --check '<command>'` - print `risky`/`safe` for a command and exit (0 risky, 1 safe),
+  without reading stdin or saving. Handy for tuning `QUICKSAVE_RISKY`.
 
 ```
 quicksave hook install
 quicksave hook install --tool codex
+quicksave hook --check 'terraform destroy'
 ```
 
 `QUICKSAVE_KEEP=N` caps the history the hook keeps to the N most recent snapshots, dropping older
 ones after each save.
+
+`QUICKSAVE_RISKY` adds your own patterns to the builtin risky list, one regex per line. Use it for
+project-specific footguns the defaults don't cover:
+
+```
+export QUICKSAVE_RISKY='terraform\s+destroy
+make\s+clean
+docker\s+compose\s+down\s+-v'
+```
+
+Invalid regexes are skipped quietly, and an unset variable keeps the default behavior.
 
 ## Refs
 

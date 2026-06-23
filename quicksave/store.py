@@ -1008,9 +1008,20 @@ def _extra_risky_re():
     return out
 
 
+def risky_match(command):
+    # the first pattern that flags the command, or None. builtins win over
+    # QUICKSAVE_RISKY so `hook --check` can show why a command tripped.
+    for r in _RISKY_RE:
+        if r.search(command):
+            return r.pattern
+    for r in _extra_risky_re():
+        if r.search(command):
+            return r.pattern
+    return None
+
+
 def looks_risky(command):
-    return (any(r.search(command) for r in _RISKY_RE)
-            or any(r.search(command) for r in _extra_risky_re()))
+    return risky_match(command) is not None
 
 
 # where each runner keeps its hook config. both Claude Code and Codex nest the

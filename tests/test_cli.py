@@ -920,7 +920,9 @@ def test_hook_skips_safe_command(tmp_path, monkeypatch):
 
 def test_hook_check_risky(capsys):
     main(["hook", "--check", "rm -rf build"])
-    assert capsys.readouterr().out.strip() == "risky"
+    out = capsys.readouterr().out.strip()
+    assert out.split("\t")[0] == "risky"
+    assert r"\brm\b" in out
 
 
 def test_hook_check_safe_exits_nonzero(capsys):
@@ -933,7 +935,9 @@ def test_hook_check_safe_exits_nonzero(capsys):
 def test_hook_check_honors_custom_pattern(capsys, monkeypatch):
     monkeypatch.setenv("QUICKSAVE_RISKY", r"terraform\s+destroy")
     main(["hook", "--check", "terraform destroy"])
-    assert capsys.readouterr().out.strip() == "risky"
+    out = capsys.readouterr().out.strip()
+    assert out.split("\t")[0] == "risky"
+    assert r"terraform\s+destroy" in out
 
 
 def test_hook_noop_outside_project(tmp_path, monkeypatch):

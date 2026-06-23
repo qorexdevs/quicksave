@@ -1045,9 +1045,11 @@ def cmd_hook(args):
     check = getattr(args, "check", None)
     if check is not None:
         # tune QUICKSAVE_RISKY patterns without an agent: exit 0 on a match,
-        # 1 otherwise, so it composes in scripts the way grep does.
-        if store.looks_risky(check):
-            print("risky")
+        # 1 otherwise, so it composes in scripts the way grep does. on a hit the
+        # matching pattern rides along after a tab so you can see what tripped.
+        hit = store.risky_match(check)
+        if hit is not None:
+            print(f"risky\t{hit}")
         else:
             print("safe")
             raise SystemExit(1)

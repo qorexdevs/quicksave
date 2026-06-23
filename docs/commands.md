@@ -386,11 +386,13 @@ staying quiet so it never blocks the agent. `quicksave hook install` writes the 
 
 - `hook install --tool {claude,codex}` - which runner to wire up (default claude).
 - `hook --check '<command>'` - print `risky`/`safe` for a command and exit (0 risky, 1 safe),
-  without reading stdin or saving. Handy for tuning `QUICKSAVE_RISKY`.
+  without reading stdin or saving. On a hit the matching pattern follows after a tab, so you can
+  see what tripped while tuning `QUICKSAVE_RISKY`.
 
 ```
 quicksave hook install
 quicksave hook install --tool codex
+quicksave hook --check 'rm -rf build'   # risky	\brm\b
 quicksave hook --check 'terraform destroy'
 ```
 

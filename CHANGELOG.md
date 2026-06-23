@@ -10,7 +10,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   builtin list so project footguns like `terraform destroy`, `make clean` or `docker compose down -v`
   also trigger a checkpoint. Invalid regexes are skipped quietly, unset keeps the current behavior.
 - `quicksave hook --check '<command>'` prints `risky`/`safe` for a command without running the agent,
-  exiting 0 when it would snapshot and 1 otherwise, so you can tune `QUICKSAVE_RISKY` patterns.
+  exiting 0 when it would snapshot and 1 otherwise, so you can tune `QUICKSAVE_RISKY` patterns. On a
+  hit it also prints the matching pattern after a tab, so you can see exactly what tripped.
 - the hook now treats `unlink` and `git worktree remove` as risky, so an agent that deletes a file
   with `unlink` or wipes a linked worktree gets a checkpoint first, the same as `rm` and `git clean`.
 - `grep <pattern>` searches a snapshot's file contents for a regex (or a literal with `-F`), the

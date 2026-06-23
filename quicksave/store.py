@@ -801,7 +801,8 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     files, _ = _selected_files(manifest, paths, ref)
     flags = re.IGNORECASE if ignore_case else 0
     rx = re.compile(re.escape(pattern) if fixed else pattern, flags)
-    for rel in files:
+    # sort by path so output is deterministic across filesystems, like git grep
+    for rel in sorted(files):
         meta = files[rel]
         obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
         if not obj.exists():

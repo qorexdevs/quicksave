@@ -789,6 +789,32 @@ def show(root, ref, path):
     return obj.read_bytes()
 
 
+def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False):
+    # search the file contents of one snapshot (default latest) for a pattern,
+    # the read-only counterpart to 'find' which only matches paths. yields
+    # (path, lineno, line) per match, files in manifest order, line 1-based.
+    # binary blobs (undecodable) are skipped, so a checkpoint's text is grep-able
+    # without restoring it. fixed treats pattern as a literal substring.
+    store = store_path(root)
+    f = _resolve_snapshot(store, ref)
+    manifest = json.loads(f.read_text())
+    files, _ = _selected_files(manifest, paths, ref)
+    flags = re.IGNORECASE if ignore_case else 0
+    rx = re.compile(re.escape(pattern) if fixed else pattern, flags)
+    for rel in files:
+        meta = files[rel]
+        obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
+        if not obj.exists():
+            continue
+        try:
+            text = obj.read_bytes().decode()
+        except UnicodeDecodeError:
+            continue
+        for i, line in enumerate(text.splitlines(), 1):
+            if rx.search(line):
+                yield rel, i, line
+
+
 def export_snapshot(root, ref, dest, paths=None, out=None, gzip=False):
     # materialize a snapshot into a tar archive without touching the live tree.
     # gzip when dest ends in .gz/.tgz or gzip is set, plain tar otherwise. handy

@@ -835,6 +835,29 @@ def cmd_show(args):
         out.write(data)
 
 
+def cmd_grep(args):
+    root = _root_or_die()
+    hits = store.grep_snapshot(root, args.ref, args.pattern,
+                               ignore_case=args.ignore_case,
+                               paths=args.paths or None,
+                               fixed=args.fixed)
+    if args.count:
+        print(sum(1 for _ in hits))
+        return
+    if args.name_only:
+        seen = set()
+        for path, _, _ in hits:
+            if path not in seen:
+                seen.add(path)
+                print(path)
+        return
+    if args.json:
+        print(json.dumps([{"path": p, "line": n, "text": t} for p, n, t in hits]))
+        return
+    for path, n, text in hits:
+        console.print(f"[cyan]{path}[/]:[yellow]{n}[/]:{text}")
+
+
 def cmd_export(args):
     root = _root_or_die()
     ref = args.ref or "latest"
@@ -1284,6 +1307,18 @@ def build_parser():
     ph.add_argument("ref", help="snapshot id or number, or just the file if you want the newest snapshot that has it")
     ph.add_argument("path", nargs="?", help="file to print (omit to treat ref as the file)")
     ph.set_defaults(func=cmd_show)
+
+    pgr = sub.add_parser("grep", help="search a snapshot's file contents for a pattern", parents=[common])
+    pgr.add_argument("pattern", help="regular expression to search for (or a literal with -F)")
+    pgr.add_argument("paths", nargs="*", help="limit the search to these paths")
+    pgr.add_argument("-r", "--ref", help="snapshot id, number or name (default latest)")
+    pgr.add_argument("-i", "--ignore-case", action="store_true", help="case-insensitive match")
+    pgr.add_argument("-F", "--fixed", "--fixed-strings", action="store_true",
+                     help="treat the pattern as a literal string, not a regex")
+    pgr.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
+    pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
+    pgr.add_argument("--json", action="store_true", help="print matches as json")
+    pgr.set_defaults(func=cmd_grep)
 
     pe = sub.add_parser("export", help="write a snapshot to a tar archive without touching the tree", parents=[common])
     pe.add_argument("dest", help="output path (.tar.gz/.tgz for gzip, else plain .tar), or - for stdout")

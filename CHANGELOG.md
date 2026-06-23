@@ -6,6 +6,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep <pattern>` searches a snapshot's file contents for a regex (or a literal with `-F`), the
+  read-only counterpart to `find` which only matches paths. Prints `path:line:text`, with `-i` for
+  case-insensitive, `-l`/`--name-only` for just the files, `--count` for the match total, `--json`,
+  an optional `-r`/`--ref` (default latest), and trailing paths to narrow the search. Binary blobs
+  are skipped, so you can locate a line in a checkpoint without restoring it.
 - `diff -p --git` emits a `git apply`/`patch -p1` compatible patch: `a/`/`b/` path headers,
   `new file mode`/`deleted file mode` with `/dev/null` for added and removed files, and no color, so
   you can replay the change between two checkpoints elsewhere with `quicksave diff 0 wt -p --git | git apply`.

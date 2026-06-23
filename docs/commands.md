@@ -241,6 +241,26 @@ quicksave show config.py            # newest snapshot that still has it
 quicksave show 3 config.py > config.old.py
 ```
 
+## grep
+
+Search a snapshot's file contents for a pattern, the read-only counterpart to `find` (which only
+matches paths). Prints `path:line:text` for each match. Binary blobs are skipped.
+
+- `pattern` - regular expression, or a literal string with `-F`.
+- `paths...` - limit the search to these paths.
+- `-r`, `--ref` - snapshot id, number or name (default latest).
+- `-i`, `--ignore-case` - case-insensitive match.
+- `-F`, `--fixed` - treat the pattern as a literal, not a regex.
+- `-l`, `--name-only` - print only the matching file paths.
+- `--count` - print only the number of matching lines.
+- `--json` - print matches as json.
+
+```
+quicksave grep TODO
+quicksave grep -i "api_key" -r pre-deploy src/
+quicksave grep -F "a.b.c" --name-only
+```
+
 ## export
 
 Write a snapshot to a tar archive without touching the tree. A `.gz`/`.tgz` name gives a gzipped

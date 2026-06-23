@@ -2037,3 +2037,57 @@ def test_save_message_from_stdin_json(tmp_path, monkeypatch, capsys):
     main(["save", "-m", "-", "--json"])
     data = json.loads(capsys.readouterr().out)
     assert data["message"] == "piped message"
+
+
+def test_grep_matches_lines_and_skips_binary(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("import os\nfrom store import grep\nx = 1\n")
+    (tmp_path / "b.txt").write_text("nothing here\n")
+    (tmp_path / "bin.dat").write_bytes(b"\xff\xfe import os \x00")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    main(["grep", "import"])
+    out = capsys.readouterr().out
+    assert "a.py:1:import os" in out
+    assert "a.py:2:from store import grep" in out
+    # the binary blob holds "import" bytes but must be skipped, not dumped
+    assert "bin.dat" not in out
+    assert "b.txt" not in out
+
+
+def test_grep_ignore_case_name_only_count_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("Hello world\nhello again\n")
+    (tmp_path / "b.py").write_text("HELLO there\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    main(["grep", "-i", "hello", "--count"])
+    assert capsys.readouterr().out.strip() == "3"
+
+    main(["grep", "-i", "hello", "--name-only"])
+    names = capsys.readouterr().out.split()
+    assert names == ["a.py", "b.py"]
+
+    main(["grep", "-i", "hello", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert {d["path"] for d in data} == {"a.py", "b.py"}
+    assert any(d["line"] == 2 and "again" in d["text"] for d in data)
+
+
+def test_grep_fixed_string_and_path_filter(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("a.b.c matched\nplain line\n")
+    (tmp_path / "b.py").write_text("a.b.c here too\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -F treats a.b.c as a literal, and the path filter keeps it to a.py
+    main(["grep", "-F", "a.b.c", "a.py"])
+    out = capsys.readouterr().out
+    assert "a.py:1:a.b.c matched" in out
+    assert "b.py" not in out

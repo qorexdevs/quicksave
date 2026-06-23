@@ -24,10 +24,12 @@ def test_looks_risky():
              "echo x > config.yml", "git clean -fd", "find . -name '*.tmp' -delete",
              "git rm cached.txt", "git stash", "rsync -a --delete src/ dst/",
              "echo x >| config.yml", "echo x | tee config.yml", "git switch -f main",
-             "git switch --discard-changes -"]
+             "git switch --discard-changes -", "unlink config.yml",
+             "git worktree remove ../wt"]
     safe = ["ls -la", "git status", "cat file >> log.txt", "grep -r foo .",
             "python -m pytest", "echo hi", "rsync -a src/ dst/", "git stashed",
-            "echo x | tee -a log.txt", "git switch feature", "committee notes"]
+            "echo x | tee -a log.txt", "git switch feature", "committee notes",
+            "git worktree list", "git worktree add ../wt"]
     for c in risky:
         assert store.looks_risky(c), c
     for c in safe:

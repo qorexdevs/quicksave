@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- the hook now treats `unlink` and `git worktree remove` as risky, so an agent that deletes a file
+  with `unlink` or wipes a linked worktree gets a checkpoint first, the same as `rm` and `git clean`.
 - `grep <pattern>` searches a snapshot's file contents for a regex (or a literal with `-F`), the
   read-only counterpart to `find` which only matches paths. Prints `path:line:text`, with `-i` for
   case-insensitive, `-l`/`--name-only` for just the files, `--count` for the match total, `--json`,

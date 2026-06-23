@@ -962,6 +962,7 @@ def import_archive(root, src, message="", name="", fileobj=None, dry_run=False):
 # in-place edits and history rewrites. not exhaustive, just the usual footguns.
 _RISKY = [
     r"\brm\b",
+    r"\bunlink\b",
     r"\bmv\b",
     r"\bdd\b",
     r"\bshred\b",
@@ -974,6 +975,7 @@ _RISKY = [
     r"\bgit\s+restore\b",
     r"\bgit\s+rm\b",
     r"\bgit\s+stash\b",
+    r"\bgit\s+worktree\s+remove\b",
     r"\bgit\s+switch\b[^|]*(?:--discard-changes|--force|-f\b)",
     r"\bfind\b.*\s-delete\b",
     r"\brsync\b[^|]*--delete\b",

@@ -253,14 +253,22 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-F`, `--fixed` - treat the pattern as a literal, not a regex.
 - `-w`, `--word` - match whole words only, so `foo` won't hit `foobar`.
 - `-v`, `--invert-match` - show the lines that do not match the pattern.
+- `-A N`, `--after-context` - print N lines of context after each match.
+- `-B N`, `--before-context` - print N lines of context before each match.
+- `-C N`, `--context` - print N lines of context on both sides.
 - `-l`, `--name-only` - print only the matching file paths.
 - `--count` - print only the number of matching lines.
 - `--json` - print matches as json.
+
+Context lines use a `-` separator (`path-line-text`) instead of the `:` of a match, and
+non-adjacent groups are split by a `--` divider, like `grep`. Context is ignored by `--count`,
+`--name-only` and `--json`, which only report matches.
 
 ```
 quicksave grep TODO
 quicksave grep -i "api_key" -r pre-deploy src/
 quicksave grep -w -F "a.b.c" --name-only
+quicksave grep -C 2 "def main"
 ```
 
 ## export

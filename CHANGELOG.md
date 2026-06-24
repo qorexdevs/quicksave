@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep -A`/`-B`/`-C` print context lines around each match, like `grep`. Context lines use a
+  `-` separator instead of `:`, overlapping windows merge, and non-adjacent groups are split by a
+  `--` divider. `--count`, `--name-only` and `--json` ignore context and report only matches.
 - `grep -v`/`--invert-match` shows the lines that do not match the pattern, like `grep -v`.
   Composes with `--count`, `--name-only`, `--json`, `-i`, `-F` and a path filter.
 - `grep -w`/`--word` matches whole words only, anchoring the pattern to word boundaries so `foo`

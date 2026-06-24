@@ -2179,3 +2179,47 @@ def test_grep_invert_match(tmp_path, monkeypatch, capsys):
 
     main(["grep", "-v", "foo", "--count"])
     assert capsys.readouterr().out.strip() == "2"
+
+
+def test_grep_context_lines(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text(
+        "one\ntwo\nhit here\nfour\nfive\nsix\nhit again\neight\n"
+    )
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -C 1 pulls one line on each side, context uses '-' and matches use ':'
+    main(["grep", "hit", "-C", "1"])
+    out = capsys.readouterr().out
+    assert "a.py-2-two" in out
+    assert "a.py:3:hit here" in out
+    assert "a.py-4-four" in out
+    assert "a.py:7:hit again" in out
+    assert "a.py-8-eight" in out
+    # non-adjacent groups are split by a divider
+    assert "--" in out
+    # 'one' and 'five' fall outside both windows
+    assert "one" not in out
+    assert "a.py-5-five" not in out
+
+    # -A/-B work independently; -B 2 only reaches back
+    main(["grep", "hit again", "-B", "2"])
+    out = capsys.readouterr().out
+    assert "a.py-5-five" in out
+    assert "a.py-6-six" in out
+    assert "a.py:7:hit again" in out
+    assert "eight" not in out
+
+    # overlapping windows merge instead of repeating shared lines
+    (tmp_path / "b.py").write_text("a\nx\nb\nx\nc\n")
+    main(["save", "-m", "v2"])
+    capsys.readouterr()
+    main(["grep", "x", "b.py", "-C", "1"])
+    out = capsys.readouterr().out
+    assert out.count("b.py-3-b") == 1
+
+    # count ignores context and still reports only matching lines
+    main(["grep", "hit", "-C", "5", "--count"])
+    assert capsys.readouterr().out.strip() == "2"

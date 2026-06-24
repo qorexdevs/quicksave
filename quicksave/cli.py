@@ -837,27 +837,41 @@ def cmd_show(args):
 
 def cmd_grep(args):
     root = _root_or_die()
+    before = args.context if args.context is not None else args.before
+    after = args.context if args.context is not None else args.after
+    # context only shapes the default line output; count/-l/json work on matches
+    if args.count or args.name_only or args.json:
+        before = after = 0
     hits = store.grep_snapshot(root, args.ref, args.pattern,
                                ignore_case=args.ignore_case,
                                paths=args.paths or None,
                                fixed=args.fixed,
                                word=args.word,
-                               invert=args.invert)
+                               invert=args.invert,
+                               before=before,
+                               after=after)
     if args.count:
         print(sum(1 for _ in hits))
         return
     if args.name_only:
         seen = set()
-        for path, _, _ in hits:
+        for path, _, _, _ in hits:
             if path not in seen:
                 seen.add(path)
                 print(path)
         return
     if args.json:
-        print(json.dumps([{"path": p, "line": n, "text": t} for p, n, t in hits]))
+        print(json.dumps([{"path": p, "line": n, "text": t} for p, n, t, _ in hits]))
         return
-    for path, n, text in hits:
-        console.print(f"[cyan]{path}[/]:[yellow]{n}[/]:{text}")
+    prev = None
+    for path, n, text, is_match in hits:
+        # a '--' divider between non-adjacent context groups, like grep
+        if (before or after) and prev is not None and (
+                path != prev[0] or n != prev[1] + 1):
+            console.print("[dim]--[/]")
+        sep = ":" if is_match else "-"
+        console.print(f"[cyan]{path}[/]{sep}[yellow]{n}[/]{sep}{text}")
+        prev = (path, n)
 
 
 def cmd_export(args):
@@ -1336,6 +1350,12 @@ def build_parser():
                      help="match whole words only, so 'foo' won't hit 'foobar'")
     pgr.add_argument("-v", "--invert-match", dest="invert", action="store_true",
                      help="show lines that do not match the pattern")
+    pgr.add_argument("-A", "--after-context", dest="after", type=int, default=0, metavar="N",
+                     help="print N lines of context after each match")
+    pgr.add_argument("-B", "--before-context", dest="before", type=int, default=0, metavar="N",
+                     help="print N lines of context before each match")
+    pgr.add_argument("-C", "--context", type=int, default=None, metavar="N",
+                     help="print N lines of context on both sides of each match")
     pgr.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
     pgr.add_argument("--json", action="store_true", help="print matches as json")

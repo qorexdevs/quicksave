@@ -790,14 +790,16 @@ def show(root, ref, path):
 
 
 def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False,
-                  word=False, invert=False):
+                  word=False, invert=False, before=0, after=0):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
-    # (path, lineno, line) per match, files in manifest order, line 1-based.
-    # binary blobs (undecodable) are skipped, so a checkpoint's text is grep-able
-    # without restoring it. fixed treats pattern as a literal substring, word
-    # anchors the match to word boundaries so 'foo' won't hit 'foobar'. invert
-    # yields the lines that do not match, like grep -v.
+    # (path, lineno, line, is_match) per emitted line, files in manifest order,
+    # line 1-based. binary blobs (undecodable) are skipped, so a checkpoint's
+    # text is grep-able without restoring it. fixed treats pattern as a literal
+    # substring, word anchors the match to word boundaries so 'foo' won't hit
+    # 'foobar'. invert yields the lines that do not match, like grep -v. before
+    # and after pull in that many surrounding lines as context (grep -B/-A/-C),
+    # flagged is_match=False so callers can render them differently.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
@@ -815,9 +817,26 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
             text = obj.read_bytes().decode()
         except UnicodeDecodeError:
             continue
-        for i, line in enumerate(text.splitlines(), 1):
-            if bool(rx.search(line)) != invert:
-                yield rel, i, line
+        lines = text.splitlines()
+        if before <= 0 and after <= 0:
+            for i, line in enumerate(lines, 1):
+                if bool(rx.search(line)) != invert:
+                    yield rel, i, line, True
+            continue
+        matches = {i for i, line in enumerate(lines) if bool(rx.search(line)) != invert}
+        if not matches:
+            continue
+        # expand each match into a window and emit each line once, in order, so
+        # overlapping windows merge instead of repeating shared context lines
+        emitted = set()
+        for mi in sorted(matches):
+            lo = max(0, mi - before)
+            hi = min(len(lines) - 1, mi + after)
+            for j in range(lo, hi + 1):
+                if j in emitted:
+                    continue
+                emitted.add(j)
+                yield rel, j + 1, lines[j], j in matches
 
 
 def export_snapshot(root, ref, dest, paths=None, out=None, gzip=False):

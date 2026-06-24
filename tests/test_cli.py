@@ -863,6 +863,29 @@ def test_cli_verify_repair_drops_broken_snapshot(tmp_path, monkeypatch, capsys):
     assert "ok" in capsys.readouterr().out
 
 
+def test_cli_verify_repair_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("keep")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("broken")
+    main(["save", "-m", "second"])
+
+    broken = hashlib.sha256(b"broken").hexdigest()
+    (tmp_path / ".quicksave" / "objects" / broken[:2] / broken[2:]).unlink()
+    capsys.readouterr()
+
+    main(["verify", "--repair", "--dry-run", "--json"])
+    r = json.loads(capsys.readouterr().out)
+    assert r["dry_run"] is True
+    assert len(r["dropped"]) == 1
+    # dry run left the broken snapshot in place
+    main(["verify", "--repair", "--json"])
+    r = json.loads(capsys.readouterr().out)
+    assert r["dry_run"] is False
+    assert len(r["dropped"]) == 1
+
+
 def test_hook_saves_before_risky_command(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "data.txt").write_text("keep")

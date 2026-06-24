@@ -329,11 +329,13 @@ Check the store for corrupt or missing blobs.
 
 - `--repair` - drop snapshots that point at corrupt or missing blobs.
 - `--dry-run` - with `--repair`, show what would be dropped without touching the store.
-- `--json` - the result as json.
+- `--json` - the result as json, for plain verify and `--repair` alike (with `--repair`: `dropped`,
+  `corrupt_blobs`, `blobs`, `dry_run`).
 
 ```
 quicksave verify
 quicksave verify --repair --dry-run
+quicksave verify --repair --json
 ```
 
 ## gc

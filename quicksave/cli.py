@@ -959,6 +959,9 @@ def cmd_verify(args):
     root = _root_or_die()
     if args.repair:
         r = store.repair(root, dry_run=args.dry_run)
+        if args.json:
+            print(json.dumps(r))
+            return
         tag = " [dim](dry run)[/]" if r["dry_run"] else ""
         if not r["dropped"] and not r["corrupt_blobs"]:
             console.print(f"[green]ok[/] [dim]nothing to repair[/]{tag}")

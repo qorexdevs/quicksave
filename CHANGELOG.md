@@ -5,6 +5,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `verify --repair --json` now emits the repair result (`dropped`, `corrupt_blobs`, `blobs`,
+  `dry_run`) instead of only the rich text, so a hook or CI step can repair the store and read
+  what it did. Plain `verify --json` already worked; `--repair` ignored the flag.
+
 ## [0.7.0] - 2026-06-23
 
 ### Added

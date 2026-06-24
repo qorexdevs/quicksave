@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep -v`/`--invert-match` shows the lines that do not match the pattern, like `grep -v`.
+  Composes with `--count`, `--name-only`, `--json`, `-i`, `-F` and a path filter.
 - `grep -w`/`--word` matches whole words only, anchoring the pattern to word boundaries so `foo`
   no longer hits `foobar`. Works with `-F`, `-i`, `--count`, `--name-only` and a path filter.
 - `verify --repair --json` now emits the repair result (`dropped`, `corrupt_blobs`, `blobs`,

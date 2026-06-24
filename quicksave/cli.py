@@ -841,7 +841,8 @@ def cmd_grep(args):
                                ignore_case=args.ignore_case,
                                paths=args.paths or None,
                                fixed=args.fixed,
-                               word=args.word)
+                               word=args.word,
+                               invert=args.invert)
     if args.count:
         print(sum(1 for _ in hits))
         return
@@ -1333,6 +1334,8 @@ def build_parser():
                      help="treat the pattern as a literal string, not a regex")
     pgr.add_argument("-w", "--word", "--word-regexp", action="store_true",
                      help="match whole words only, so 'foo' won't hit 'foobar'")
+    pgr.add_argument("-v", "--invert-match", dest="invert", action="store_true",
+                     help="show lines that do not match the pattern")
     pgr.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
     pgr.add_argument("--json", action="store_true", help="print matches as json")

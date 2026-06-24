@@ -252,6 +252,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-i`, `--ignore-case` - case-insensitive match.
 - `-F`, `--fixed` - treat the pattern as a literal, not a regex.
 - `-w`, `--word` - match whole words only, so `foo` won't hit `foobar`.
+- `-v`, `--invert-match` - show the lines that do not match the pattern.
 - `-l`, `--name-only` - print only the matching file paths.
 - `--count` - print only the number of matching lines.
 - `--json` - print matches as json.

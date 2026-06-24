@@ -2161,3 +2161,21 @@ def test_grep_word_matches_whole_words_only(tmp_path, monkeypatch, capsys):
     # works with a fixed string too
     main(["grep", "-w", "-F", "foo", "--count"])
     assert capsys.readouterr().out.strip() == "2"
+
+
+def test_grep_invert_match(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("keep this\ndrop foo\nkeep that\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -v yields the lines that do not match
+    main(["grep", "-v", "foo"])
+    out = capsys.readouterr().out
+    assert "a.py:1:keep this" in out
+    assert "a.py:3:keep that" in out
+    assert "drop foo" not in out
+
+    main(["grep", "-v", "foo", "--count"])
+    assert capsys.readouterr().out.strip() == "2"

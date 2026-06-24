@@ -789,13 +789,15 @@ def show(root, ref, path):
     return obj.read_bytes()
 
 
-def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False, word=False):
+def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False,
+                  word=False, invert=False):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
     # (path, lineno, line) per match, files in manifest order, line 1-based.
     # binary blobs (undecodable) are skipped, so a checkpoint's text is grep-able
     # without restoring it. fixed treats pattern as a literal substring, word
-    # anchors the match to word boundaries so 'foo' won't hit 'foobar'.
+    # anchors the match to word boundaries so 'foo' won't hit 'foobar'. invert
+    # yields the lines that do not match, like grep -v.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
@@ -814,7 +816,7 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
         except UnicodeDecodeError:
             continue
         for i, line in enumerate(text.splitlines(), 1):
-            if rx.search(line):
+            if bool(rx.search(line)) != invert:
                 yield rel, i, line
 
 

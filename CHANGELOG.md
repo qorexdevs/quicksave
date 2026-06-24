@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-25
+
 ### Added
 - `grep -A`/`-B`/`-C` print context lines around each match, like `grep`. Context lines use a
   `-` separator instead of `:`, overlapping windows merge, and non-adjacent groups are split by a

@@ -2138,3 +2138,26 @@ def test_grep_fixed_string_and_path_filter(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "a.py:1:a.b.c matched" in out
     assert "b.py" not in out
+
+
+def test_grep_word_matches_whole_words_only(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("foo here\nfoobar there\na foo line\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # without -w foobar matches too
+    main(["grep", "foo", "--count"])
+    assert capsys.readouterr().out.strip() == "3"
+
+    # -w anchors to word boundaries, so foobar is skipped
+    main(["grep", "-w", "foo"])
+    out = capsys.readouterr().out
+    assert "a.py:1:foo here" in out
+    assert "a.py:3:a foo line" in out
+    assert "foobar" not in out
+
+    # works with a fixed string too
+    main(["grep", "-w", "-F", "foo", "--count"])
+    assert capsys.readouterr().out.strip() == "2"

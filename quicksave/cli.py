@@ -840,7 +840,8 @@ def cmd_grep(args):
     hits = store.grep_snapshot(root, args.ref, args.pattern,
                                ignore_case=args.ignore_case,
                                paths=args.paths or None,
-                               fixed=args.fixed)
+                               fixed=args.fixed,
+                               word=args.word)
     if args.count:
         print(sum(1 for _ in hits))
         return
@@ -1330,6 +1331,8 @@ def build_parser():
     pgr.add_argument("-i", "--ignore-case", action="store_true", help="case-insensitive match")
     pgr.add_argument("-F", "--fixed", "--fixed-strings", action="store_true",
                      help="treat the pattern as a literal string, not a regex")
+    pgr.add_argument("-w", "--word", "--word-regexp", action="store_true",
+                     help="match whole words only, so 'foo' won't hit 'foobar'")
     pgr.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
     pgr.add_argument("--json", action="store_true", help="print matches as json")

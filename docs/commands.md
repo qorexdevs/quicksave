@@ -251,6 +251,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-r`, `--ref` - snapshot id, number or name (default latest).
 - `-i`, `--ignore-case` - case-insensitive match.
 - `-F`, `--fixed` - treat the pattern as a literal, not a regex.
+- `-w`, `--word` - match whole words only, so `foo` won't hit `foobar`.
 - `-l`, `--name-only` - print only the matching file paths.
 - `--count` - print only the number of matching lines.
 - `--json` - print matches as json.
@@ -258,7 +259,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 ```
 quicksave grep TODO
 quicksave grep -i "api_key" -r pre-deploy src/
-quicksave grep -F "a.b.c" --name-only
+quicksave grep -w -F "a.b.c" --name-only
 ```
 
 ## export

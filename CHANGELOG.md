@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep -w`/`--word` matches whole words only, anchoring the pattern to word boundaries so `foo`
+  no longer hits `foobar`. Works with `-F`, `-i`, `--count`, `--name-only` and a path filter.
 - `verify --repair --json` now emits the repair result (`dropped`, `corrupt_blobs`, `blobs`,
   `dry_run`) instead of only the rich text, so a hook or CI step can repair the store and read
   what it did. Plain `verify --json` already worked; `--repair` ignored the flag.

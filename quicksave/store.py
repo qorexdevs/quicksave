@@ -789,18 +789,20 @@ def show(root, ref, path):
     return obj.read_bytes()
 
 
-def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False):
+def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False, word=False):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
     # (path, lineno, line) per match, files in manifest order, line 1-based.
     # binary blobs (undecodable) are skipped, so a checkpoint's text is grep-able
-    # without restoring it. fixed treats pattern as a literal substring.
+    # without restoring it. fixed treats pattern as a literal substring, word
+    # anchors the match to word boundaries so 'foo' won't hit 'foobar'.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
     files, _ = _selected_files(manifest, paths, ref)
     flags = re.IGNORECASE if ignore_case else 0
-    rx = re.compile(re.escape(pattern) if fixed else pattern, flags)
+    core = re.escape(pattern) if fixed else pattern
+    rx = re.compile(rf"\b(?:{core})\b" if word else core, flags)
     # sort by path so output is deterministic across filesystems, like git grep
     for rel in sorted(files):
         meta = files[rel]

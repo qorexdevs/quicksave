@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-06-26
+
 ### Added
 - `grep -L`/`--files-without-match` lists the text files with no match, the complement of `-l`.
   Handy for spotting files missing a required header or license line. Mutually exclusive with `-l`.

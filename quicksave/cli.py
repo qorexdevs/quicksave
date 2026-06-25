@@ -947,7 +947,10 @@ def cmd_grep(args):
                 path != prev[0] or n != prev[1] + 1):
             console.print("[dim]--[/]")
         sep = ":" if is_match else "-"
-        console.print(f"[cyan]{path}[/]{sep}[yellow]{n}[/]{sep}{text}")
+        if args.no_filename:
+            console.print(f"[yellow]{n}[/]{sep}{text}")
+        else:
+            console.print(f"[cyan]{path}[/]{sep}[yellow]{n}[/]{sep}{text}")
         prev = (path, n)
 
 
@@ -1455,6 +1458,8 @@ def build_parser():
                      help="print N lines of context on both sides of each match")
     pgr.add_argument("-o", "--only-matching", dest="only", action="store_true",
                      help="print only the matched part of each line, one match per line")
+    pgr.add_argument("--no-filename", dest="no_filename", action="store_true",
+                     help="drop the 'path:' prefix from each printed line")
     pgr.add_argument("-m", "--max-count", type=int, default=0, metavar="N",
                      help="stop after N matching lines per file (grep -m)")
     pgl = pgr.add_mutually_exclusive_group()

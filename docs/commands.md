@@ -261,6 +261,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-B N`, `--before-context` - print N lines of context before each match.
 - `-C N`, `--context` - print N lines of context on both sides.
 - `-o`, `--only-matching` - print only the matched part of each line, one match per line.
+- `--no-filename` - drop the `path:` prefix so each line is just `line:text`, handy when piping matches on. Affects the default and context output only; `--count`/`-c`/`-l`/`-L`/`--json` ignore it.
 - `-m N`, `--max-count` - stop after N matching lines per file, like `grep -m`. `0` is no cap.
 - `-l`, `--name-only` - print only the matching file paths.
 - `-L`, `--files-without-match` - print only the paths of text files with no match, the complement of `-l`. Can't be combined with `-l`.

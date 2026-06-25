@@ -2380,6 +2380,30 @@ def test_grep_context_lines(tmp_path, monkeypatch, capsys):
     assert capsys.readouterr().out.strip() == "2"
 
 
+def test_grep_no_filename(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("alpha\nhit one\nbeta\n")
+    (tmp_path / "b.py").write_text("gamma\nhit two\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # --no-filename keeps line numbers and text but drops the path prefix
+    main(["grep", "hit", "--no-filename"])
+    out = capsys.readouterr().out
+    assert "2:hit one" in out
+    assert "2:hit two" in out
+    assert "a.py" not in out
+    assert "b.py" not in out
+
+    # context lines lose the prefix too but keep the '-' separator
+    main(["grep", "hit one", "-A", "1", "--no-filename"])
+    out = capsys.readouterr().out
+    assert "2:hit one" in out
+    assert "3-beta" in out
+    assert "a.py" not in out
+
+
 def test_grep_max_count_caps_lines_per_file(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

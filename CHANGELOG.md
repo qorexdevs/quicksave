@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep --no-filename` drops the `path:` prefix from each printed line, leaving `line:text`, for
+  piping matches into a tool that chokes on the path. Context lines lose the prefix too but keep
+  their `-` separator; `--count`/`-c`/`-l`/`-L`/`--json` ignore it.
 - `grep -c`/`--count-per-file` prints `path:count` of matching lines for each file that matched,
   sorted by path, so you can see which file in a snapshot has the most TODOs without dumping the
   lines. Files with no match are left out. Mutually exclusive with `-l`/`-L`.

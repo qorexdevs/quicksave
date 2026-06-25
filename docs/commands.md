@@ -256,6 +256,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-i`, `--ignore-case` - case-insensitive match.
 - `-F`, `--fixed` - treat the pattern as a literal, not a regex.
 - `-w`, `--word` - match whole words only, so `foo` won't hit `foobar`.
+- `-x`, `--line-regexp` - match whole lines only, so the pattern must equal the entire line. When both `-x` and `-w` are passed, `-x` wins.
 - `-v`, `--invert-match` - show the lines that do not match the pattern.
 - `-A N`, `--after-context` - print N lines of context after each match.
 - `-B N`, `--before-context` - print N lines of context before each match.
@@ -277,6 +278,7 @@ non-adjacent groups are split by a `--` divider, like `grep`. Context is ignored
 quicksave grep TODO
 quicksave grep -i "api_key" -r pre-deploy src/
 quicksave grep -w -F "a.b.c" --name-only
+quicksave grep -x TODO                   # lines that are exactly "TODO", not "TODO: fix later"
 quicksave grep -C 2 "def main"
 quicksave grep -o "[A-Z]+_[A-Z]+" -r v1   # pull just the env var names out
 quicksave grep -m 1 -l TODO               # first file with a TODO, stop early

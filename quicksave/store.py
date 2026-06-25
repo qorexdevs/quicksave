@@ -790,7 +790,8 @@ def show(root, ref, path):
 
 
 def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False,
-                  word=False, invert=False, before=0, after=0, only=False, max_count=0):
+                  word=False, line_regexp=False, invert=False, before=0, after=0,
+                  only=False, max_count=0):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
     # (path, lineno, line, is_match) per emitted line, files in manifest order,
@@ -808,7 +809,9 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     files, _ = _selected_files(manifest, paths, ref)
     flags = re.IGNORECASE if ignore_case else 0
     core = re.escape(pattern) if fixed else pattern
-    rx = re.compile(rf"\b(?:{core})\b" if word else core, flags)
+    if line_regexp:
+        core = rf"^(?:{core})$"
+    rx = re.compile(rf"\b(?:{core})\b" if word and not line_regexp else core, flags)
     # sort by path so output is deterministic across filesystems, like git grep
     for rel in sorted(files):
         meta = files[rel]

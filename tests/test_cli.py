@@ -2289,6 +2289,58 @@ def test_grep_word_matches_whole_words_only(tmp_path, monkeypatch, capsys):
     assert capsys.readouterr().out.strip() == "2"
 
 
+
+def test_grep_line_regexp_matches_whole_lines_only(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("TODO\nTODO: fix this later\nbare TODO line\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # without -x, every TODO line matches
+    main(["grep", "TODO", "--count"])
+    assert capsys.readouterr().out.strip() == "3"
+
+    # -x matches only the line that is exactly "TODO"
+    main(["grep", "-x", "TODO"])
+    out = capsys.readouterr().out
+    assert "a.py:1:TODO" in out
+    assert "TODO: fix this" not in out
+    assert "bare TODO line" not in out
+
+    # -x wins over -w when both are set
+    main(["grep", "-x", "-w", "TODO", "--count"])
+    assert capsys.readouterr().out.strip() == "1"
+
+    # works with -F
+    main(["grep", "-x", "-F", "TODO", "--count"])
+    assert capsys.readouterr().out.strip() == "1"
+
+    # with -v, yields lines that are NOT exactly "TODO"
+    main(["grep", "-x", "-v", "TODO"])
+    out = capsys.readouterr().out
+    assert "a.py:2:TODO: fix this later" in out
+    assert "a.py:3:bare TODO line" in out
+    assert "a.py:1:TODO" not in out
+
+    # -x with -i
+    (tmp_path / "b.py").write_text("todo\nTODO\nTODO: later\n")
+    main(["save", "-m", "v2"])
+    capsys.readouterr()
+    main(["grep", "-x", "-i", "todo", "--count"])
+    # a.py has 'TODO' (1), b.py has 'todo' and 'TODO' (2) = 3 total
+    assert capsys.readouterr().out.strip() == "3"
+
+    # -x works with -o (only-matching)
+    main(["grep", "-x", "-o", "TODO"])
+    out = capsys.readouterr().out
+    assert "a.py:1:TODO" in out
+    assert "TODO: fix" not in out
+
+    # count respects -x
+    main(["grep", "-x", "TODO", "--count"])
+    assert capsys.readouterr().out.strip() == "2"
+
 def test_grep_invert_match(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

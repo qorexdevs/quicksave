@@ -909,6 +909,7 @@ def cmd_grep(args):
                                paths=args.paths or None,
                                fixed=args.fixed,
                                word=args.word,
+                               line_regexp=args.line_regexp,
                                invert=args.invert,
                                before=before,
                                after=after,
@@ -1448,6 +1449,8 @@ def build_parser():
                      help="treat the pattern as a literal string, not a regex")
     pgr.add_argument("-w", "--word", "--word-regexp", action="store_true",
                      help="match whole words only, so 'foo' won't hit 'foobar'")
+    pgr.add_argument("-x", "--line-regexp", action="store_true",
+                     help="match whole lines only, so the pattern must equal the entire line")
     pgr.add_argument("-v", "--invert-match", dest="invert", action="store_true",
                      help="show lines that do not match the pattern")
     pgr.add_argument("-A", "--after-context", dest="after", type=int, default=0, metavar="N",

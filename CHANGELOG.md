@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-25
+
 ### Added
 - `restore --into DIR --dry-run` previews what would land in DIR (created vs overwritten) instead of
   ignoring the flag; the plan and the `--json` output's new `into` field measure against DIR, so

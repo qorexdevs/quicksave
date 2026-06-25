@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `show -n`/`--number` numbers the printed lines, like `cat -n`, so a `grep` hit at line N lines up
+  with the output. Without it `show` still streams raw bytes for binary-safe redirects.
 - `grep -m`/`--max-count N` stops after N matching lines per file, like GNU grep. The cap is per
   file, so `--count` sums the capped hits across files; `0` means no cap. Works with `-o` (caps
   matching lines, not fragments) and context.

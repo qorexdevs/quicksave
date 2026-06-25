@@ -878,6 +878,14 @@ def cmd_show(args):
     else:
         ref, path = args.ref, args.path
     data = store.show(root, ref, path)
+    if args.number:
+        # number the lines like cat -n, so a grep hit at line N is easy to find
+        # again. decode lossily; numbering a binary blob is on you.
+        lines = data.decode("utf-8", "replace").splitlines()
+        width = len(str(len(lines))) if lines else 1
+        sys.stdout.write("".join(f"{i:>{width}}\t{ln}\n"
+                                 for i, ln in enumerate(lines, 1)))
+        return
     with open(1, "wb", closefd=False) as out:
         out.write(data)
 
@@ -1411,6 +1419,7 @@ def build_parser():
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])
     ph.add_argument("ref", help="snapshot id or number, or just the file if you want the newest snapshot that has it")
     ph.add_argument("path", nargs="?", help="file to print (omit to treat ref as the file)")
+    ph.add_argument("-n", "--number", action="store_true", help="number the output lines, like cat -n")
     ph.set_defaults(func=cmd_show)
 
     pgr = sub.add_parser("grep", help="search a snapshot's file contents for a pattern", parents=[common])

@@ -2164,6 +2164,18 @@ def test_save_message_from_stdin_json(tmp_path, monkeypatch, capsys):
     assert data["message"] == "piped message"
 
 
+def test_show_number_lines(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("import os\nx = 1\ny = 2\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    main(["show", "a.py", "-n"])
+    out = capsys.readouterr().out
+    assert out == "1\timport os\n2\tx = 1\n3\ty = 2\n"
+
+
 def test_grep_matches_lines_and_skips_binary(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

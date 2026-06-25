@@ -165,6 +165,14 @@ resolves to its own newest snapshot while a single pre-restore backup covers the
 `undo` rewinds them all. If the newest copy turns out to be the broken one, `find` lists the candidates
 and `recover app.py --from 3` pulls from the snapshot you pick instead of scanning for the newest match.
 
+`find` matches paths; `grep` matches contents. `quicksave grep TODO` searches a snapshot's files for a
+pattern without restoring anything, printing `path:line:text` for each hit. It reads like the grep you
+already know: `-i` ignores case, `-F` takes a literal instead of a regex, `-w` matches whole words,
+`-v` shows lines that don't match, `-A`/`-B`/`-C N` pull context lines around each hit, and `-o` prints
+just the matched part. `--count` reports how many lines matched, `-l` lists only the files, and `--json`
+gives machine-readable output. Pass `-r <ref>` to search a specific snapshot and paths to narrow it, so
+`quicksave grep -i api_key -r pre-deploy src/` checks one checkpoint before you ship.
+
 `save -n <name>` tags a snapshot so you can roll back to it without hunting for its number or id:
 `quicksave restore pre-deploy`. Anywhere a command takes a snapshot ref (`restore`, `status`, `show`,
 `diff`) the name works too. Names can't be all digits so they never clash with the list numbers, and

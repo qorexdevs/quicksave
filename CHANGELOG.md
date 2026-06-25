@@ -9,6 +9,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 - `grep -m`/`--max-count N` stops after N matching lines per file, like GNU grep. The cap is per
   file, so `--count` sums the capped hits across files; `0` means no cap. Works with `-o` (caps
   matching lines, not fragments) and context.
+- `hook --check -` reads commands from stdin, one per line, and prints a verdict per line
+  (`risky`/`safe` with the command), exiting 0 if any line is risky. Pipe an agent's command log
+  through to see which lines would trip a snapshot.
 
 ## [0.9.0] - 2026-06-25
 

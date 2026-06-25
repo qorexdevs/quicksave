@@ -278,6 +278,8 @@ docker\s+compose\s+down\s+-v'
 
 To check whether a command would trigger a save without running anything, `quicksave hook --check
 'terraform destroy'` prints `risky` or `safe` (and exits 0 or 1), so you can tune the patterns.
+Pass `-` to read commands from stdin, one per line, and get a verdict for each
+(`cat commands.txt | quicksave hook --check -`) - handy for scanning an agent's command log.
 
 ## Shell completion
 

@@ -1121,6 +1121,23 @@ def cmd_hook(args):
         # tune QUICKSAVE_RISKY patterns without an agent: exit 0 on a match,
         # 1 otherwise, so it composes in scripts the way grep does. on a hit the
         # matching pattern rides along after a tab so you can see what tripped.
+        if check == "-":
+            # batch mode: one command per line on stdin, verdict per line, so you
+            # can pipe an agent's command log through and see what would trip a snap.
+            any_risky = False
+            for line in sys.stdin:
+                cmd = line.rstrip("\n")
+                if not cmd:
+                    continue
+                hit = store.risky_match(cmd)
+                if hit is not None:
+                    print(f"risky\t{hit}\t{cmd}")
+                    any_risky = True
+                else:
+                    print(f"safe\t{cmd}")
+            if not any_risky:
+                raise SystemExit(1)
+            return
         hit = store.risky_match(check)
         if hit is not None:
             print(f"risky\t{hit}")
@@ -1496,7 +1513,8 @@ def build_parser():
 
     phook = sub.add_parser("hook", help="PreToolUse hook: auto-save before a risky bash command", parents=[common])
     phook.add_argument("--check", metavar="CMD",
-                       help="print whether CMD would trigger a snapshot, then exit (0 risky, 1 safe)")
+                       help="print whether CMD would trigger a snapshot, then exit (0 risky, 1 safe); "
+                            "pass - to read commands from stdin, one per line")
     phook.set_defaults(func=cmd_hook)
     hsub = phook.add_subparsers(dest="hook_action")
     hin = hsub.add_parser("install", help="wire the hook into an agent runner's config", parents=[common])

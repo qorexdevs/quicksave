@@ -982,6 +982,25 @@ def test_hook_check_honors_custom_pattern(capsys, monkeypatch):
     assert r"terraform\s+destroy" in out
 
 
+def test_hook_check_stdin_mixed(capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO("rm -rf build\nls -la\n\ngit status\n"))
+    main(["hook", "--check", "-"])
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0].split("\t")[0] == "risky"
+    assert lines[0].endswith("\trm -rf build")
+    assert lines[1] == "safe\tls -la"
+    assert lines[2] == "safe\tgit status"
+
+
+def test_hook_check_stdin_all_safe_exits_nonzero(capsys, monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO("ls -la\ngit status\n"))
+    with pytest.raises(SystemExit) as e:
+        main(["hook", "--check", "-"])
+    assert e.value.code == 1
+    out = capsys.readouterr().out.splitlines()
+    assert all(line.startswith("safe\t") for line in out)
+
+
 def test_hook_noop_outside_project(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": "rm -rf x"}})

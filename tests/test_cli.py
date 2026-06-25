@@ -460,6 +460,25 @@ def test_restore_into_leaves_tree_untouched(tmp_path, monkeypatch, capsys):
     assert len(snaps) == 1
 
 
+def test_restore_into_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "note.md").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    out_dir = tmp_path / "recovered"
+    (out_dir).mkdir()
+    (out_dir / "note.md").write_text("stale")  # already there, should read as overwritten
+    main(["restore", "0", "--into", str(out_dir), "--dry-run", "--json"])
+    res = json.loads(capsys.readouterr().out)
+    assert res["dry_run"] is True
+    assert res["into"] == str(out_dir)
+    assert res["overwritten"] == ["note.md"]
+    # plan against the dir only, the dir contents stay put
+    assert (out_dir / "note.md").read_text() == "stale"
+
+
 def test_cli_restore_dry_run_changes_nothing(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

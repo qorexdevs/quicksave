@@ -1137,10 +1137,12 @@ def _selected_files(manifest, paths, ref):
     return files, wanted
 
 
-def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE):
-    # what restore would do, without touching disk
+def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest=None):
+    # what restore would do, without touching disk. dest mirrors restore(): the
+    # plan is measured against DIR instead of the live tree, and clean is off.
     root = Path(root)
     store = store_path(root)
+    base = Path(dest) if dest else root
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
     files, wanted = _selected_files(manifest, paths, ref)
@@ -1150,13 +1152,13 @@ def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE)
         obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
         if not obj.exists():
             missing.append(relpath)
-        elif (root / relpath).exists():
+        elif (base / relpath).exists():
             overwritten.append(relpath)
         else:
             created.append(relpath)
 
     removed = []
-    if clean:
+    if clean and dest is None:
         keep = set(files)
         for rel in iter_files(root, ignore):
             relp = rel.as_posix()

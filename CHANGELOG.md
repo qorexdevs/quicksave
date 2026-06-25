@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `restore --into DIR --dry-run` previews what would land in DIR (created vs overwritten) instead of
+  ignoring the flag; the plan and the `--json` output's new `into` field measure against DIR, so
+  files already there read as overwritten.
 - `diff --numstat` prints added/removed line counts per file as `added<tab>removed<tab>path`, like
   `git diff --numstat`. Binary files show `-` for both counts. Works between two snapshots and
   against the working tree; with `--json` the counts come back as a `files` list.

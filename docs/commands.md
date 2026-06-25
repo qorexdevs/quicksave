@@ -141,7 +141,7 @@ after the snapshot. Snapshots the current tree first, so a wrong restore is itse
 - `ref` - snapshot id, number or name (default latest).
 - `paths...` - only restore these files or directories.
 - `--clean` - exact rewind: also delete files the snapshot didn't have.
-- `--dry-run` - preview what would be written or deleted, no changes.
+- `--dry-run` - preview what would be written or deleted, no changes. With `--into` it previews against DIR.
 - `--into DIR` - write the snapshot into DIR, leave the live tree alone.
 - `--no-backup` - skip the safety snapshot of the current tree.
 - `--json` - report the files restored, the removed count and the backup id.

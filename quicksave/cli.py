@@ -455,7 +455,10 @@ def cmd_restore(args):
     ref = args.ref or "latest"
     if into:
         # pulling a snapshot aside, the live tree is untouched so no backup and
-        # no clean. dry-run previews against the tree, which is meaningless here.
+        # no clean. dry-run previews against DIR instead of writing into it.
+        if args.dry_run:
+            cmd_restore_preview(args, root, dest=into)
+            return
         target = store.resolve_id(root, args.ref)
         n, _, _ = store.restore(root, target, args.paths, dest=into)
         if as_json:
@@ -489,17 +492,21 @@ def cmd_restore(args):
     console.print(f"restored [cyan]{n}[/] files from [cyan]{ref}[/] [dim]{when}[/]{scope}{extra}")
 
 
-def cmd_restore_preview(args, root):
-    p = store.restore_plan(root, args.ref, args.paths, clean=args.clean)
+def cmd_restore_preview(args, root, dest=None):
+    p = store.restore_plan(root, args.ref, args.paths, clean=args.clean, dest=dest)
     ref = args.ref or "latest"
     total = len(p["created"]) + len(p["overwritten"])
     if getattr(args, "json", False):
-        print(json.dumps({"ref": ref, "dry_run": True, "would_write": total,
-                          "created": p["created"], "overwritten": p["overwritten"],
-                          "removed": p["removed"], "missing": p["missing"]}))
+        out = {"ref": ref, "dry_run": True, "would_write": total,
+               "created": p["created"], "overwritten": p["overwritten"],
+               "removed": p["removed"], "missing": p["missing"]}
+        if dest:
+            out["into"] = dest
+        print(json.dumps(out))
         return
+    where = f" into {dest}" if dest else ""
     if not total and not p["removed"] and not p["missing"]:
-        console.print(f"[dim]nothing to restore from {ref}[/]")
+        console.print(f"[dim]nothing to restore from {ref}{where}[/]")
         return
     for path in p["created"]:
         console.print(f"[green]+ {path}[/]")

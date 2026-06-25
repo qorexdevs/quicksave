@@ -263,12 +263,13 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-o`, `--only-matching` - print only the matched part of each line, one match per line.
 - `-m N`, `--max-count` - stop after N matching lines per file, like `grep -m`. `0` is no cap.
 - `-l`, `--name-only` - print only the matching file paths.
+- `-L`, `--files-without-match` - print only the paths of text files with no match, the complement of `-l`. Can't be combined with `-l`.
 - `--count` - print only the number of matching lines.
 - `--json` - print matches as json.
 
 Context lines use a `-` separator (`path-line-text`) instead of the `:` of a match, and
 non-adjacent groups are split by a `--` divider, like `grep`. Context is ignored by `--count`,
-`--name-only` and `--json`, which only report matches.
+`--name-only`, `--files-without-match` and `--json`, which only report files or matches.
 
 ```
 quicksave grep TODO
@@ -277,6 +278,7 @@ quicksave grep -w -F "a.b.c" --name-only
 quicksave grep -C 2 "def main"
 quicksave grep -o "[A-Z]+_[A-Z]+" -r v1   # pull just the env var names out
 quicksave grep -m 1 -l TODO               # first file with a TODO, stop early
+quicksave grep -L "Copyright" src/        # source files missing the license line
 ```
 
 ## export

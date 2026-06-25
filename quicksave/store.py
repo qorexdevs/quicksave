@@ -862,6 +862,28 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
                 yield rel, j + 1, lines[j], j in matches
 
 
+def grep_text_files(root, ref, paths=None):
+    # the set of files grep_snapshot would actually search: selected blobs that
+    # decode as text, same skip-binary rule. lets callers compute the complement
+    # of the matched files for grep -L, in sorted (manifest) order.
+    store = store_path(root)
+    f = _resolve_snapshot(store, ref)
+    manifest = json.loads(f.read_text())
+    files, _ = _selected_files(manifest, paths, ref)
+    out = []
+    for rel in sorted(files):
+        meta = files[rel]
+        obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
+        if not obj.exists():
+            continue
+        try:
+            obj.read_bytes().decode()
+        except UnicodeDecodeError:
+            continue
+        out.append(rel)
+    return out
+
+
 def export_snapshot(root, ref, dest, paths=None, out=None, gzip=False):
     # materialize a snapshot into a tar archive without touching the live tree.
     # gzip when dest ends in .gz/.tgz or gzip is set, plain tar otherwise. handy

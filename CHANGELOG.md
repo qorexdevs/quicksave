@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep -L`/`--files-without-match` lists the text files with no match, the complement of `-l`.
+  Handy for spotting files missing a required header or license line. Mutually exclusive with `-l`.
 - `show -n`/`--number` numbers the printed lines, like `cat -n`, so a `grep` hit at line N lines up
   with the output. Without it `show` still streams raw bytes for binary-safe redirects.
 - `grep -m`/`--max-count N` stops after N matching lines per file, like GNU grep. The cap is per

@@ -895,11 +895,12 @@ def cmd_grep(args):
     before = args.context if args.context is not None else args.before
     after = args.context if args.context is not None else args.after
     only = args.only
-    # context only shapes the default line output; count/-l/json work on matches
-    if args.count or args.name_only or args.json:
+    list_files = args.name_only or args.files_without_match
+    # context only shapes the default line output; count/-l/-L/json work on matches
+    if args.count or list_files or args.json:
         before = after = 0
-    # count tallies matching lines and -l lists files, so -o doesn't apply there
-    if args.count or args.name_only:
+    # count tallies matching lines and -l/-L list files, so -o doesn't apply there
+    if args.count or list_files:
         only = False
     if only:
         before = after = 0
@@ -921,6 +922,12 @@ def cmd_grep(args):
         for path, _, _, _ in hits:
             if path not in seen:
                 seen.add(path)
+                print(path)
+        return
+    if args.files_without_match:
+        matched = {path for path, _, _, _ in hits}
+        for path in store.grep_text_files(root, args.ref, args.paths or None):
+            if path not in matched:
                 print(path)
         return
     if args.json:
@@ -1443,7 +1450,10 @@ def build_parser():
                      help="print only the matched part of each line, one match per line")
     pgr.add_argument("-m", "--max-count", type=int, default=0, metavar="N",
                      help="stop after N matching lines per file (grep -m)")
-    pgr.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
+    pgl = pgr.add_mutually_exclusive_group()
+    pgl.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
+    pgl.add_argument("-L", "--files-without-match", action="store_true",
+                     help="print only the paths of text files with no match")
     pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
     pgr.add_argument("--json", action="store_true", help="print matches as json")
     pgr.set_defaults(func=cmd_grep)

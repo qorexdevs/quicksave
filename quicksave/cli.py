@@ -903,7 +903,8 @@ def cmd_grep(args):
                                invert=args.invert,
                                before=before,
                                after=after,
-                               only=only)
+                               only=only,
+                               max_count=args.max_count)
     if args.count:
         print(sum(1 for _ in hits))
         return
@@ -1414,6 +1415,8 @@ def build_parser():
                      help="print N lines of context on both sides of each match")
     pgr.add_argument("-o", "--only-matching", dest="only", action="store_true",
                      help="print only the matched part of each line, one match per line")
+    pgr.add_argument("-m", "--max-count", type=int, default=0, metavar="N",
+                     help="stop after N matching lines per file (grep -m)")
     pgr.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
     pgr.add_argument("--json", action="store_true", help="print matches as json")

@@ -790,7 +790,7 @@ def show(root, ref, path):
 
 
 def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False,
-                  word=False, invert=False, before=0, after=0, only=False):
+                  word=False, invert=False, before=0, after=0, only=False, max_count=0):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
     # (path, lineno, line, is_match) per emitted line, files in manifest order,
@@ -801,6 +801,7 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     # and after pull in that many surrounding lines as context (grep -B/-A/-C),
     # flagged is_match=False so callers can render them differently. only yields
     # just the matched substrings (grep -o), one per match, instead of whole lines.
+    # max_count stops after that many matching lines per file (grep -m), 0 is no cap.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
@@ -823,17 +824,29 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
             # -o prints matched fragments, so -v (non-matching lines) leaves
             # nothing to print, like grep -o -v
             if not invert:
+                seen = 0
                 for i, line in enumerate(lines, 1):
-                    for m in rx.finditer(line):
-                        if m.group():
-                            yield rel, i, m.group(), True
+                    frags = [m.group() for m in rx.finditer(line) if m.group()]
+                    if not frags:
+                        continue
+                    for frag in frags:
+                        yield rel, i, frag, True
+                    seen += 1
+                    if max_count and seen >= max_count:
+                        break
             continue
         if before <= 0 and after <= 0:
+            seen = 0
             for i, line in enumerate(lines, 1):
                 if bool(rx.search(line)) != invert:
                     yield rel, i, line, True
+                    seen += 1
+                    if max_count and seen >= max_count:
+                        break
             continue
         matches = {i for i, line in enumerate(lines) if bool(rx.search(line)) != invert}
+        if max_count and len(matches) > max_count:
+            matches = set(sorted(matches)[:max_count])
         if not matches:
             continue
         # expand each match into a window and emit each line once, in order, so

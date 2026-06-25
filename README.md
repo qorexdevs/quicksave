@@ -169,7 +169,8 @@ and `recover app.py --from 3` pulls from the snapshot you pick instead of scanni
 pattern without restoring anything, printing `path:line:text` for each hit. It reads like the grep you
 already know: `-i` ignores case, `-F` takes a literal instead of a regex, `-w` matches whole words,
 `-v` shows lines that don't match, `-A`/`-B`/`-C N` pull context lines around each hit, and `-o` prints
-just the matched part. `--count` reports how many lines matched, `-l` lists only the files, and `--json`
+just the matched part. `-m N` stops after N matching lines per file, like grep's `-m`. `--count` reports
+how many lines matched, `-l` lists only the files, and `--json`
 gives machine-readable output. Pass `-r <ref>` to search a specific snapshot and paths to narrow it, so
 `quicksave grep -i api_key -r pre-deploy src/` checks one checkpoint before you ship.
 

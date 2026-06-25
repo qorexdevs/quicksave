@@ -2311,3 +2311,39 @@ def test_grep_context_lines(tmp_path, monkeypatch, capsys):
     # count ignores context and still reports only matching lines
     main(["grep", "hit", "-C", "5", "--count"])
     assert capsys.readouterr().out.strip() == "2"
+
+
+def test_grep_max_count_caps_lines_per_file(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("hit 1\nhit 2\nhit 3\nmiss\nhit 4\n")
+    (tmp_path / "b.py").write_text("hit a\nhit b\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -m 2 stops after two matching lines in each file, like grep -m
+    main(["grep", "hit", "-m", "2"])
+    out = capsys.readouterr().out
+    assert "a.py:1:hit 1" in out
+    assert "a.py:2:hit 2" in out
+    assert "a.py:3:hit 3" not in out
+    assert "b.py:1:hit a" in out
+    assert "b.py:2:hit b" in out
+
+    # the cap is per file, so count sums the capped hits (2 + 2)
+    main(["grep", "hit", "-m", "2", "--count"])
+    assert capsys.readouterr().out.strip() == "4"
+
+    # 0 means no cap
+    main(["grep", "hit", "-m", "0", "--count"])
+    assert capsys.readouterr().out.strip() == "6"
+
+    # -o respects the cap on matching lines too
+    (tmp_path / "c.py").write_text("id=1 id=2\nid=3\nid=4\n")
+    main(["save", "-m", "v2"])
+    capsys.readouterr()
+    main(["grep", r"id=\d", "c.py", "-o", "-m", "1"])
+    out = capsys.readouterr().out
+    assert "c.py:1:id=1" in out
+    assert "c.py:1:id=2" in out
+    assert "c.py:2:id=3" not in out

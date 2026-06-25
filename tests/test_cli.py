@@ -2215,6 +2215,24 @@ def test_grep_ignore_case_name_only_count_json(tmp_path, monkeypatch, capsys):
     assert any(d["line"] == 2 and "again" in d["text"] for d in data)
 
 
+def test_grep_count_per_file(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("todo one\ntodo two\nclean\n")
+    (tmp_path / "b.py").write_text("todo here\n")
+    (tmp_path / "c.py").write_text("nothing\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    main(["grep", "todo", "-c"])
+    # sorted by path, files with no match are skipped
+    assert capsys.readouterr().out.split() == ["a.py:2", "b.py:1"]
+
+    # -c and -l can't be combined
+    with pytest.raises(SystemExit):
+        main(["grep", "todo", "-c", "-l"])
+
+
 def test_grep_files_without_match(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

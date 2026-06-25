@@ -264,12 +264,13 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-m N`, `--max-count` - stop after N matching lines per file, like `grep -m`. `0` is no cap.
 - `-l`, `--name-only` - print only the matching file paths.
 - `-L`, `--files-without-match` - print only the paths of text files with no match, the complement of `-l`. Can't be combined with `-l`.
+- `-c`, `--count-per-file` - print `path:count` of matching lines for each file that matched, sorted by path. Files with no match are left out. Can't be combined with `-l`/`-L`.
 - `--count` - print only the number of matching lines.
 - `--json` - print matches as json.
 
 Context lines use a `-` separator (`path-line-text`) instead of the `:` of a match, and
 non-adjacent groups are split by a `--` divider, like `grep`. Context is ignored by `--count`,
-`--name-only`, `--files-without-match` and `--json`, which only report files or matches.
+`--count-per-file`, `--name-only`, `--files-without-match` and `--json`, which only report files or matches.
 
 ```
 quicksave grep TODO
@@ -279,6 +280,7 @@ quicksave grep -C 2 "def main"
 quicksave grep -o "[A-Z]+_[A-Z]+" -r v1   # pull just the env var names out
 quicksave grep -m 1 -l TODO               # first file with a TODO, stop early
 quicksave grep -L "Copyright" src/        # source files missing the license line
+quicksave grep -c TODO                     # which file has the most TODOs
 ```
 
 ## export

@@ -5,6 +5,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `grep -c`/`--count-per-file` prints `path:count` of matching lines for each file that matched,
+  sorted by path, so you can see which file in a snapshot has the most TODOs without dumping the
+  lines. Files with no match are left out. Mutually exclusive with `-l`/`-L`.
+
 ## [0.10.0] - 2026-06-26
 
 ### Added

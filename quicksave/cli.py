@@ -896,11 +896,11 @@ def cmd_grep(args):
     after = args.context if args.context is not None else args.after
     only = args.only
     list_files = args.name_only or args.files_without_match
-    # context only shapes the default line output; count/-l/-L/json work on matches
-    if args.count or list_files or args.json:
+    # context only shapes the default line output; count/-c/-l/-L/json work on matches
+    if args.count or args.count_per_file or list_files or args.json:
         before = after = 0
-    # count tallies matching lines and -l/-L list files, so -o doesn't apply there
-    if args.count or list_files:
+    # count tallies matching lines and -c/-l/-L list per file, so -o doesn't apply there
+    if args.count or args.count_per_file or list_files:
         only = False
     if only:
         before = after = 0
@@ -914,6 +914,13 @@ def cmd_grep(args):
                                after=after,
                                only=only,
                                max_count=args.max_count)
+    if args.count_per_file:
+        counts = {}
+        for path, _, _, _ in hits:
+            counts[path] = counts.get(path, 0) + 1
+        for path in sorted(counts):
+            print(f"{path}:{counts[path]}")
+        return
     if args.count:
         print(sum(1 for _ in hits))
         return
@@ -1454,6 +1461,8 @@ def build_parser():
     pgl.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgl.add_argument("-L", "--files-without-match", action="store_true",
                      help="print only the paths of text files with no match")
+    pgl.add_argument("-c", "--count-per-file", action="store_true",
+                     help="print 'path:count' of matching lines for each file that matched")
     pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
     pgr.add_argument("--json", action="store_true", help="print matches as json")
     pgr.set_defaults(func=cmd_grep)

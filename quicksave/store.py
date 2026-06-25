@@ -820,10 +820,13 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
             continue
         lines = text.splitlines()
         if only:
-            for i, line in enumerate(lines, 1):
-                for m in rx.finditer(line):
-                    if m.group():
-                        yield rel, i, m.group(), True
+            # -o prints matched fragments, so -v (non-matching lines) leaves
+            # nothing to print, like grep -o -v
+            if not invert:
+                for i, line in enumerate(lines, 1):
+                    for m in rx.finditer(line):
+                        if m.group():
+                            yield rel, i, m.group(), True
             continue
         if before <= 0 and after <= 0:
             for i, line in enumerate(lines, 1):

@@ -2264,6 +2264,10 @@ def test_grep_only_matching(tmp_path, monkeypatch, capsys):
     rows = json.loads(capsys.readouterr().out)
     assert [r["text"] for r in rows] == ["12", "345", "6"]
 
+    # -o with -v prints nothing: there is no match text on non-matching lines
+    main(["grep", r"\d+", "-o", "-v"])
+    assert capsys.readouterr().out.strip() == ""
+
 
 def test_grep_context_lines(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)

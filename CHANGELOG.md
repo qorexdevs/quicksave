@@ -17,6 +17,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   and `--json` (which carries the fragment in `text`); `--count` and `--name-only` still report
   matching lines and files.
 
+### Fixed
+- `grep -o -v` now prints nothing instead of ignoring `-v` and printing matches. `-o` emits only the
+  matched text, so on the non-matching lines `-v` selects there is nothing to print, like GNU grep.
+
 ## [0.8.0] - 2026-06-25
 
 ### Added

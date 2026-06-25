@@ -5,6 +5,12 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `grep -o`/`--only-matching` prints just the matched part of each line, one match per line, so
+  repeated matches on a line each print separately. Composes with `-i`, `-F`, `-w`, a path filter
+  and `--json` (which carries the fragment in `text`); `--count` and `--name-only` still report
+  matching lines and files.
+
 ## [0.8.0] - 2026-06-25
 
 ### Added

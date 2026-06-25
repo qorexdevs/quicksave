@@ -790,7 +790,7 @@ def show(root, ref, path):
 
 
 def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False,
-                  word=False, invert=False, before=0, after=0):
+                  word=False, invert=False, before=0, after=0, only=False):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
     # (path, lineno, line, is_match) per emitted line, files in manifest order,
@@ -799,7 +799,8 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     # substring, word anchors the match to word boundaries so 'foo' won't hit
     # 'foobar'. invert yields the lines that do not match, like grep -v. before
     # and after pull in that many surrounding lines as context (grep -B/-A/-C),
-    # flagged is_match=False so callers can render them differently.
+    # flagged is_match=False so callers can render them differently. only yields
+    # just the matched substrings (grep -o), one per match, instead of whole lines.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
@@ -818,6 +819,12 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
         except UnicodeDecodeError:
             continue
         lines = text.splitlines()
+        if only:
+            for i, line in enumerate(lines, 1):
+                for m in rx.finditer(line):
+                    if m.group():
+                        yield rel, i, m.group(), True
+            continue
         if before <= 0 and after <= 0:
             for i, line in enumerate(lines, 1):
                 if bool(rx.search(line)) != invert:

@@ -839,8 +839,14 @@ def cmd_grep(args):
     root = _root_or_die()
     before = args.context if args.context is not None else args.before
     after = args.context if args.context is not None else args.after
+    only = args.only
     # context only shapes the default line output; count/-l/json work on matches
     if args.count or args.name_only or args.json:
+        before = after = 0
+    # count tallies matching lines and -l lists files, so -o doesn't apply there
+    if args.count or args.name_only:
+        only = False
+    if only:
         before = after = 0
     hits = store.grep_snapshot(root, args.ref, args.pattern,
                                ignore_case=args.ignore_case,
@@ -849,7 +855,8 @@ def cmd_grep(args):
                                word=args.word,
                                invert=args.invert,
                                before=before,
-                               after=after)
+                               after=after,
+                               only=only)
     if args.count:
         print(sum(1 for _ in hits))
         return
@@ -1356,6 +1363,8 @@ def build_parser():
                      help="print N lines of context before each match")
     pgr.add_argument("-C", "--context", type=int, default=None, metavar="N",
                      help="print N lines of context on both sides of each match")
+    pgr.add_argument("-o", "--only-matching", dest="only", action="store_true",
+                     help="print only the matched part of each line, one match per line")
     pgr.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgr.add_argument("--count", action="store_true", help="print only the number of matching lines")
     pgr.add_argument("--json", action="store_true", help="print matches as json")

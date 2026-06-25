@@ -256,6 +256,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-A N`, `--after-context` - print N lines of context after each match.
 - `-B N`, `--before-context` - print N lines of context before each match.
 - `-C N`, `--context` - print N lines of context on both sides.
+- `-o`, `--only-matching` - print only the matched part of each line, one match per line.
 - `-l`, `--name-only` - print only the matching file paths.
 - `--count` - print only the number of matching lines.
 - `--json` - print matches as json.
@@ -269,6 +270,7 @@ quicksave grep TODO
 quicksave grep -i "api_key" -r pre-deploy src/
 quicksave grep -w -F "a.b.c" --name-only
 quicksave grep -C 2 "def main"
+quicksave grep -o "[A-Z]+_[A-Z]+" -r v1   # pull just the env var names out
 ```
 
 ## export

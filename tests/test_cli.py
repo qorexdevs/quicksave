@@ -2181,6 +2181,31 @@ def test_grep_invert_match(tmp_path, monkeypatch, capsys):
     assert capsys.readouterr().out.strip() == "2"
 
 
+def test_grep_only_matching(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("id=12 then id=345\nno digits here\nid=6\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -o prints just the matched part, one match per line, repeats on the same line
+    main(["grep", r"\d+", "-o"])
+    out = capsys.readouterr().out
+    assert "a.py:1:12" in out
+    assert "a.py:1:345" in out
+    assert "a.py:3:6" in out
+    assert "then" not in out
+
+    # count still reports matching lines, not match fragments
+    main(["grep", r"\d+", "-o", "--count"])
+    assert capsys.readouterr().out.strip() == "2"
+
+    # json carries the matched fragment in text
+    main(["grep", r"\d+", "-o", "--json"])
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["text"] for r in rows] == ["12", "345", "6"]
+
+
 def test_grep_context_lines(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

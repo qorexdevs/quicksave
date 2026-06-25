@@ -1483,6 +1483,46 @@ def test_diff_name_status_against_working_tree(tmp_path, monkeypatch, capsys):
     assert set(lines) == {"A\tnew.txt", "M\ta.txt"}
 
 
+def test_diff_numstat_between_snapshots(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    (tmp_path / "drop.txt").write_text("gone\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\nthree\n")
+    (tmp_path / "drop.txt").unlink()
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--numstat"])
+    lines = capsys.readouterr().out.splitlines()
+    assert set(lines) == {"2\t1\ta.txt", "0\t1\tdrop.txt", "1\t0\tnew.txt"}
+
+
+def test_diff_numstat_binary_shows_dash(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "bin").write_bytes(b"\xff\xfe\x00")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "bin").write_bytes(b"\xff\xfe\x00\x01")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--numstat"])
+    assert capsys.readouterr().out.strip() == "-\t-\tbin"
+
+
+def test_diff_numstat_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--numstat", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data["files"] == [{"path": "a.txt", "added": 1, "removed": 0}]
+
+
 def test_diff_patch_between_snapshots(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\n")

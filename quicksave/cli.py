@@ -693,6 +693,38 @@ def _patch_json(root, a, b, paths):
     print(json.dumps({"a": a, "b": b, "files": files}))
 
 
+def _numstat(root, a, b, path):
+    # added/removed line counts for one path, or None if it's binary on both
+    # sides. added/removed/modified all fall out of unified_diff once a missing
+    # side is an empty list.
+    import difflib
+    ta = _file_text(root, a, path)
+    tb = _file_text(root, b, path)
+    if ta is None and tb is None:
+        return None
+    added = removed = 0
+    for line in difflib.unified_diff(ta or [], tb or []):
+        if line.startswith("+") and not line.startswith("+++"):
+            added += 1
+        elif line.startswith("-") and not line.startswith("---"):
+            removed += 1
+    return added, removed
+
+
+def _emit_numstat(root, a, b, paths, as_json):
+    rows = [(path, _numstat(root, a, b, path)) for path in paths]
+    if as_json:
+        files = [{"path": p, "added": None if c is None else c[0],
+                  "removed": None if c is None else c[1]} for p, c in rows]
+        print(json.dumps({"a": a, "b": b, "files": files}))
+        return
+    for path, c in rows:
+        if c is None:
+            print(f"-\t-\t{path}")
+        else:
+            print(f"{c[0]}\t{c[1]}\t{path}")
+
+
 def cmd_diff(args):
     root = _root_or_die()
     if args.path:
@@ -735,6 +767,10 @@ def cmd_diff(args):
         added, removed = s["added"], s["removed"]
         if args.a == "wt":
             added, removed = removed, added
+        if args.numstat:
+            _emit_numstat(root, args.a, args.b,
+                          added + removed + s["modified"], args.json)
+            return
         if args.json:
             if args.patch:
                 _patch_json(root, args.a, args.b, added + removed + s["modified"])
@@ -778,6 +814,10 @@ def cmd_diff(args):
         )
         return
     d = store.diff(root, args.a, args.b)
+    if args.numstat:
+        _emit_numstat(root, args.a, args.b,
+                      d["added"] + d["removed"] + d["modified"], args.json)
+        return
     if args.json:
         if args.patch:
             _patch_json(root, args.a, args.b,
@@ -1335,6 +1375,8 @@ def build_parser():
                     help="print just the changed paths, one per line, no markers and no summary")
     pd.add_argument("--name-status", action="store_true",
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
+    pd.add_argument("--numstat", action="store_true",
+                    help="print added/removed line counts per file as 'added<tab>removed<tab>path', like 'git diff --numstat' (binary files show '-')")
     pd.add_argument("-p", "--patch", action="store_true",
                     help="print a unified diff of every changed file, like 'git diff'")
     pd.add_argument("--git", action="store_true",

@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `diff --numstat` prints added/removed line counts per file as `added<tab>removed<tab>path`, like
+  `git diff --numstat`. Binary files show `-` for both counts. Works between two snapshots and
+  against the working tree; with `--json` the counts come back as a `files` list.
 - `grep -o`/`--only-matching` prints just the matched part of each line, one match per line, so
   repeated matches on a line each print separately. Composes with `-i`, `-F`, `-w`, a path filter
   and `--json` (which carries the fragment in `text`); `--count` and `--name-only` still report

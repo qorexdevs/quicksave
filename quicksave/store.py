@@ -1155,6 +1155,38 @@ def install_hook(root, tool):
     return path, True
 
 
+def uninstall_hook(root, tool):
+    rel = HOOK_TARGETS[tool]
+    path = Path(root) / rel
+    if not path.is_file():
+        return path, False
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        raise QuicksaveError(f"{rel.as_posix()} is not valid json, leaving it alone")
+
+    pre = data.get("hooks", {}).get("PreToolUse", [])
+    changed = False
+    for group in pre:
+        handlers = group.get("hooks", [])
+        kept = [h for h in handlers if h.get("command") != HOOK_COMMAND]
+        if len(kept) != len(handlers):
+            group["hooks"] = kept
+            changed = True
+    if not changed:
+        return path, False
+
+    # leave the file tidy: drop groups and keys we emptied, but never touch
+    # handlers or matchers that belong to something else.
+    data["hooks"]["PreToolUse"] = [g for g in pre if g.get("hooks")]
+    if not data["hooks"]["PreToolUse"]:
+        del data["hooks"]["PreToolUse"]
+    if not data["hooks"]:
+        del data["hooks"]
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return path, True
+
+
 def _path_selected(relpath, paths):
     for p in paths:
         if relpath == p or relpath.startswith(p.rstrip("/") + "/"):

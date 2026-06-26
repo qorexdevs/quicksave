@@ -243,6 +243,7 @@ Or let quicksave write that config for you:
 ```
 quicksave hook install            # Claude Code (.claude/settings.json)
 quicksave hook install --tool codex   # Codex (.codex/hooks.json)
+quicksave hook uninstall          # take it back out, leaving other hooks alone
 ```
 
 It merges into an existing config and won't add the hook twice. Codex uses the same hook shape and

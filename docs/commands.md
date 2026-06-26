@@ -410,12 +410,16 @@ quicksave completion fish | source             # fish
 quicksave completion powershell | Out-String | Invoke-Expression   # powershell
 ```
 
-## hook / hook install
+## hook / hook install / hook uninstall
 
 `quicksave hook` reads a `PreToolUse` payload on stdin and snapshots before a risky bash command,
-staying quiet so it never blocks the agent. `quicksave hook install` writes the config for you.
+staying quiet so it never blocks the agent. `quicksave hook install` writes the config for you, and
+`quicksave hook uninstall` takes it back out.
 
 - `hook install --tool {claude,codex}` - which runner to wire up (default claude).
+- `hook uninstall --tool {claude,codex}` - drop the quicksave hook from that runner's config,
+  leaving any other hooks and the `Bash` matcher's other handlers untouched. Empty groups and keys
+  it created are cleaned up.
 - `hook --check '<command>'` - print `risky`/`safe` for a command and exit (0 risky, 1 safe),
   without saving. On a hit the matching pattern follows after a tab, so you can
   see what tripped while tuning `QUICKSAVE_RISKY`.
@@ -426,6 +430,7 @@ staying quiet so it never blocks the agent. `quicksave hook install` writes the 
 ```
 quicksave hook install
 quicksave hook install --tool codex
+quicksave hook uninstall                # take it back out
 quicksave hook --check 'rm -rf build'   # risky	\brm\b
 quicksave hook --check 'terraform destroy'
 cat commands.txt | quicksave hook --check -

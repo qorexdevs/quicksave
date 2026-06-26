@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `hook uninstall` removes the quicksave hook from a runner's config (`--tool claude`/`codex`),
+  the counterpart to `hook install`. Leaves other hooks and the `Bash` matcher's other handlers in
+  place, and tidies up any group or key it empties out.
 - `grep -Z`/`--null` ends each `-l`/`-L` path with a NUL byte instead of a newline, so paths with
   spaces or newlines survive a pipe into `xargs -0`. No-op for the other output modes.
 - `grep --include`/`--exclude GLOB` filter which files are searched by a basename glob, like

@@ -1279,6 +1279,16 @@ def cmd_hook_install(args):
         console.print(f"[yellow]already wired[/] in {rel}")
 
 
+def cmd_hook_uninstall(args):
+    root = _root_or_die()
+    path, changed = store.uninstall_hook(root, args.tool)
+    rel = path.relative_to(root).as_posix()
+    if changed:
+        console.print(f"[green]removed quicksave hook[/] from {rel} ({args.tool})")
+    else:
+        console.print(f"[yellow]nothing to remove[/] in {rel}")
+
+
 def build_parser():
     # --quiet lives on a shared parent so it works both before and after the
     # subcommand; SUPPRESS keeps an unset copy from clobbering one that was set.
@@ -1568,6 +1578,10 @@ def build_parser():
     hin.add_argument("--tool", choices=sorted(store.HOOK_TARGETS), default="claude",
                      help="which runner to wire up")
     hin.set_defaults(func=cmd_hook_install)
+    hun = hsub.add_parser("uninstall", help="remove the quicksave hook from a runner's config", parents=[common])
+    hun.add_argument("--tool", choices=sorted(store.HOOK_TARGETS), default="claude",
+                     help="which runner to unwire")
+    hun.set_defaults(func=cmd_hook_uninstall)
 
     return p
 

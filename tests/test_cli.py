@@ -1044,6 +1044,46 @@ def test_hook_install_merges_existing(tmp_path, monkeypatch):
     assert cfg["hooks"]["PreToolUse"][0]["hooks"][0]["command"] == "quicksave hook"
 
 
+def test_hook_uninstall_roundtrips(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    main(["hook", "install"])
+    capsys.readouterr()
+
+    main(["hook", "uninstall"])
+    assert "removed quicksave hook" in capsys.readouterr().out
+    cfg = json.loads((tmp_path / ".claude" / "settings.json").read_text())
+    assert "hooks" not in cfg  # nothing else was in there, so it's cleaned out
+
+
+def test_hook_uninstall_keeps_other_hooks(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    cfg_dir = tmp_path / ".claude"
+    cfg_dir.mkdir()
+    (cfg_dir / "settings.json").write_text(json.dumps({"hooks": {"PreToolUse": [
+        {"matcher": "Bash", "hooks": [
+            {"type": "command", "command": "quicksave hook"},
+            {"type": "command", "command": "echo other"},
+        ]},
+        {"matcher": "Edit", "hooks": [{"type": "command", "command": "lint"}]},
+    ]}}))
+    main(["hook", "uninstall"])
+
+    pre = json.loads((cfg_dir / "settings.json").read_text())["hooks"]["PreToolUse"]
+    bash = next(g for g in pre if g["matcher"] == "Bash")
+    assert [h["command"] for h in bash["hooks"]] == ["echo other"]
+    assert any(g["matcher"] == "Edit" for g in pre)
+
+
+def test_hook_uninstall_noop_when_absent(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    capsys.readouterr()
+    main(["hook", "uninstall"])
+    assert "nothing to remove" in capsys.readouterr().out
+
+
 def test_quiet_silences_save_and_list(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

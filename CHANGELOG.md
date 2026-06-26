@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `diff -z`/`--null` ends each `--name-only`/`--name-status` record with a NUL byte instead of a
+  newline, like `git diff -z`, so paths with spaces or newlines survive a pipe into `xargs -0`. With
+  `--name-status` the status and path are NUL-separated too (`STATUS\0path\0`).
 - `diff --shortstat` and `status --shortstat` print one summary line of files changed and total
   insertions/deletions (` N files changed, X insertions(+), Y deletions(-)`), like
   `git diff --shortstat`. Clauses with a zero count are dropped and `--json` returns

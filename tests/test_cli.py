@@ -1561,6 +1561,38 @@ def test_diff_name_status_against_working_tree(tmp_path, monkeypatch, capsys):
     assert set(lines) == {"A\tnew.txt", "M\ta.txt"}
 
 
+def test_diff_name_only_null_terminates_paths(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--name-only", "-z"])
+    out = capsys.readouterr().out
+    assert "\n" not in out
+    assert set(out.split("\0")) == {"a.txt", "new.txt", ""}
+
+
+def test_diff_name_status_null_against_working_tree(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--name-status", "-z"])
+    out = capsys.readouterr().out
+    assert "\t" not in out and "\n" not in out
+    records = [r for r in out.split("\0") if r]
+    # records come in status/path pairs: M a.txt and A new.txt
+    pairs = set(zip(records[0::2], records[1::2]))
+    assert pairs == {("M", "a.txt"), ("A", "new.txt")}
+
+
 def test_diff_numstat_between_snapshots(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\ntwo\n")

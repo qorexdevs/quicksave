@@ -769,6 +769,24 @@ def _emit_shortstat(root, a, b, paths, as_json):
     print(" " + ", ".join(parts))
 
 
+def _emit_name_only(added, removed, modified, null):
+    end = "\0" if null else "\n"
+    for path in added + removed + modified:
+        print(path, end=end)
+
+
+def _emit_name_status(added, removed, modified, null):
+    rows = ([("A", p) for p in added] + [("D", p) for p in removed]
+            + [("M", p) for p in modified])
+    if null:
+        # 'git diff -z --name-status' shape: STATUS NUL path NUL
+        for st, p in rows:
+            print(f"{st}\0{p}", end="\0")
+    else:
+        for st, p in rows:
+            print(f"{st}\t{p}")
+
+
 def cmd_diff(args):
     root = _root_or_die()
     if args.path:
@@ -834,20 +852,10 @@ def cmd_diff(args):
                         git=args.git)
             return
         if args.name_only:
-            for path in added:
-                print(path)
-            for path in removed:
-                print(path)
-            for path in s["modified"]:
-                print(path)
+            _emit_name_only(added, removed, s["modified"], args.null)
             return
         if args.name_status:
-            for path in added:
-                print(f"A\t{path}")
-            for path in removed:
-                print(f"D\t{path}")
-            for path in s["modified"]:
-                print(f"M\t{path}")
+            _emit_name_status(added, removed, s["modified"], args.null)
             return
         if not args.stat:
             for path in added:
@@ -886,20 +894,10 @@ def cmd_diff(args):
                     git=args.git)
         return
     if args.name_only:
-        for path in d["added"]:
-            print(path)
-        for path in d["removed"]:
-            print(path)
-        for path in d["modified"]:
-            print(path)
+        _emit_name_only(d["added"], d["removed"], d["modified"], args.null)
         return
     if args.name_status:
-        for path in d["added"]:
-            print(f"A\t{path}")
-        for path in d["removed"]:
-            print(f"D\t{path}")
-        for path in d["modified"]:
-            print(f"M\t{path}")
+        _emit_name_status(d["added"], d["removed"], d["modified"], args.null)
         return
     if not args.stat:
         for path in d["added"]:
@@ -1503,6 +1501,8 @@ def build_parser():
                     help="print just the changed paths, one per line, no markers and no summary")
     pd.add_argument("--name-status", action="store_true",
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
+    pd.add_argument("-z", "--null", action="store_true",
+                    help="with --name-only/--name-status, end each record with a NUL byte instead of a newline, like 'git diff -z' (for xargs -0)")
     pd.add_argument("--numstat", action="store_true",
                     help="print added/removed line counts per file as 'added<tab>removed<tab>path', like 'git diff --numstat' (binary files show '-')")
     pd.add_argument("--shortstat", action="store_true",

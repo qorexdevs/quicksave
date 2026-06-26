@@ -218,6 +218,7 @@ for the live tree on either side. Add a path for a line-by-line diff of one file
 - `--stat` - only the summary line, skip the file list.
 - `--name-only` - just the changed paths, one per line.
 - `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
+- `-z`, `--null` - with `--name-only`/`--name-status`, end each record with a NUL byte instead of a newline, like `git diff -z`, so paths with spaces or newlines survive a pipe into `xargs -0`. With `--name-status` the status and path are also NUL-separated.
 - `--numstat` - added/removed line counts per file as `added<tab>removed<tab>path`, like `git diff --numstat`. Binary files show `-` for both counts. With `--json` the counts come back as a `files` list.
 - `--shortstat` - one summary line of files changed and total insertions/deletions, like `git diff --shortstat`. With `--json` the totals come back as `files_changed`/`insertions`/`deletions`.
 - `-p`, `--patch` - a unified diff of every changed file, like `git diff`. Binary files are noted, not dumped.
@@ -232,6 +233,7 @@ quicksave diff 2 3 --stat
 quicksave diff 2 3 -p
 quicksave diff 0 wt -p --git | git apply   # replay the change somewhere else
 quicksave diff 0 wt --name-status | grep '^M'
+quicksave diff 0 wt --name-only -z | xargs -0 ls -l
 quicksave diff 2 3 --numstat
 quicksave diff 2 3 --shortstat
 ```

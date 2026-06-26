@@ -1742,6 +1742,24 @@ def test_status_name_status(tmp_path, monkeypatch, capsys):
     assert set(lines) == {"A\tb.txt", "D\tgone.txt", "M\ta.txt"}
 
 
+def test_status_numstat(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    (tmp_path / "gone.txt").write_text("bye\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\nthree\n")
+    (tmp_path / "gone.txt").unlink()
+    (tmp_path / "b.txt").write_text("new\n")
+    capsys.readouterr()
+    main(["status", "--numstat"])
+    lines = capsys.readouterr().out.splitlines()
+    assert set(lines) == {"2\t1\ta.txt", "0\t1\tgone.txt", "1\t0\tb.txt"}
+    main(["status", "--numstat", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert {f["path"] for f in data["files"]} == {"a.txt", "gone.txt", "b.txt"}
+
+
 def test_diff_name_only_no_changes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\n")

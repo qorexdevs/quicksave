@@ -559,6 +559,14 @@ def cmd_status(args):
     root = _root_or_die()
     s = store.status(root, args.ref)
     dirty = bool(s["added"] or s["removed"] or s["modified"])
+    if args.numstat:
+        # status is a diff of the snapshot against the live tree, so reuse the
+        # same per-file counter diff uses, snapshot as the old side, tree as new.
+        _emit_numstat(root, s["id"], "wt",
+                      s["added"] + s["removed"] + s["modified"], args.json)
+        if args.exit_code and dirty:
+            raise SystemExit(1)
+        return
     if args.json:
         print(json.dumps(s))
         if args.exit_code and dirty:
@@ -1423,6 +1431,8 @@ def build_parser():
                     help="print just the changed paths, one per line, no markers and no summary")
     pt.add_argument("--name-status", action="store_true",
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
+    pt.add_argument("--numstat", action="store_true",
+                    help="print added/removed line counts per file as 'added<tab>removed<tab>path', like 'git diff --numstat' (binary files show '-')")
     pt.add_argument("--exit-code", action="store_true",
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.set_defaults(func=cmd_status)

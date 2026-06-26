@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `status --numstat` prints per-file added/removed line counts (`added<tab>removed<tab>path`) for the
+  working tree against the last snapshot, like `git diff --numstat`, mirroring `diff --numstat`. Binary
+  files show `-` and `--json` is honored.
 - `grep -e`/`--regexp PATTERN` takes a pattern and can be repeated, matching a line if any of them
   hits, like `grep -e`. The positional pattern is optional once `-e` is given, and both combine when
   passed together. Each pattern is escaped before joining under `-F`.

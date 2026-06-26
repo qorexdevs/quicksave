@@ -173,6 +173,7 @@ Show what changed in the working tree since a snapshot (latest by default).
 - `--stat` - only the summary line (`N added, N removed, N modified`), or `clean`.
 - `--name-only` - just the changed paths, one per line, no markers and no summary.
 - `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
+- `--numstat` - added/removed line counts per file as `added<tab>removed<tab>path`, like `git diff --numstat` (binary files show `-`).
 - `--exit-code` - exit 1 if the tree changed, 0 if clean, like `git diff --exit-code`.
 - `--json` - the diff as json.
 
@@ -182,6 +183,7 @@ quicksave status --short
 quicksave status --stat
 quicksave status --name-only
 quicksave status --name-status
+quicksave status --numstat
 quicksave status --exit-code
 ```
 

@@ -903,6 +903,13 @@ def cmd_grep(args):
     patterns = list(args.patterns or [])
     if args.pattern is not None:
         patterns.insert(0, args.pattern)
+    for pf in args.pattern_files or []:
+        try:
+            text = sys.stdin.read() if pf == "-" else open(pf, encoding="utf-8", errors="replace").read()
+        except OSError as e:
+            console.print(f"[red]grep: cannot read pattern file {pf}[/]: {e.strerror}")
+            raise SystemExit(1)
+        patterns.extend(text.splitlines())
     if not patterns:
         console.print("[red]grep: no pattern given[/] (pass a pattern or use -e PATTERN)")
         raise SystemExit(1)
@@ -1476,6 +1483,8 @@ def build_parser():
                      help="regular expression to search for (or a literal with -F); optional when -e is given")
     pgr.add_argument("-e", "--regexp", dest="patterns", action="append", metavar="PATTERN",
                      help="pattern to search for; repeat to match a line against any of them")
+    pgr.add_argument("-f", "--file", dest="pattern_files", action="append", metavar="FILE",
+                     help="read patterns from FILE, one per line (- for stdin); repeatable, combines with -e")
     pgr.add_argument("paths", nargs="*", help="limit the search to these paths")
     pgr.add_argument("-r", "--ref", help="snapshot id, number or name (default latest)")
     pgr.add_argument("-i", "--ignore-case", action="store_true", help="case-insensitive match")

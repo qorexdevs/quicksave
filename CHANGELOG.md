@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep -f`/`--file FILE` reads patterns from a file, one per line (`-` for stdin), like `grep -f`.
+  Repeatable and combines with the positional pattern and `-e`; a line matches if any pattern hits.
 - `status --numstat` prints per-file added/removed line counts (`added<tab>removed<tab>path`) for the
   working tree against the last snapshot, like `git diff --numstat`, mirroring `diff --numstat`. Binary
   files show `-` and `--json` is honored.

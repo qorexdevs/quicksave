@@ -2348,6 +2348,34 @@ def test_grep_multiple_patterns(tmp_path, monkeypatch, capsys):
     assert "axb" not in out
 
 
+def test_grep_patterns_from_file(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("alpha here\nbeta here\ngamma here\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    pf = tmp_path / "pats.txt"
+    pf.write_text("alpha\ngamma\n")
+
+    # -f reads one pattern per line, a line matches if any of them hits
+    main(["grep", "-f", str(pf)])
+    out = capsys.readouterr().out
+    assert "a.py:1:alpha here" in out
+    assert "a.py:3:gamma here" in out
+    assert "beta" not in out
+
+    # -f combines with a positional and -e
+    main(["grep", "-f", str(pf), "-e", "beta"])
+    out = capsys.readouterr().out
+    assert "beta here" in out
+    assert "alpha here" in out
+
+    # a missing pattern file exits non-zero
+    with pytest.raises(SystemExit):
+        main(["grep", "-f", str(tmp_path / "nope.txt")])
+
+
 def test_grep_no_pattern_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

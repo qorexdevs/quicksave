@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-06-27
+
 ### Added
 - `grep --group-separator SEP` sets the string printed between non-adjacent context groups (default
   `--`), and `--no-group-separator` drops it entirely, like GNU grep. Only affects context output from

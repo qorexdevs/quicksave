@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep -x`/`--line-regexp` anchors the pattern to the whole line, so it only matches when the
+  line equals the pattern. Useful for finding a bare `TODO` line or a config key on its own line.
+  Wins over `-w` when both are set; works with `-i`/`-F`/`-v`/`-o` and the count paths.
 - `grep --no-filename` drops the `path:` prefix from each printed line, leaving `line:text`, for
   piping matches into a tool that chokes on the path. Context lines lose the prefix too but keep
   their `-` separator; `--count`/`-c`/`-l`/`-L`/`--json` ignore it.

@@ -2289,6 +2289,25 @@ def test_grep_word_matches_whole_words_only(tmp_path, monkeypatch, capsys):
     assert capsys.readouterr().out.strip() == "2"
 
 
+def test_grep_line_regexp_matches_whole_lines_only(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("TODO\nTODO: ship it\na TODO note\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -x only hits the bare line that equals the pattern
+    main(["grep", "-x", "TODO"])
+    out = capsys.readouterr().out
+    assert "a.py:1:TODO" in out
+    assert "ship it" not in out
+    assert "a TODO note" not in out
+
+    # -x wins over -w, still just the whole-line match
+    main(["grep", "-x", "-w", "TODO", "--count"])
+    assert capsys.readouterr().out.strip() == "1"
+
+
 def test_grep_invert_match(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

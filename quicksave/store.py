@@ -790,7 +790,8 @@ def show(root, ref, path):
 
 
 def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False,
-                  word=False, invert=False, before=0, after=0, only=False, max_count=0):
+                  word=False, invert=False, before=0, after=0, only=False, max_count=0,
+                  line_regexp=False):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
     # (path, lineno, line, is_match) per emitted line, files in manifest order,
@@ -802,13 +803,22 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     # flagged is_match=False so callers can render them differently. only yields
     # just the matched substrings (grep -o), one per match, instead of whole lines.
     # max_count stops after that many matching lines per file (grep -m), 0 is no cap.
+    # line_regexp anchors the pattern to the whole line (grep -x), so it only hits
+    # when the entire line equals the pattern; it's the stronger anchor, so it wins
+    # over word when both are set.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
     files, _ = _selected_files(manifest, paths, ref)
     flags = re.IGNORECASE if ignore_case else 0
     core = re.escape(pattern) if fixed else pattern
-    rx = re.compile(rf"\b(?:{core})\b" if word else core, flags)
+    if line_regexp:
+        anchored = rf"^(?:{core})$"
+    elif word:
+        anchored = rf"\b(?:{core})\b"
+    else:
+        anchored = core
+    rx = re.compile(anchored, flags)
     # sort by path so output is deterministic across filesystems, like git grep
     for rel in sorted(files):
         meta = files[rel]

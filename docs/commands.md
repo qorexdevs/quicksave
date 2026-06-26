@@ -256,6 +256,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-i`, `--ignore-case` - case-insensitive match.
 - `-F`, `--fixed` - treat the pattern as a literal, not a regex.
 - `-w`, `--word` - match whole words only, so `foo` won't hit `foobar`.
+- `-x`, `--line-regexp` - match whole lines only, so the line must equal the pattern. Wins over `-w` when both are set.
 - `-v`, `--invert-match` - show the lines that do not match the pattern.
 - `-A N`, `--after-context` - print N lines of context after each match.
 - `-B N`, `--before-context` - print N lines of context before each match.

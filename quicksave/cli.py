@@ -913,7 +913,8 @@ def cmd_grep(args):
                                before=before,
                                after=after,
                                only=only,
-                               max_count=args.max_count)
+                               max_count=args.max_count,
+                               line_regexp=args.line_regexp)
     if args.count_per_file:
         counts = {}
         for path, _, _, _ in hits:
@@ -1448,6 +1449,8 @@ def build_parser():
                      help="treat the pattern as a literal string, not a regex")
     pgr.add_argument("-w", "--word", "--word-regexp", action="store_true",
                      help="match whole words only, so 'foo' won't hit 'foobar'")
+    pgr.add_argument("-x", "--line-regexp", dest="line_regexp", action="store_true",
+                     help="match whole lines only, so the line must equal the pattern")
     pgr.add_argument("-v", "--invert-match", dest="invert", action="store_true",
                      help="show lines that do not match the pattern")
     pgr.add_argument("-A", "--after-context", dest="after", type=int, default=0, metavar="N",

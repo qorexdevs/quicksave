@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-06-26
+
 ### Added
 - `hook uninstall` removes the quicksave hook from a runner's config (`--tool claude`/`codex`),
   the counterpart to `hook install`. Leaves other hooks and the `Bash` matcher's other handlers in

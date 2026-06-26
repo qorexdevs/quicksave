@@ -558,6 +558,18 @@ def cmd_check_ignore(args):
 def cmd_status(args):
     root = _root_or_die()
     s = store.status(root, args.ref)
+    if args.diff_filter:
+        keep = set(args.diff_filter.upper())
+        bad = keep - {"A", "D", "M"}
+        if bad:
+            console.print(f"[red]status: unknown --diff-filter letters {''.join(sorted(bad))}[/] (use A, D, M)")
+            raise SystemExit(2)
+        if "A" not in keep:
+            s["added"] = []
+        if "D" not in keep:
+            s["removed"] = []
+        if "M" not in keep:
+            s["modified"] = []
     dirty = bool(s["added"] or s["removed"] or s["modified"])
     if args.numstat:
         # status is a diff of the snapshot against the live tree, so reuse the
@@ -1479,6 +1491,8 @@ def build_parser():
                     help="print one summary line of files changed and total insertions/deletions, like 'git diff --shortstat'")
     pt.add_argument("--exit-code", action="store_true",
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
+    pt.add_argument("--diff-filter", default=None, metavar="LETTERS",
+                    help="keep only the listed change types: A added, D deleted, M modified (e.g. --diff-filter=AM)")
     pt.set_defaults(func=cmd_status)
 
     pci = sub.add_parser("check-ignore",

@@ -823,6 +823,42 @@ def test_cli_status_name_only(tmp_path, monkeypatch, capsys):
     capsys.readouterr()
 
 
+def test_cli_status_diff_filter(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "gone.txt").write_text("bye")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    (tmp_path / "a.txt").write_text("v2")  # modified
+    (tmp_path / "b.txt").write_text("new")  # added
+    (tmp_path / "gone.txt").unlink()        # removed
+
+    main(["status", "--diff-filter", "A", "--name-status"])
+    assert capsys.readouterr().out.splitlines() == ["A\tb.txt"]
+
+    main(["status", "--diff-filter", "AM", "--name-only"])
+    assert set(capsys.readouterr().out.splitlines()) == {"a.txt", "b.txt"}
+
+    # lowercase is accepted the same as uppercase
+    main(["status", "--diff-filter", "d", "--name-status"])
+    assert capsys.readouterr().out.splitlines() == ["D\tgone.txt"]
+
+    # a filter that matches no change reads as clean and exits 0 with --exit-code
+    (tmp_path / "b.txt").unlink()  # drop the only added file, leaving M and D
+    main(["status", "--diff-filter", "A", "--exit-code"])
+    assert "clean" in capsys.readouterr().out
+
+    try:
+        main(["status", "--diff-filter", "X"])
+    except SystemExit as e:
+        assert e.code == 2
+    else:
+        raise AssertionError("bad filter letter should exit 2")
+    capsys.readouterr()
+
+
 def test_cli_status_exit_code(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

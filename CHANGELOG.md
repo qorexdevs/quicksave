@@ -6,6 +6,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `status --diff-filter LETTERS` keeps only the listed change types (`A` added, `D` deleted,
+  `M` modified, e.g. `--diff-filter=AM`), like `git diff --diff-filter`. It applies before any
+  output mode, so it composes with `--name-only`/`--name-status`/`--numstat`/`--exit-code` and
+  reads as `clean` when nothing of the kept types changed.
 - `diff -z`/`--null` ends each `--name-only`/`--name-status` record with a NUL byte instead of a
   newline, like `git diff -z`, so paths with spaces or newlines survive a pipe into `xargs -0`. With
   `--name-status` the status and path are NUL-separated too (`STATUS\0path\0`).

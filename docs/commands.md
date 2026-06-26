@@ -176,6 +176,7 @@ Show what changed in the working tree since a snapshot (latest by default).
 - `--numstat` - added/removed line counts per file as `added<tab>removed<tab>path`, like `git diff --numstat` (binary files show `-`).
 - `--shortstat` - one summary line of files changed and total insertions/deletions, like `git diff --shortstat`.
 - `--exit-code` - exit 1 if the tree changed, 0 if clean, like `git diff --exit-code`.
+- `--diff-filter LETTERS` - keep only the listed change types: `A` added, `D` deleted, `M` modified (e.g. `--diff-filter=AM`), like `git diff --diff-filter`. Combines with any output mode and with `--exit-code`.
 - `--json` - the diff as json.
 
 ```
@@ -186,6 +187,7 @@ quicksave status --name-only
 quicksave status --name-status
 quicksave status --numstat
 quicksave status --shortstat
+quicksave status --diff-filter AM --name-only
 quicksave status --exit-code
 ```
 

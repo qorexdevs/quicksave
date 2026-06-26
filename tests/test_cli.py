@@ -1601,6 +1601,58 @@ def test_diff_numstat_json(tmp_path, monkeypatch, capsys):
     assert data["files"] == [{"path": "a.txt", "added": 1, "removed": 0}]
 
 
+def test_diff_shortstat_between_snapshots(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    (tmp_path / "drop.txt").write_text("gone\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\nthree\n")
+    (tmp_path / "drop.txt").unlink()
+    (tmp_path / "new.txt").write_text("fresh\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--shortstat"])
+    assert capsys.readouterr().out.strip() == "3 files changed, 3 insertions(+), 2 deletions(-)"
+
+
+def test_diff_shortstat_singular(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--shortstat"])
+    assert capsys.readouterr().out.strip() == "1 file changed, 1 insertion(+)"
+
+
+def test_diff_shortstat_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo\nthree\n")
+    capsys.readouterr()
+    main(["diff", "0", "wt", "--shortstat", "--json"])
+    data = json.loads(capsys.readouterr().out)
+    assert data["files_changed"] == 1
+    assert data["insertions"] == 2
+    assert data["deletions"] == 0
+
+
+def test_status_shortstat(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\n")
+    (tmp_path / "new.txt").write_text("hi\n")
+    capsys.readouterr()
+    main(["status", "--shortstat"])
+    assert capsys.readouterr().out.strip() == "2 files changed, 1 insertion(+), 1 deletion(-)"
+
+
 def test_diff_patch_between_snapshots(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\n")

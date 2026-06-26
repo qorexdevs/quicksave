@@ -5,6 +5,12 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `diff --shortstat` and `status --shortstat` print one summary line of files changed and total
+  insertions/deletions (` N files changed, X insertions(+), Y deletions(-)`), like
+  `git diff --shortstat`. Clauses with a zero count are dropped and `--json` returns
+  `files_changed`/`insertions`/`deletions`.
+
 ## [0.13.0] - 2026-06-27
 
 ### Added

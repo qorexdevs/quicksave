@@ -174,6 +174,7 @@ Show what changed in the working tree since a snapshot (latest by default).
 - `--name-only` - just the changed paths, one per line, no markers and no summary.
 - `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
 - `--numstat` - added/removed line counts per file as `added<tab>removed<tab>path`, like `git diff --numstat` (binary files show `-`).
+- `--shortstat` - one summary line of files changed and total insertions/deletions, like `git diff --shortstat`.
 - `--exit-code` - exit 1 if the tree changed, 0 if clean, like `git diff --exit-code`.
 - `--json` - the diff as json.
 
@@ -184,6 +185,7 @@ quicksave status --stat
 quicksave status --name-only
 quicksave status --name-status
 quicksave status --numstat
+quicksave status --shortstat
 quicksave status --exit-code
 ```
 
@@ -217,6 +219,7 @@ for the live tree on either side. Add a path for a line-by-line diff of one file
 - `--name-only` - just the changed paths, one per line.
 - `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
 - `--numstat` - added/removed line counts per file as `added<tab>removed<tab>path`, like `git diff --numstat`. Binary files show `-` for both counts. With `--json` the counts come back as a `files` list.
+- `--shortstat` - one summary line of files changed and total insertions/deletions, like `git diff --shortstat`. With `--json` the totals come back as `files_changed`/`insertions`/`deletions`.
 - `-p`, `--patch` - a unified diff of every changed file, like `git diff`. Binary files are noted, not dumped.
 - `--git` - with `-p`, emit a `git apply`/`patch -p1` compatible diff: `a/`/`b/` headers, `/dev/null` for added or removed files, and no color. Binary notes go to stderr so the stream stays clean.
 - `--json` - the diff as json.
@@ -230,6 +233,7 @@ quicksave diff 2 3 -p
 quicksave diff 0 wt -p --git | git apply   # replay the change somewhere else
 quicksave diff 0 wt --name-status | grep '^M'
 quicksave diff 2 3 --numstat
+quicksave diff 2 3 --shortstat
 ```
 
 ## show

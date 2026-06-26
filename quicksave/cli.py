@@ -567,6 +567,12 @@ def cmd_status(args):
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
+    if args.shortstat:
+        _emit_shortstat(root, s["id"], "wt",
+                        s["added"] + s["removed"] + s["modified"], args.json)
+        if args.exit_code and dirty:
+            raise SystemExit(1)
+        return
     if args.json:
         print(json.dumps(s))
         if args.exit_code and dirty:
@@ -740,6 +746,29 @@ def _emit_numstat(root, a, b, paths, as_json):
             print(f"{c[0]}\t{c[1]}\t{path}")
 
 
+def _emit_shortstat(root, a, b, paths, as_json):
+    # one summary line like 'git diff --shortstat': files changed plus total
+    # insertions/deletions across the text files. binary files still count as
+    # changed but contribute no line counts.
+    files = len(paths)
+    ins = dels = 0
+    for path in paths:
+        c = _numstat(root, a, b, path)
+        if c is not None:
+            ins += c[0]
+            dels += c[1]
+    if as_json:
+        print(json.dumps({"a": a, "b": b, "files_changed": files,
+                          "insertions": ins, "deletions": dels}))
+        return
+    parts = [f"{files} file{'' if files == 1 else 's'} changed"]
+    if ins:
+        parts.append(f"{ins} insertion{'' if ins == 1 else 's'}(+)")
+    if dels:
+        parts.append(f"{dels} deletion{'' if dels == 1 else 's'}(-)")
+    print(" " + ", ".join(parts))
+
+
 def cmd_diff(args):
     root = _root_or_die()
     if args.path:
@@ -785,6 +814,10 @@ def cmd_diff(args):
         if args.numstat:
             _emit_numstat(root, args.a, args.b,
                           added + removed + s["modified"], args.json)
+            return
+        if args.shortstat:
+            _emit_shortstat(root, args.a, args.b,
+                            added + removed + s["modified"], args.json)
             return
         if args.json:
             if args.patch:
@@ -832,6 +865,10 @@ def cmd_diff(args):
     if args.numstat:
         _emit_numstat(root, args.a, args.b,
                       d["added"] + d["removed"] + d["modified"], args.json)
+        return
+    if args.shortstat:
+        _emit_shortstat(root, args.a, args.b,
+                        d["added"] + d["removed"] + d["modified"], args.json)
         return
     if args.json:
         if args.patch:
@@ -1440,6 +1477,8 @@ def build_parser():
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
     pt.add_argument("--numstat", action="store_true",
                     help="print added/removed line counts per file as 'added<tab>removed<tab>path', like 'git diff --numstat' (binary files show '-')")
+    pt.add_argument("--shortstat", action="store_true",
+                    help="print one summary line of files changed and total insertions/deletions, like 'git diff --shortstat'")
     pt.add_argument("--exit-code", action="store_true",
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.set_defaults(func=cmd_status)
@@ -1466,6 +1505,8 @@ def build_parser():
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
     pd.add_argument("--numstat", action="store_true",
                     help="print added/removed line counts per file as 'added<tab>removed<tab>path', like 'git diff --numstat' (binary files show '-')")
+    pd.add_argument("--shortstat", action="store_true",
+                    help="print one summary line of files changed and total insertions/deletions, like 'git diff --shortstat'")
     pd.add_argument("-p", "--patch", action="store_true",
                     help="print a unified diff of every changed file, like 'git diff'")
     pd.add_argument("--git", action="store_true",

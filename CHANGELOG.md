@@ -8,6 +8,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ### Added
 - `grep -Z`/`--null` ends each `-l`/`-L` path with a NUL byte instead of a newline, so paths with
   spaces or newlines survive a pipe into `xargs -0`. No-op for the other output modes.
+- `grep --include`/`--exclude GLOB` filter which files are searched by a basename glob, like
+  `grep --include`. Both are repeatable; `--exclude` wins when a file matches both.
 
 ## [0.11.0] - 2026-06-26
 

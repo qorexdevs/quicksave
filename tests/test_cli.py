@@ -2266,6 +2266,28 @@ def test_grep_fixed_string_and_path_filter(tmp_path, monkeypatch, capsys):
     assert "b.py" not in out
 
 
+def test_grep_include_exclude_globs(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("hit here\n")
+    (tmp_path / "b.txt").write_text("hit here\n")
+    (tmp_path / "c.py").write_text("hit here\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # --include keeps only python files by basename glob
+    main(["grep", "hit", "--include", "*.py", "-l"])
+    assert capsys.readouterr().out.split() == ["a.py", "c.py"]
+
+    # --exclude drops a file, and wins over --include when both match
+    main(["grep", "hit", "--include", "*.py", "--exclude", "c.py", "-l"])
+    assert capsys.readouterr().out.split() == ["a.py"]
+
+    # repeatable, and -L sees the same filtered set
+    main(["grep", "nope", "--include", "*.txt", "-L"])
+    assert capsys.readouterr().out.split() == ["b.txt"]
+
+
 def test_grep_word_matches_whole_words_only(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

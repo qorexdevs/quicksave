@@ -789,9 +789,20 @@ def show(root, ref, path):
     return obj.read_bytes()
 
 
+def _grep_glob_keep(rel, include, exclude):
+    # filter a path the way grep --include/--exclude do: match the basename,
+    # exclude wins over include when both hit
+    base = os.path.basename(rel)
+    if exclude and any(fnmatch.fnmatch(base, p) for p in exclude):
+        return False
+    if include and not any(fnmatch.fnmatch(base, p) for p in include):
+        return False
+    return True
+
+
 def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False,
                   word=False, invert=False, before=0, after=0, only=False, max_count=0,
-                  line_regexp=False):
+                  line_regexp=False, include=None, exclude=None):
     # search the file contents of one snapshot (default latest) for a pattern,
     # the read-only counterpart to 'find' which only matches paths. yields
     # (path, lineno, line, is_match) per emitted line, files in manifest order,
@@ -805,11 +816,14 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     # max_count stops after that many matching lines per file (grep -m), 0 is no cap.
     # line_regexp anchors the pattern to the whole line (grep -x), so it only hits
     # when the entire line equals the pattern; it's the stronger anchor, so it wins
-    # over word when both are set.
+    # over word when both are set. include/exclude keep or drop files by a glob on
+    # the basename (grep --include/--exclude), applied after the path selection.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
     files, _ = _selected_files(manifest, paths, ref)
+    if include or exclude:
+        files = {rel: m for rel, m in files.items() if _grep_glob_keep(rel, include, exclude)}
     flags = re.IGNORECASE if ignore_case else 0
     core = re.escape(pattern) if fixed else pattern
     if line_regexp:
@@ -872,14 +886,17 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
                 yield rel, j + 1, lines[j], j in matches
 
 
-def grep_text_files(root, ref, paths=None):
+def grep_text_files(root, ref, paths=None, include=None, exclude=None):
     # the set of files grep_snapshot would actually search: selected blobs that
     # decode as text, same skip-binary rule. lets callers compute the complement
-    # of the matched files for grep -L, in sorted (manifest) order.
+    # of the matched files for grep -L, in sorted (manifest) order. include/exclude
+    # apply the same basename glob filter as grep_snapshot so -L stays consistent.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
     files, _ = _selected_files(manifest, paths, ref)
+    if include or exclude:
+        files = {rel: m for rel, m in files.items() if _grep_glob_keep(rel, include, exclude)}
     out = []
     for rel in sorted(files):
         meta = files[rel]

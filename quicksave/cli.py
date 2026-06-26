@@ -914,7 +914,9 @@ def cmd_grep(args):
                                after=after,
                                only=only,
                                max_count=args.max_count,
-                               line_regexp=args.line_regexp)
+                               line_regexp=args.line_regexp,
+                               include=args.include or None,
+                               exclude=args.exclude or None)
     if args.count_per_file:
         counts = {}
         for path, _, _, _ in hits:
@@ -935,7 +937,9 @@ def cmd_grep(args):
         return
     if args.files_without_match:
         matched = {path for path, _, _, _ in hits}
-        for path in store.grep_text_files(root, args.ref, args.paths or None):
+        for path in store.grep_text_files(root, args.ref, args.paths or None,
+                                           include=args.include or None,
+                                           exclude=args.exclude or None):
             if path not in matched:
                 print(path, end=end)
         return
@@ -1468,6 +1472,10 @@ def build_parser():
                      help="end each -l/-L path with a NUL byte instead of a newline, for xargs -0")
     pgr.add_argument("-m", "--max-count", type=int, default=0, metavar="N",
                      help="stop after N matching lines per file (grep -m)")
+    pgr.add_argument("--include", action="append", metavar="GLOB",
+                     help="only search files whose name matches GLOB (repeatable)")
+    pgr.add_argument("--exclude", action="append", metavar="GLOB",
+                     help="skip files whose name matches GLOB (repeatable, wins over --include)")
     pgl = pgr.add_mutually_exclusive_group()
     pgl.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgl.add_argument("-L", "--files-without-match", action="store_true",

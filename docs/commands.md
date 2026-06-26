@@ -264,6 +264,8 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-o`, `--only-matching` - print only the matched part of each line, one match per line.
 - `--no-filename` - drop the `path:` prefix so each line is just `line:text`, handy when piping matches on. Affects the default and context output only; `--count`/`-c`/`-l`/`-L`/`--json` ignore it.
 - `-m N`, `--max-count` - stop after N matching lines per file, like `grep -m`. `0` is no cap.
+- `--include GLOB` - only search files whose name matches GLOB, like `grep --include`. Repeatable.
+- `--exclude GLOB` - skip files whose name matches GLOB. Repeatable, and wins over `--include` when both match.
 - `-l`, `--name-only` - print only the matching file paths.
 - `-L`, `--files-without-match` - print only the paths of text files with no match, the complement of `-l`. Can't be combined with `-l`.
 - `-c`, `--count-per-file` - print `path:count` of matching lines for each file that matched, sorted by path. Files with no match are left out. Can't be combined with `-l`/`-L`.
@@ -284,6 +286,8 @@ quicksave grep -o "[A-Z]+_[A-Z]+" -r v1   # pull just the env var names out
 quicksave grep -m 1 -l TODO               # first file with a TODO, stop early
 quicksave grep -L "Copyright" src/        # source files missing the license line
 quicksave grep -c TODO                     # which file has the most TODOs
+quicksave grep TODO --include "*.py"        # only python files
+quicksave grep import --include "*.py" --exclude "test_*.py"
 ```
 
 ## export

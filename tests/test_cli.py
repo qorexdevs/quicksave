@@ -2423,6 +2423,27 @@ def test_grep_no_filename(tmp_path, monkeypatch, capsys):
     assert "a.py" not in out
 
 
+def test_grep_null_separates_name_list(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("foo here\n")
+    (tmp_path / "b.py").write_text("foo there\n")
+    (tmp_path / "c.py").write_text("nothing\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -l -Z splits the matching paths on NUL instead of newline, for xargs -0
+    main(["grep", "foo", "-l", "-Z"])
+    out = capsys.readouterr().out
+    assert "\n" not in out
+    assert sorted(p for p in out.split("\0") if p) == ["a.py", "b.py"]
+
+    # -L -Z does the same for the no-match list
+    main(["grep", "foo", "-L", "-Z"])
+    out = capsys.readouterr().out
+    assert out.split("\0")[0] == "c.py"
+
+
 def test_grep_max_count_caps_lines_per_file(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

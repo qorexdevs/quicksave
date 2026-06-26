@@ -267,6 +267,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `-l`, `--name-only` - print only the matching file paths.
 - `-L`, `--files-without-match` - print only the paths of text files with no match, the complement of `-l`. Can't be combined with `-l`.
 - `-c`, `--count-per-file` - print `path:count` of matching lines for each file that matched, sorted by path. Files with no match are left out. Can't be combined with `-l`/`-L`.
+- `-Z`, `--null` - end each `-l`/`-L` path with a NUL byte instead of a newline, so paths with spaces or newlines survive a pipe into `xargs -0`. No-op for the other output modes.
 - `--count` - print only the number of matching lines.
 - `--json` - print matches as json.
 

@@ -925,18 +925,19 @@ def cmd_grep(args):
     if args.count:
         print(sum(1 for _ in hits))
         return
+    end = "\0" if args.null else "\n"
     if args.name_only:
         seen = set()
         for path, _, _, _ in hits:
             if path not in seen:
                 seen.add(path)
-                print(path)
+                print(path, end=end)
         return
     if args.files_without_match:
         matched = {path for path, _, _, _ in hits}
         for path in store.grep_text_files(root, args.ref, args.paths or None):
             if path not in matched:
-                print(path)
+                print(path, end=end)
         return
     if args.json:
         print(json.dumps([{"path": p, "line": n, "text": t} for p, n, t, _ in hits]))
@@ -1463,6 +1464,8 @@ def build_parser():
                      help="print only the matched part of each line, one match per line")
     pgr.add_argument("--no-filename", dest="no_filename", action="store_true",
                      help="drop the 'path:' prefix from each printed line")
+    pgr.add_argument("-Z", "--null", action="store_true",
+                     help="end each -l/-L path with a NUL byte instead of a newline, for xargs -0")
     pgr.add_argument("-m", "--max-count", type=int, default=0, metavar="N",
                      help="stop after N matching lines per file (grep -m)")
     pgl = pgr.add_mutually_exclusive_group()

@@ -9,4 +9,5 @@ venv/
 .pytest_cache/
 .ruff_cache/
 .quicksave/
-.DS_Storesolar/
+.DS_Store
+solar/

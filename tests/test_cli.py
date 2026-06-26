@@ -2306,6 +2306,41 @@ def test_grep_fixed_string_and_path_filter(tmp_path, monkeypatch, capsys):
     assert "b.py" not in out
 
 
+def test_grep_multiple_patterns(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("alpha here\nbeta here\ngamma here\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # two -e patterns match a line if either hits, like grep -e P -e P
+    main(["grep", "-e", "alpha", "-e", "gamma"])
+    out = capsys.readouterr().out
+    assert "a.py:1:alpha here" in out
+    assert "a.py:3:gamma here" in out
+    assert "beta" not in out
+
+    # each -F pattern is escaped before joining, so a.b stays a literal
+    (tmp_path / "b.py").write_text("a.b literal\naxb regex\n")
+    main(["save", "-m", "v2"])
+    capsys.readouterr()
+    main(["grep", "-F", "-e", "a.b", "b.py"])
+    out = capsys.readouterr().out
+    assert "b.py:1:a.b literal" in out
+    assert "axb" not in out
+
+
+def test_grep_no_pattern_errors(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("x\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    with pytest.raises(SystemExit):
+        main(["grep"])
+
+
 def test_grep_include_exclude_globs(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

@@ -892,6 +892,12 @@ def cmd_show(args):
 
 def cmd_grep(args):
     root = _root_or_die()
+    patterns = list(args.patterns or [])
+    if args.pattern is not None:
+        patterns.insert(0, args.pattern)
+    if not patterns:
+        console.print("[red]grep: no pattern given[/] (pass a pattern or use -e PATTERN)")
+        raise SystemExit(1)
     before = args.context if args.context is not None else args.before
     after = args.context if args.context is not None else args.after
     only = args.only
@@ -904,7 +910,7 @@ def cmd_grep(args):
         only = False
     if only:
         before = after = 0
-    hits = store.grep_snapshot(root, args.ref, args.pattern,
+    hits = store.grep_snapshot(root, args.ref, patterns,
                                ignore_case=args.ignore_case,
                                paths=args.paths or None,
                                fixed=args.fixed,
@@ -1456,7 +1462,10 @@ def build_parser():
     ph.set_defaults(func=cmd_show)
 
     pgr = sub.add_parser("grep", help="search a snapshot's file contents for a pattern", parents=[common])
-    pgr.add_argument("pattern", help="regular expression to search for (or a literal with -F)")
+    pgr.add_argument("pattern", nargs="?", default=None,
+                     help="regular expression to search for (or a literal with -F); optional when -e is given")
+    pgr.add_argument("-e", "--regexp", dest="patterns", action="append", metavar="PATTERN",
+                     help="pattern to search for; repeat to match a line against any of them")
     pgr.add_argument("paths", nargs="*", help="limit the search to these paths")
     pgr.add_argument("-r", "--ref", help="snapshot id, number or name (default latest)")
     pgr.add_argument("-i", "--ignore-case", action="store_true", help="case-insensitive match")

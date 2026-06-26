@@ -5,6 +5,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `grep -e`/`--regexp PATTERN` takes a pattern and can be repeated, matching a line if any of them
+  hits, like `grep -e`. The positional pattern is optional once `-e` is given, and both combine when
+  passed together. Each pattern is escaped before joining under `-F`.
+
 ## [0.12.0] - 2026-06-26
 
 ### Added

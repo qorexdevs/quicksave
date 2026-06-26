@@ -250,9 +250,10 @@ quicksave show -n src/app.py        # numbered, to line up with a grep hit
 Search a snapshot's file contents for a pattern, the read-only counterpart to `find` (which only
 matches paths). Prints `path:line:text` for each match. Binary blobs are skipped.
 
-- `pattern` - regular expression, or a literal string with `-F`.
+- `pattern` - regular expression, or a literal string with `-F`. Optional when `-e` is given.
 - `paths...` - limit the search to these paths.
 - `-r`, `--ref` - snapshot id, number or name (default latest).
+- `-e PATTERN`, `--regexp` - pattern to search for; repeat it to match a line against any of them, like `grep -e`. Handier than hand-writing an alternation when the patterns carry regex metachars or mix with `-F` literals. Combines with a positional pattern when both are given.
 - `-i`, `--ignore-case` - case-insensitive match.
 - `-F`, `--fixed` - treat the pattern as a literal, not a regex.
 - `-w`, `--word` - match whole words only, so `foo` won't hit `foobar`.
@@ -279,6 +280,7 @@ non-adjacent groups are split by a `--` divider, like `grep`. Context is ignored
 
 ```
 quicksave grep TODO
+quicksave grep -e TODO -e FIXME             # lines mentioning either
 quicksave grep -i "api_key" -r pre-deploy src/
 quicksave grep -w -F "a.b.c" --name-only
 quicksave grep -C 2 "def main"

@@ -818,6 +818,8 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     # when the entire line equals the pattern; it's the stronger anchor, so it wins
     # over word when both are set. include/exclude keep or drop files by a glob on
     # the basename (grep --include/--exclude), applied after the path selection.
+    # pattern is a single string or a list of them (grep -e given more than once),
+    # joined into one alternation so a line matches if any of them hits.
     store = store_path(root)
     f = _resolve_snapshot(store, ref)
     manifest = json.loads(f.read_text())
@@ -825,7 +827,8 @@ def grep_snapshot(root, ref, pattern, ignore_case=False, paths=None, fixed=False
     if include or exclude:
         files = {rel: m for rel, m in files.items() if _grep_glob_keep(rel, include, exclude)}
     flags = re.IGNORECASE if ignore_case else 0
-    core = re.escape(pattern) if fixed else pattern
+    pats = [pattern] if isinstance(pattern, str) else list(pattern)
+    core = "|".join(re.escape(p) if fixed else p for p in pats)
     if line_regexp:
         anchored = rf"^(?:{core})$"
     elif word:

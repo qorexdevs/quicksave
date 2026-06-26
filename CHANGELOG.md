@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `grep --group-separator SEP` sets the string printed between non-adjacent context groups (default
+  `--`), and `--no-group-separator` drops it entirely, like GNU grep. Only affects context output from
+  `-A`/`-B`/`-C`.
 - `grep -f`/`--file FILE` reads patterns from a file, one per line (`-` for stdin), like `grep -f`.
   Repeatable and combines with the positional pattern and `-e`; a line matches if any pattern hits.
 - `status --numstat` prints per-file added/removed line counts (`added<tab>removed<tab>path`) for the

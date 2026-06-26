@@ -971,8 +971,8 @@ def cmd_grep(args):
     for path, n, text, is_match in hits:
         # a '--' divider between non-adjacent context groups, like grep
         if (before or after) and prev is not None and (
-                path != prev[0] or n != prev[1] + 1):
-            console.print("[dim]--[/]")
+                path != prev[0] or n != prev[1] + 1) and args.group_separator is not None:
+            console.print(f"[dim]{args.group_separator}[/]")
         sep = ":" if is_match else "-"
         if args.no_filename:
             console.print(f"[yellow]{n}[/]{sep}{text}")
@@ -1514,6 +1514,10 @@ def build_parser():
                      help="only search files whose name matches GLOB (repeatable)")
     pgr.add_argument("--exclude", action="append", metavar="GLOB",
                      help="skip files whose name matches GLOB (repeatable, wins over --include)")
+    pgr.add_argument("--group-separator", default="--", metavar="SEP",
+                     help="string printed between non-adjacent context groups (default '--')")
+    pgr.add_argument("--no-group-separator", dest="group_separator", action="store_const", const=None,
+                     help="don't print a separator between context groups")
     pgl = pgr.add_mutually_exclusive_group()
     pgl.add_argument("-l", "--name-only", action="store_true", help="print only the matching file paths")
     pgl.add_argument("-L", "--files-without-match", action="store_true",

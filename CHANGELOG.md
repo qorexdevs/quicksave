@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-26
+
 ### Added
 - `grep -x`/`--line-regexp` anchors the pattern to the whole line, so it only matches when the
   line equals the pattern. Useful for finding a bare `TODO` line or a config key on its own line.

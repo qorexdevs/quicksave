@@ -1306,6 +1306,7 @@ def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest
     removed = 0
     if clean and dest is None:
         keep = set(files)
+        emptied = set()
         for rel in iter_files(root, ignore):
             relp = rel.as_posix()
             if relp in keep:
@@ -1315,6 +1316,18 @@ def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest
             try:
                 (root / relp).unlink()
                 removed += 1
+                emptied.add((root / relp).parent)
             except OSError:
                 pass
+        # drop directories the clean just emptied, deepest first and walking up.
+        # rmdir refuses a non-empty dir, so a folder that still holds anything
+        # (even an ignored file) is left alone.
+        for d in sorted(emptied, key=lambda p: len(p.parts), reverse=True):
+            cur = d
+            while cur != root and cur.is_dir():
+                try:
+                    cur.rmdir()
+                except OSError:
+                    break
+                cur = cur.parent
     return restored, removed, manifest

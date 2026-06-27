@@ -137,8 +137,9 @@ quicksave restore 0            # roll back if it broke something
 `restore` brings back every file that was in the snapshot, so deleting a directory and restoring
 gets it back. Pass one or more paths to only restore those (a directory name matches everything
 under it). By default it is additive: it won't touch new files you created after the snapshot. Add
-`--clean` for an exact rewind that also deletes files the snapshot didn't have, so the tree matches
-the checkpoint byte for byte. Not sure what a restore will do? Add `--dry-run` to see the files it
+`--clean` for an exact rewind that also deletes files the snapshot didn't have (and the now-empty
+dirs that held them), so the tree matches the checkpoint byte for byte. Not sure what a restore will
+do? Add `--dry-run` to see the files it
 would write (new vs overwritten) and, with `--clean`, the ones it would delete, without touching disk.
 
 Restore snapshots the current tree first, so a restore you didn't mean is itself reversible: pick the

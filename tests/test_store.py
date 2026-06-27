@@ -729,6 +729,39 @@ def test_restore_clean_scoped_to_paths(tmp_path):
     assert (tmp_path / "other.txt").read_text() == "leave me"
 
 
+def test_restore_clean_prunes_emptied_dirs(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "code.py").write_text("v1")
+    snap_id, _, _ = store.save(tmp_path)
+
+    # an agent drops a whole subtree the snapshot never had
+    (tmp_path / "junk" / "deep").mkdir(parents=True)
+    (tmp_path / "junk" / "a.log").write_text("noise")
+    (tmp_path / "junk" / "deep" / "b.log").write_text("more")
+
+    _, removed, _ = store.restore(tmp_path, snap_id, clean=True)
+    assert removed == 2
+    # files gone and the now-empty dirs that held them are gone too
+    assert not (tmp_path / "junk").exists()
+
+
+def test_restore_clean_keeps_dir_with_ignored_file(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "code.py").write_text("v1")
+    (tmp_path / ".gitignore").write_text("*.log\n")
+    snap_id, _, _ = store.save(tmp_path)
+
+    (tmp_path / "logs").mkdir()
+    (tmp_path / "logs" / "tracked.txt").write_text("junk")
+    (tmp_path / "logs" / "skip.log").write_text("ignored, stays")
+
+    _, removed, _ = store.restore(tmp_path, snap_id, clean=True)
+    assert removed == 1
+    # the ignored file was never touched, so its dir survives
+    assert (tmp_path / "logs" / "skip.log").exists()
+    assert not (tmp_path / "logs" / "tracked.txt").exists()
+
+
 def test_restore_plan_reports_changes_without_touching_disk(tmp_path):
     store.init(tmp_path)
     (tmp_path / "code.py").write_text("v1")

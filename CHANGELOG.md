@@ -10,6 +10,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   into `restore` instead of eyeballing the listing. `-z`/`--null` ends each id with a NUL byte
   for `xargs -0`. Respects the same `--since`/`--before`/`--changes`/`--limit`/`--reverse` filters.
 
+### Changed
+- `restore --clean` now also removes directories its cleanup just emptied, so the tree matches the
+  snapshot instead of leaving behind hollow folders. A dir is only dropped when nothing is left in
+  it, so a folder still holding an ignored file is untouched.
+
 ## [0.14.0] - 2026-06-27
 
 ### Added

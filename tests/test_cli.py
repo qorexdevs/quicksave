@@ -2292,6 +2292,58 @@ def test_completion_powershell_registers_completer(capsys):
 # find --changes --diff
 # ---------------------------------------------------------------------------
 
+def test_find_ids_prints_only_snapshot_ids(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "notes.txt"
+    main(["init"])
+    f.write_text("one\n")
+    main(["save", "-m", "v1"])
+    f.write_text("two\n")
+    main(["save", "-m", "v2"])
+    capsys.readouterr()
+
+    main(["find", "notes.txt", "--ids"])
+    out = capsys.readouterr().out
+    ids = out.split()
+    # both snapshots hold the file, ids only - no paths or sizes
+    assert len(ids) == 2
+    assert "notes.txt" not in out
+
+    # an id should round-trip back into restore
+    capsys.readouterr()
+    main(["restore", ids[0], "notes.txt", "--clean", "--no-backup"])
+
+
+def test_find_ids_null_separates_with_nul(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "a.txt"
+    main(["init"])
+    f.write_text("x\n")
+    main(["save", "-m", "s1"])
+    f.write_text("y\n")
+    main(["save", "-m", "s2"])
+    capsys.readouterr()
+
+    main(["find", "a.txt", "--ids", "-z"])
+    out = capsys.readouterr().out
+    assert "\n" not in out
+    assert out.count("\0") == 2
+
+
+def test_find_ids_respects_limit(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "c.txt"
+    main(["init"])
+    for i in range(3):
+        f.write_text(f"v{i}\n")
+        main(["save", "-m", f"s{i}"])
+    capsys.readouterr()
+
+    main(["find", "c.txt", "--ids", "--limit", "1"])
+    out = capsys.readouterr().out
+    assert len(out.split()) == 1
+
+
 def test_find_changes_diff_shows_unified_diff(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "notes.txt"

@@ -106,6 +106,8 @@ part of a name, or a glob (`*.py`, `src/**/test_*.py`). Pass several paths to ma
 - `--reverse` - oldest match first, to read a file's history forward.
 - `--limit N` - only the N newest matches.
 - `--count` - print only the number of matching snapshots.
+- `--ids` - print only the matching snapshot ids, one per line, to pipe straight into `restore`.
+- `-z`, `--null` - with `--ids`, end each id with a NUL byte instead of a newline, for `xargs -0`.
 - `--json` - matches as json.
 
 ```
@@ -113,6 +115,7 @@ quicksave find app.py
 quicksave find '*.py' --since 2h
 quicksave find -i readme
 quicksave find src/app.py --changes --diff
+quicksave find app.py --ids --limit 1 | xargs -I{} quicksave restore {} app.py
 ```
 
 ## recover

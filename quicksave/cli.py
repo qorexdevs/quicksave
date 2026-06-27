@@ -295,6 +295,12 @@ def cmd_find(args):
         print(len(snaps))
         return
 
+    if getattr(args, "ids", False):
+        end = "\0" if getattr(args, "null", False) else "\n"
+        for s in snaps:
+            print(s["id"], end=end)
+        return
+
     if getattr(args, "diff", False):
         import difflib
         # collect every distinct path matched across all change-point snapshots
@@ -1452,6 +1458,10 @@ def build_parser():
     pf.add_argument("--limit", type=int, help="show only the n newest matching snapshots")
     pf.add_argument("--count", action="store_true",
                     help="print only the number of matching snapshots, nothing else")
+    pf.add_argument("--ids", action="store_true",
+                    help="print only the matching snapshot ids, one per line, to pipe into restore")
+    pf.add_argument("-z", "--null", action="store_true",
+                    help="terminate --ids entries with NUL instead of newline, for xargs -0")
     pf.set_defaults(func=cmd_find)
 
     prc = sub.add_parser("recover", help="restore files from the newest snapshot that still has them", parents=[common])

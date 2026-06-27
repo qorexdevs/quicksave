@@ -5,6 +5,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `find --ids` prints only the matching snapshot ids, one per line, so you can pipe them straight
+  into `restore` instead of eyeballing the listing. `-z`/`--null` ends each id with a NUL byte
+  for `xargs -0`. Respects the same `--since`/`--before`/`--changes`/`--limit`/`--reverse` filters.
+
 ## [0.14.0] - 2026-06-27
 
 ### Added

@@ -320,6 +320,29 @@ def test_names_grep_filters_by_name(tmp_path, monkeypatch, capsys):
     main(["names", "--grep", "nope"])
     assert "no named snapshots match 'nope'" in capsys.readouterr().out
 
+def test_names_since_before_filter_by_age(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "old", "-n", "release-1"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "fresh", "-n", "release-2"])
+    capsys.readouterr()
+
+    snap_files = sorted((tmp_path / ".quicksave" / "snapshots").glob("*.json"))
+    oldest = json.loads(snap_files[0].read_text())
+    oldest["created_at"] = time.time() - 3 * 3600
+    snap_files[0].write_text(json.dumps(oldest))
+
+    main(["names", "--since", "1h", "--json"])
+    assert [r["name"] for r in json.loads(capsys.readouterr().out)] == ["release-2"]
+
+    main(["names", "--before", "1h", "--json"])
+    assert [r["name"] for r in json.loads(capsys.readouterr().out)] == ["release-1"]
+
+    main(["names", "--before", "5h"])
+    assert "no named snapshots older than 5h" in capsys.readouterr().out
+
 def test_names_empty_state(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

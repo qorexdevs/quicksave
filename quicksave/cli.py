@@ -164,6 +164,14 @@ def cmd_list(args):
 def cmd_names(args):
     root = _root_or_die()
     named = [s for s in store.list_snapshots(root) if s.get("name")]
+    since = getattr(args, "since", None)
+    if since:
+        cutoff = datetime.now().timestamp() - store.parse_duration(since)
+        named = [s for s in named if s["created_at"] and s["created_at"] >= cutoff]
+    before = getattr(args, "before", None)
+    if before:
+        cutoff = datetime.now().timestamp() - store.parse_duration(before)
+        named = [s for s in named if s["created_at"] and s["created_at"] <= cutoff]
     grep = getattr(args, "grep", None)
     if grep:
         needle = grep.lower()
@@ -177,7 +185,11 @@ def cmd_names(args):
         print(json.dumps([{"id": s["id"], "name": s["name"]} for s in ordered]))
         return
     if not named:
-        if grep:
+        if since:
+            console.print(f"[dim]no named snapshots in the last {since}[/]")
+        elif before:
+            console.print(f"[dim]no named snapshots older than {before}[/]")
+        elif grep:
             console.print(f"[dim]no named snapshots match '{grep}'[/]")
         else:
             console.print("[dim]no named snapshots yet, name one with 'quicksave name <ref> <name>'[/]")
@@ -1404,6 +1416,10 @@ def build_parser():
     pnm.add_argument("--json", action="store_true", help="print the named snapshots as json")
     pnm.add_argument("--grep", default=None, metavar="TEXT",
                      help="show only named snapshots whose name contains this text")
+    pnm.add_argument("--since", default=None, metavar="DUR",
+                     help="show only named snapshots newer than a duration (1h, 7d) or date (2026-06-01)")
+    pnm.add_argument("--before", default=None, metavar="DUR",
+                     help="show only named snapshots older than a duration (1h, 7d) or date (2026-06-01)")
     pnm.add_argument("--reverse", action="store_true", help="show oldest first instead of newest first")
     pnm.add_argument("--limit", type=int, help="show only the n most recent named snapshots")
     pnm.add_argument("--count", action="store_true",

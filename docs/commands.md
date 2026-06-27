@@ -66,6 +66,8 @@ quicksave list --grep "rm -rf"
 List just the named snapshots, id and name, newest first.
 
 - `--grep TEXT` - show only names containing the text, case-insensitive.
+- `--since DUR` - show only names newer than a duration (`1h`, `7d`) or date (`2026-06-01`).
+- `--before DUR` - show only names older than a duration or date.
 - `--reverse` - oldest first instead of newest first.
 - `--limit N` - show only the N most recent named snapshots; pairs with `--reverse`.
 - `--count` - print just the number of matching names, nothing else.

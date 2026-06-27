@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `names --since DUR` and `names --before DUR` filter named snapshots by age, the same
+  duration/date window `list` already takes (`1h`, `7d`, `2026-06-01`), so you can scope the
+  named list to a release window.
 - `status --diff-filter LETTERS` keeps only the listed change types (`A` added, `D` deleted,
   `M` modified, e.g. `--diff-filter=AM`), like `git diff --diff-filter`. It applies before any
   output mode, so it composes with `--name-only`/`--name-status`/`--numstat`/`--exit-code` and

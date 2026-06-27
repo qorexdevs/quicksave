@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-06-27
+
 ### Added
 - `names --since DUR` and `names --before DUR` filter named snapshots by age, the same
   duration/date window `list` already takes (`1h`, `7d`, `2026-06-01`), so you can scope the

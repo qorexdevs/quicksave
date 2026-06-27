@@ -89,6 +89,7 @@ quicksave status --numstat     # per-file added/removed line counts, like 'git d
 quicksave status --exit-code   # exit 1 if the tree changed, like 'git diff --exit-code'
 quicksave check-ignore .env    # is a path captured or ignored, and which rule decided (git check-ignore -v style)
 quicksave find app.py          # which snapshots still hold a file you lost, newest first
+quicksave find app.py --ids --limit 1 | xargs -I{} quicksave restore {} app.py  # pipe the newest id on
 quicksave recover app.py       # just bring it back from the newest snapshot that has it
 quicksave recover app.py util.py config.json # several at once, each from its own newest snapshot
 quicksave recover app.py --from 3 # pull it from snapshot 3 if the newest copy is already broken

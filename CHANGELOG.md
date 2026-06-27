@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-06-28
+
 ### Added
 - `find --ids` prints only the matching snapshot ids, one per line, so you can pipe them straight
   into `restore` instead of eyeballing the listing. `-z`/`--null` ends each id with a NUL byte

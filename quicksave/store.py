@@ -1078,7 +1078,7 @@ _RISKY = [
     r"\bfind\b.*\s-delete\b",
     r"\brsync\b[^|]*--delete\b",
     r"\btee\b(?![^|]*(?:-a\b|--append))",
-    r"(?:^|\s)>(?!>)\|?\s*\S",
+    r"(?:^|\s)(?:\d*|&)>(?!>)(?!&)\|?\s*\S",
 ]
 _RISKY_RE = [re.compile(p) for p in _RISKY]
 _extra_cache = (None, [])

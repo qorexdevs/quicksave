@@ -5,6 +5,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Fixed
+- The hook now flags fd-prefixed truncating redirects (`2>file`, `1>file`, `&>file`), which also
+  clobber a file but slipped past the old `>` check. Append (`2>>`) and fd dups (`2>&1`) stay safe.
+
 ## [0.15.0] - 2026-06-28
 
 ### Added

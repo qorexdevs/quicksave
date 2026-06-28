@@ -65,6 +65,7 @@ quicksave save --dry-run       # preview what a snapshot would capture, nothing 
 quicksave list                 # snapshots with file count, size and "2h ago" relative time
 quicksave list --absolute      # show full timestamps instead of relative time
 quicksave list --pinned        # only the snapshots you pinned out of gc rotation
+quicksave list --named         # only snapshots you gave a name, with size and file count
 quicksave list --since 1h      # only snapshots from the last hour (1h, 30m, 7d)
 quicksave list --before 7d     # only snapshots older than a week, handy before gc
 quicksave list --grep "rm -rf" # only snapshots whose message or name matches

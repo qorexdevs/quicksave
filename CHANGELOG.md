@@ -6,6 +6,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `list --named` shows only snapshots that have a name, the same way `--pinned` filters to pinned
+  ones. Unlike `names`, it keeps the full table with size and file count, so you can scan your
+  milestone checkpoints without the autosaves in between.
 - `show -L/--lines RANGE` prints only a slice of the file, like `10-20`, `10-` (to the end) or
   `-20` (from the start), so you can pull one section out of a large file in a snapshot. With `-n`
   the numbers stay the file's own, so a range still lines up.

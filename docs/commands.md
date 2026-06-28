@@ -231,6 +231,7 @@ for the live tree on either side. Add a path for a line-by-line diff of one file
 - `--shortstat` - one summary line of files changed and total insertions/deletions, like `git diff --shortstat`. With `--json` the totals come back as `files_changed`/`insertions`/`deletions`.
 - `-p`, `--patch` - a unified diff of every changed file, like `git diff`. Binary files are noted, not dumped.
 - `--git` - with `-p`, emit a `git apply`/`patch -p1` compatible diff: `a/`/`b/` headers, `/dev/null` for added or removed files, and no color. Binary notes go to stderr so the stream stays clean.
+- `--diff-filter LETTERS` - keep only the listed change types: `A` added, `D` deleted, `M` modified (e.g. `--diff-filter=AM`), like `git diff --diff-filter` and matching `status --diff-filter`. Applies before any output mode.
 - `--json` - the diff as json.
 
 ```
@@ -244,6 +245,7 @@ quicksave diff 0 wt --name-status | grep '^M'
 quicksave diff 0 wt --name-only -z | xargs -0 ls -l
 quicksave diff 2 3 --numstat
 quicksave diff 2 3 --shortstat
+quicksave diff 2 3 --diff-filter AM --name-only
 ```
 
 ## show

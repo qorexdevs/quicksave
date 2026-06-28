@@ -578,15 +578,21 @@ def cmd_check_ignore(args):
         raise SystemExit(1)
 
 
+def _diff_filter_keep(spec):
+    # parse a git-style --diff-filter into the set of A/D/M classes to keep
+    keep = set(spec.upper())
+    bad = keep - {"A", "D", "M"}
+    if bad:
+        console.print(f"[red]unknown --diff-filter letters {''.join(sorted(bad))}[/] (use A, D, M)")
+        raise SystemExit(2)
+    return keep
+
+
 def cmd_status(args):
     root = _root_or_die()
     s = store.status(root, args.ref)
     if args.diff_filter:
-        keep = set(args.diff_filter.upper())
-        bad = keep - {"A", "D", "M"}
-        if bad:
-            console.print(f"[red]status: unknown --diff-filter letters {''.join(sorted(bad))}[/] (use A, D, M)")
-            raise SystemExit(2)
+        keep = _diff_filter_keep(args.diff_filter)
         if "A" not in keep:
             s["added"] = []
         if "D" not in keep:
@@ -864,6 +870,14 @@ def cmd_diff(args):
         added, removed = s["added"], s["removed"]
         if args.a == "wt":
             added, removed = removed, added
+        if args.diff_filter:
+            keep = _diff_filter_keep(args.diff_filter)
+            if "A" not in keep:
+                added = []
+            if "D" not in keep:
+                removed = []
+            if "M" not in keep:
+                s["modified"] = []
         if args.numstat:
             _emit_numstat(root, args.a, args.b,
                           added + removed + s["modified"], args.json)
@@ -905,6 +919,14 @@ def cmd_diff(args):
         )
         return
     d = store.diff(root, args.a, args.b)
+    if args.diff_filter:
+        keep = _diff_filter_keep(args.diff_filter)
+        if "A" not in keep:
+            d["added"] = []
+        if "D" not in keep:
+            d["removed"] = []
+        if "M" not in keep:
+            d["modified"] = []
     if args.numstat:
         _emit_numstat(root, args.a, args.b,
                       d["added"] + d["removed"] + d["modified"], args.json)
@@ -1599,6 +1621,8 @@ def build_parser():
                     help="print a unified diff of every changed file, like 'git diff'")
     pd.add_argument("--git", action="store_true",
                     help="with -p, emit a 'git apply'/'patch -p1' compatible diff (a/ b/ headers, no color)")
+    pd.add_argument("--diff-filter", default=None, metavar="LETTERS",
+                    help="keep only the listed change types: A added, D deleted, M modified (e.g. --diff-filter=AM)")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])

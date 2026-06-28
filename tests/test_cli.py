@@ -882,6 +882,37 @@ def test_cli_status_diff_filter(tmp_path, monkeypatch, capsys):
     capsys.readouterr()
 
 
+def test_cli_diff_diff_filter(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "gone.txt").write_text("bye")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("v2")  # modified
+    (tmp_path / "b.txt").write_text("new")  # added
+    (tmp_path / "gone.txt").unlink()        # removed
+    main(["save", "-m", "next"])
+    capsys.readouterr()
+
+    main(["diff", "0", "1", "--diff-filter", "A", "--name-status"])
+    assert capsys.readouterr().out.splitlines() == ["A\tb.txt"]
+
+    main(["diff", "0", "1", "--diff-filter", "DM", "--name-only"])
+    assert set(capsys.readouterr().out.splitlines()) == {"a.txt", "gone.txt"}
+
+    # same filter works against the live working tree, not just snapshot to snapshot
+    main(["diff", "0", "wt", "--diff-filter", "a", "--name-status"])
+    assert capsys.readouterr().out.splitlines() == ["A\tb.txt"]
+
+    try:
+        main(["diff", "0", "1", "--diff-filter", "X"])
+    except SystemExit as e:
+        assert e.code == 2
+    else:
+        raise AssertionError("bad filter letter should exit 2")
+    capsys.readouterr()
+
+
 def test_cli_status_exit_code(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

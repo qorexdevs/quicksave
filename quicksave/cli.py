@@ -1062,6 +1062,23 @@ def cmd_grep(args):
     if args.json:
         print(json.dumps([{"path": p, "line": n, "text": t} for p, n, t, _ in hits]))
         return
+    if args.heading:
+        # ripgrep-style: print the path once on its own line, then bare 'n:text'
+        prev_path = None
+        prev_n = None
+        for path, n, text, is_match in hits:
+            if path != prev_path:
+                if prev_path is not None:
+                    console.print("")
+                console.print(f"[cyan]{path}[/]")
+                prev_n = None
+            elif (before or after) and prev_n is not None and n != prev_n + 1 \
+                    and args.group_separator is not None:
+                console.print(f"[dim]{args.group_separator}[/]")
+            sep = ":" if is_match else "-"
+            console.print(f"[yellow]{n}[/]{sep}{text}")
+            prev_path, prev_n = path, n
+        return
     prev = None
     for path, n, text, is_match in hits:
         # a '--' divider between non-adjacent context groups, like grep
@@ -1620,6 +1637,8 @@ def build_parser():
                      help="print only the matched part of each line, one match per line")
     pgr.add_argument("--no-filename", dest="no_filename", action="store_true",
                      help="drop the 'path:' prefix from each printed line")
+    pgr.add_argument("--heading", action="store_true",
+                     help="print each path once as a header, then its matches without the path prefix")
     pgr.add_argument("-Z", "--null", action="store_true",
                      help="end each -l/-L path with a NUL byte instead of a newline, for xargs -0")
     pgr.add_argument("-m", "--max-count", type=int, default=0, metavar="N",

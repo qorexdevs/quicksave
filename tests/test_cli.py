@@ -2843,6 +2843,30 @@ def test_grep_no_filename(tmp_path, monkeypatch, capsys):
     assert "a.py" not in out
 
 
+def test_grep_heading_groups_by_path(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("alpha\nhit one\nbeta\n")
+    (tmp_path / "b.py").write_text("gamma\nhit two\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # --heading prints each path once on its own line, then bare 'n:text'
+    main(["grep", "hit", "--heading"])
+    lines = capsys.readouterr().out.splitlines()
+    assert "a.py" in lines
+    assert "b.py" in lines
+    assert "2:hit one" in lines
+    assert "2:hit two" in lines
+    # the path never sticks to a match line
+    assert "a.py:2:hit one" not in lines
+
+    # context lines keep the '-' marker under the same heading
+    main(["grep", "hit one", "-A", "1", "--heading"])
+    out = capsys.readouterr().out
+    assert "a.py\n2:hit one\n3-beta" in out
+
+
 def test_grep_null_separates_name_list(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

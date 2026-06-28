@@ -12,6 +12,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 - `show -L/--lines RANGE` prints only a slice of the file, like `10-20`, `10-` (to the end) or
   `-20` (from the start), so you can pull one section out of a large file in a snapshot. With `-n`
   the numbers stay the file's own, so a range still lines up.
+- `grep --heading` prints each path once on its own line and then its matches without the repeated
+  `path:` prefix, the way ripgrep groups output. Reads better when a pattern hits many files.
 
 ### Fixed
 - The hook now flags fd-prefixed truncating redirects (`2>file`, `1>file`, `&>file`), which also

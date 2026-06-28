@@ -283,6 +283,7 @@ matches paths). Prints `path:line:text` for each match. Binary blobs are skipped
 - `--group-separator SEP` - string printed between non-adjacent context groups, `--` by default. `--no-group-separator` drops it entirely. Only matters with `-A`/`-B`/`-C`.
 - `-o`, `--only-matching` - print only the matched part of each line, one match per line.
 - `--no-filename` - drop the `path:` prefix so each line is just `line:text`, handy when piping matches on. Affects the default and context output only; `--count`/`-c`/`-l`/`-L`/`--json` ignore it.
+- `--heading` - print each path once as its own header line, then its matches as bare `line:text` under it, ripgrep style. Easier to read across many files. Like `--no-filename`, only shapes the default and context output.
 - `-m N`, `--max-count` - stop after N matching lines per file, like `grep -m`. `0` is no cap.
 - `--include GLOB` - only search files whose name matches GLOB, like `grep --include`. Repeatable.
 - `--exclude GLOB` - skip files whose name matches GLOB. Repeatable, and wins over `--include` when both match.

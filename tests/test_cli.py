@@ -2429,6 +2429,37 @@ def test_show_number_lines(tmp_path, monkeypatch, capsys):
     assert out == "1\timport os\n2\tx = 1\n3\ty = 2\n"
 
 
+def test_show_line_range(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("one\ntwo\nthree\nfour\nfive\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    main(["show", "a.py", "-L", "2-4"])
+    assert capsys.readouterr().out == "two\nthree\nfour\n"
+
+    # open-ended to the end, and numbering keeps the file's own line numbers
+    main(["show", "a.py", "-L", "4-", "-n"])
+    assert capsys.readouterr().out == "4\tfour\n5\tfive\n"
+
+    # from the start, and a single line
+    main(["show", "a.py", "-L", "-2"])
+    assert capsys.readouterr().out == "one\ntwo\n"
+    main(["show", "a.py", "-L", "3"])
+    assert capsys.readouterr().out == "three\n"
+
+
+def test_show_bad_line_range_errors(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("one\ntwo\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+    with pytest.raises(SystemExit):
+        main(["show", "a.py", "-L", "5-2"])
+
+
 def test_grep_matches_lines_and_skips_binary(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

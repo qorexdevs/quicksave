@@ -5,6 +5,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+### Added
+- `show -L/--lines RANGE` prints only a slice of the file, like `10-20`, `10-` (to the end) or
+  `-20` (from the start), so you can pull one section out of a large file in a snapshot. With `-n`
+  the numbers stay the file's own, so a range still lines up.
+
 ### Fixed
 - The hook now flags fd-prefixed truncating redirects (`2>file`, `1>file`, `&>file`), which also
   clobber a file but slipped past the old `>` check. Append (`2>>`) and fd dups (`2>&1`) stay safe.

@@ -99,6 +99,7 @@ quicksave stats --markdown     # same numbers as a markdown table for a readme o
 quicksave list --json          # machine-readable output, same for save, status, stats, log, diff, restore and recover --json
 quicksave show 3 src/app.py    # print one file from a snapshot without touching disk
 quicksave show src/app.py      # same, from the newest snapshot that still has it
+quicksave show 3 src/app.py -L 10-20 # only a line range (10-, -20 and a bare 10 also work)
 quicksave export backup.tgz 3  # write a snapshot to a tar.gz, live tree untouched
 quicksave import backup.tgz    # read a tar archive back into a new snapshot
 quicksave export - -z | ssh host 'cd repo && quicksave import -'  # pipe a gzipped checkpoint to another machine

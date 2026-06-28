@@ -942,6 +942,20 @@ def cmd_diff(args):
     )
 
 
+def _parse_line_range(spec, total):
+    # "N", "N-M", "N-" (to end), "-M" (from start); 1-based inclusive.
+    spec = spec.strip()
+    if "-" in spec:
+        lo, _, hi = spec.partition("-")
+        start = int(lo) if lo else 1
+        end = int(hi) if hi else total
+    else:
+        start = end = int(spec)
+    if start < 1 or end < start:
+        raise ValueError(f"bad line range {spec!r}")
+    return start, min(end, total)
+
+
 def cmd_show(args):
     root = _root_or_die()
     # one positional means just a path: print it from the newest snapshot that
@@ -951,13 +965,24 @@ def cmd_show(args):
     else:
         ref, path = args.ref, args.path
     data = store.show(root, ref, path)
-    if args.number:
-        # number the lines like cat -n, so a grep hit at line N is easy to find
-        # again. decode lossily; numbering a binary blob is on you.
+    if args.lines or args.number:
+        # decode lossily; numbering or ranging a binary blob is on you.
         lines = data.decode("utf-8", "replace").splitlines()
-        width = len(str(len(lines))) if lines else 1
-        sys.stdout.write("".join(f"{i:>{width}}\t{ln}\n"
-                                 for i, ln in enumerate(lines, 1)))
+        if args.lines:
+            try:
+                start, end = _parse_line_range(args.lines, len(lines))
+            except ValueError as e:
+                console.print(f"[red]show: {e}[/]")
+                raise SystemExit(1)
+            chosen = list(enumerate(lines[start - 1:end], start))
+        else:
+            chosen = list(enumerate(lines, 1))
+        if args.number:
+            # number against the file's own line numbers, so a range keeps them
+            width = len(str(chosen[-1][0])) if chosen else 1
+            sys.stdout.write("".join(f"{i:>{width}}\t{ln}\n" for i, ln in chosen))
+        else:
+            sys.stdout.write("".join(f"{ln}\n" for _, ln in chosen))
         return
     with open(1, "wb", closefd=False) as out:
         out.write(data)
@@ -1557,6 +1582,8 @@ def build_parser():
     ph.add_argument("ref", help="snapshot id or number, or just the file if you want the newest snapshot that has it")
     ph.add_argument("path", nargs="?", help="file to print (omit to treat ref as the file)")
     ph.add_argument("-n", "--number", action="store_true", help="number the output lines, like cat -n")
+    ph.add_argument("-L", "--lines", metavar="RANGE",
+                    help="print only a line range like 10-20, 10- (to end) or -20 (from start)")
     ph.set_defaults(func=cmd_show)
 
     pgr = sub.add_parser("grep", help="search a snapshot's file contents for a pattern", parents=[common])

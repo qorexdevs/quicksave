@@ -252,12 +252,14 @@ Print one file's contents to stdout, from a snapshot or the newest one that has 
 - `ref` - snapshot id or number, or the file itself for the newest snapshot that has it.
 - `path` - file to print (omit to treat ref as the file).
 - `-n`, `--number` - number the output lines, like `cat -n`, so a `grep` hit at line N is easy to find.
+- `-L`, `--lines RANGE` - print only a line range: `10-20`, `10-` (to the end), `-20` (from the start) or a single `10`. With `-n` the numbers stay the file's own.
 
 ```
 quicksave show 3 src/app.py
 quicksave show config.py            # newest snapshot that still has it
 quicksave show 3 config.py > config.old.py
 quicksave show -n src/app.py        # numbered, to line up with a grep hit
+quicksave show 3 src/app.py -L 40-60  # just lines 40 to 60
 ```
 
 ## grep

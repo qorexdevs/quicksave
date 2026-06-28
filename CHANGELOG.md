@@ -8,6 +8,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ### Fixed
 - The hook now flags fd-prefixed truncating redirects (`2>file`, `1>file`, `&>file`), which also
   clobber a file but slipped past the old `>` check. Append (`2>>`) and fd dups (`2>&1`) stay safe.
+- It also catches redirects with no space before `>` (`echo a>b`, `ls>out`), the last gap in the
+  redirect check. `>>` and `>&` still pass through.
 
 ## [0.15.0] - 2026-06-28
 

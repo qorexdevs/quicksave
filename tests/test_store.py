@@ -26,12 +26,13 @@ def test_looks_risky():
              "echo x >| config.yml", "echo x | tee config.yml", "git switch -f main",
              "git switch --discard-changes -", "unlink config.yml",
              "git worktree remove ../wt", "python a.py 2>err.log",
-             "make &>build.log", "cmd 1>out.txt"]
+             "make &>build.log", "cmd 1>out.txt", "echo a>b", "ls>out.txt",
+             "grep x f>results"]
     safe = ["ls -la", "git status", "cat file >> log.txt", "grep -r foo .",
             "python -m pytest", "echo hi", "rsync -a src/ dst/", "git stashed",
             "echo x | tee -a log.txt", "git switch feature", "committee notes",
             "git worktree list", "git worktree add ../wt", "python a.py 2>&1",
-            "python a.py 2>>err.log"]
+            "python a.py 2>>err.log", "cat a>>b", "wc -l<in"]
     for c in risky:
         assert store.looks_risky(c), c
     for c in safe:

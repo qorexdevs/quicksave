@@ -1098,7 +1098,8 @@ def cmd_grep(args):
                     and args.group_separator is not None:
                 console.print(f"[dim]{args.group_separator}[/]")
             sep = ":" if is_match else "-"
-            console.print(f"[yellow]{n}[/]{sep}{text}")
+            num = "" if args.no_line_number else f"[yellow]{n}[/]{sep}"
+            console.print(f"{num}{text}")
             prev_path, prev_n = path, n
         return
     prev = None
@@ -1108,10 +1109,11 @@ def cmd_grep(args):
                 path != prev[0] or n != prev[1] + 1) and args.group_separator is not None:
             console.print(f"[dim]{args.group_separator}[/]")
         sep = ":" if is_match else "-"
+        num = "" if args.no_line_number else f"[yellow]{n}[/]{sep}"
         if args.no_filename:
-            console.print(f"[yellow]{n}[/]{sep}{text}")
+            console.print(f"{num}{text}")
         else:
-            console.print(f"[cyan]{path}[/]{sep}[yellow]{n}[/]{sep}{text}")
+            console.print(f"[cyan]{path}[/]{sep}{num}{text}")
         prev = (path, n)
 
 
@@ -1661,6 +1663,8 @@ def build_parser():
                      help="print only the matched part of each line, one match per line")
     pgr.add_argument("--no-filename", dest="no_filename", action="store_true",
                      help="drop the 'path:' prefix from each printed line")
+    pgr.add_argument("-N", "--no-line-number", dest="no_line_number", action="store_true",
+                     help="drop the line-number column, leaving just the text (like ripgrep -N)")
     pgr.add_argument("--heading", action="store_true",
                      help="print each path once as a header, then its matches without the path prefix")
     pgr.add_argument("-Z", "--null", action="store_true",

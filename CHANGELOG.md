@@ -14,6 +14,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   the numbers stay the file's own, so a range still lines up.
 - `grep --heading` prints each path once on its own line and then its matches without the repeated
   `path:` prefix, the way ripgrep groups output. Reads better when a pattern hits many files.
+- `grep -N/--no-line-number` drops the line-number column, leaving `path:text` (or bare text with
+  `--no-filename`/`--heading`), like ripgrep `-N`. Useful when piping matches somewhere that the
+  numbers would just get in the way. `--json` still carries the line number.
 - `diff --diff-filter LETTERS` keeps only the listed change types (`A` added, `D` deleted, `M`
   modified, e.g. `--diff-filter=AM`), like `git diff --diff-filter` and matching `status
   --diff-filter`. Works between two snapshots and against the working tree, before any

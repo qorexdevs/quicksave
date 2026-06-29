@@ -2874,6 +2874,36 @@ def test_grep_no_filename(tmp_path, monkeypatch, capsys):
     assert "a.py" not in out
 
 
+def test_grep_no_line_number(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.py").write_text("alpha\nhit one\nbeta\n")
+    (tmp_path / "b.py").write_text("gamma\nhit two\n")
+    main(["save", "-m", "v1"])
+    capsys.readouterr()
+
+    # -N keeps the path but drops the line number, so it's just 'path:text'
+    main(["grep", "hit", "-N"])
+    out = capsys.readouterr().out
+    assert "a.py:hit one" in out
+    assert "b.py:hit two" in out
+    assert ":2:" not in out
+
+    # combined with --no-filename it's bare text
+    main(["grep", "hit", "-N", "--no-filename"])
+    out = capsys.readouterr().out
+    assert "hit one" in out
+    assert "a.py" not in out
+    assert "2:" not in out
+
+    # --heading drops the number too, leaving bare matches under the header
+    main(["grep", "hit", "-N", "--heading"])
+    lines = capsys.readouterr().out.splitlines()
+    assert "a.py" in lines
+    assert "hit one" in lines
+    assert "2:hit one" not in lines
+
+
 def test_grep_heading_groups_by_path(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

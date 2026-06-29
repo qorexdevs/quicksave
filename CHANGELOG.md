@@ -5,6 +5,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- `status -p/--patch` prints a line-by-line unified diff of everything changed since a snapshot, the
+  same output as `diff <ref> wt -p`, with `--git` for an apply-friendly stream. `status` already had
+  every other diff format (`--name-status`, `--numstat`, `--shortstat`), so the patch view was the
+  last gap.
 - `list --unpinned` shows only unpinned snapshots, the inverse of `--pinned`. These are the ones gc
   can reclaim, so it pairs with `--before` to find old autosaves safe to drop.
 

@@ -183,9 +183,11 @@ Show what changed in the working tree since a snapshot (latest by default).
 - `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
 - `--numstat` - added/removed line counts per file as `added<tab>removed<tab>path`, like `git diff --numstat` (binary files show `-`).
 - `--shortstat` - one summary line of files changed and total insertions/deletions, like `git diff --shortstat`.
+- `-p`, `--patch` - a line-by-line unified diff of every change since the snapshot, the same as `diff <ref> wt -p`. Binary files are noted, not dumped. Prints nothing when the tree is clean.
+- `--git` - with `-p`, emit a `git apply`/`patch -p1` compatible diff (`a/`/`b/` headers, `/dev/null` for added or removed files, no color).
 - `--exit-code` - exit 1 if the tree changed, 0 if clean, like `git diff --exit-code`.
 - `--diff-filter LETTERS` - keep only the listed change types: `A` added, `D` deleted, `M` modified (e.g. `--diff-filter=AM`), like `git diff --diff-filter`. Combines with any output mode and with `--exit-code`.
-- `--json` - the diff as json.
+- `--json` - the diff as json. With `-p`, the json carries each file's patch text.
 
 ```
 quicksave status
@@ -195,6 +197,8 @@ quicksave status --name-only
 quicksave status --name-status
 quicksave status --numstat
 quicksave status --shortstat
+quicksave status -p                  # line-by-line diff of everything since the snapshot
+quicksave status -p --git | git apply  # replay uncommitted work somewhere else
 quicksave status --diff-filter AM --name-only
 quicksave status --exit-code
 ```

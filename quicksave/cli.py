@@ -625,7 +625,20 @@ def cmd_status(args):
             raise SystemExit(1)
         return
     if args.json:
-        print(json.dumps(s))
+        if args.patch:
+            _patch_json(root, s["id"], "wt",
+                        s["added"] + s["removed"] + s["modified"])
+        else:
+            print(json.dumps(s))
+        if args.exit_code and dirty:
+            raise SystemExit(1)
+        return
+    if args.patch:
+        # status is the snapshot against the live tree, so the snapshot is the
+        # old side and "wt" the new one, same as the diff command's patch path.
+        if dirty:
+            _emit_patch(root, s["id"], "wt",
+                        s["added"] + s["removed"] + s["modified"], git=args.git)
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
@@ -1603,6 +1616,10 @@ def build_parser():
                     help="exit 1 if the tree changed, 0 if clean, like 'git diff --exit-code'")
     pt.add_argument("--diff-filter", default=None, metavar="LETTERS",
                     help="keep only the listed change types: A added, D deleted, M modified (e.g. --diff-filter=AM)")
+    pt.add_argument("-p", "--patch", action="store_true",
+                    help="print a line-by-line unified diff of every change since the snapshot")
+    pt.add_argument("--git", action="store_true",
+                    help="with -p, emit a 'git apply'/'patch -p1' compatible diff (a/ b/ headers, no color)")
     pt.set_defaults(func=cmd_status)
 
     pci = sub.add_parser("check-ignore",

@@ -1993,6 +1993,64 @@ def test_status_numstat(tmp_path, monkeypatch, capsys):
     assert {f["path"] for f in data["files"]} == {"a.txt", "gone.txt", "b.txt"}
 
 
+def test_status_patch_shows_line_changes(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\ntwo\n")
+    (tmp_path / "drop.txt").write_text("gone\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("one\ntwo edited\n")
+    (tmp_path / "drop.txt").unlink()
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["status", "-p"])
+    out = capsys.readouterr().out
+    assert "-two" in out and "+two edited" in out
+    assert "-gone" in out
+    assert "+fresh" in out
+
+
+def test_status_patch_clean_prints_nothing(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+    main(["status", "-p"])
+    assert capsys.readouterr().out == ""
+
+
+def test_status_patch_json_reports_per_file_diffs(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["status", "-p", "--json"])
+    d = json.loads(capsys.readouterr().out)
+    assert d["b"] == "wt"
+    by_path = {f["path"]: f["diff"] for f in d["files"]}
+    assert "+two" in by_path["a.txt"] and "-one" in by_path["a.txt"]
+    assert "+fresh" in by_path["new.txt"]
+
+
+def test_status_patch_git_headers_apply_friendly(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    (tmp_path / "new.txt").write_text("fresh\n")
+    capsys.readouterr()
+    main(["status", "-p", "--git"])
+    out = capsys.readouterr().out
+    assert "diff --git a/a.txt b/a.txt" in out
+    assert "+++ b/new.txt" in out and "--- /dev/null" in out
+    assert "@0" not in out and "@wt" not in out
+
+
 def test_diff_name_only_no_changes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\n")

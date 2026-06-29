@@ -101,6 +101,9 @@ def cmd_list(args):
     named_only = getattr(args, "named", False)
     if named_only:
         snaps = [s for s in snaps if s.get("name")]
+    unnamed_only = getattr(args, "unnamed", False)
+    if unnamed_only:
+        snaps = [s for s in snaps if not s.get("name")]
     since = getattr(args, "since", None)
     if since:
         cutoff = datetime.now().timestamp() - store.parse_duration(since)
@@ -125,6 +128,8 @@ def cmd_list(args):
             console.print("[dim]no pinned snapshots, pin one with 'quicksave pin <ref>'[/]")
         elif named_only:
             console.print("[dim]no named snapshots, label one with 'quicksave name <ref> <name>'[/]")
+        elif unnamed_only:
+            console.print("[dim]no unnamed snapshots, every snapshot has a name[/]")
         elif since:
             console.print(f"[dim]no snapshots in the last {since}[/]")
         elif before:
@@ -1479,6 +1484,7 @@ def build_parser():
     pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
     pl.add_argument("--pinned", action="store_true", help="show only pinned snapshots")
     pl.add_argument("--named", action="store_true", help="show only named snapshots")
+    pl.add_argument("--unnamed", action="store_true", help="show only snapshots with no name")
     pl.add_argument("--since", default=None, metavar="DUR",
                     help="show only snapshots newer than a duration (1h, 7d) or date (2026-06-01)")
     pl.add_argument("--before", default=None, metavar="DUR",

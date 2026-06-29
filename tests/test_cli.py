@@ -1457,6 +1457,22 @@ def test_list_named_empty(tmp_path, monkeypatch, capsys):
     assert "no named snapshots" in capsys.readouterr().out
 
 
+def test_list_unnamed_filters(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-n", "milestone", "-m", "keep me"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "throwaway"])
+    capsys.readouterr()
+
+    main(["list", "--unnamed", "--json"])
+    snaps = json.loads(capsys.readouterr().out)
+    assert len(snaps) == 1
+    assert not snaps[0]["name"]
+    assert snaps[0]["message"] == "throwaway"
+
+
 def test_cli_export(tmp_path, monkeypatch, capsys):
     import tarfile
 

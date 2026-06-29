@@ -6,6 +6,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- `list --unnamed` shows only snapshots with no name, the inverse of `--named`. Pair it with
+  `--before` to spot the old autosaves worth dropping.
 - `list --named` shows only snapshots that have a name, the same way `--pinned` filters to pinned
   ones. Unlike `names`, it keeps the full table with size and file count, so you can scan your
   milestone checkpoints without the autosaves in between.

@@ -48,6 +48,7 @@ List snapshots, oldest first, with file count, size and relative time.
 - `--absolute` - full timestamps instead of "2h ago".
 - `--pinned` - only pinned snapshots.
 - `--named` - only snapshots that have a name.
+- `--unnamed` - only snapshots with no name, the inverse of `--named`.
 - `--since DUR`, `--before DUR` - only snapshots newer / older than a duration (`1h`, `7d`) or date.
 - `--grep TEXT` - only snapshots whose message or name contains TEXT.
 - `--reverse` - newest first; pairs with `--limit` for the last few.

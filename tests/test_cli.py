@@ -2288,6 +2288,42 @@ def test_cli_list_count_no_snapshots(tmp_path, monkeypatch, capsys):
     assert out == "0"
 
 
+def test_cli_list_ids(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "a.txt"
+    main(["init"])
+    for v in ("one", "two", "three"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["list", "--ids"])
+    ids = capsys.readouterr().out.split()
+    assert len(ids) == 3
+
+    # default order is oldest first, --reverse flips it, --limit keeps newest
+    main(["list", "--ids", "--reverse"])
+    assert capsys.readouterr().out.split() == ids[::-1]
+
+    main(["list", "--ids", "--limit", "2"])
+    assert capsys.readouterr().out.split() == ids[-2:]
+
+
+def test_cli_list_ids_null_separated(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "a.txt"
+    main(["init"])
+    for v in ("one", "two"):
+        f.write_text(v)
+        main(["save", "-m", v])
+    capsys.readouterr()
+
+    main(["list", "--ids", "-z"])
+    out = capsys.readouterr().out
+    assert "\n" not in out
+    assert out.count("\0") == 2
+
+
 def test_cli_find_changes(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "keep.txt"

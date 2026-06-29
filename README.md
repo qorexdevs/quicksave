@@ -72,6 +72,7 @@ quicksave list --before 7d     # only snapshots older than a week, handy before 
 quicksave list --grep "rm -rf" # only snapshots whose message or name matches
 quicksave list --reverse       # newest first, pairs with --limit for the last few
 quicksave list --grep wip --count  # just the number of matching snapshots, for scripts
+quicksave list --unpinned --before 30d --ids | xargs quicksave drop  # drop old gc-eligible snapshots
 quicksave restore              # roll back to the latest snapshot
 quicksave restore 3            # restore by number from the list
 quicksave restore a1b2c3       # or by id

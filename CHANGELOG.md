@@ -5,6 +5,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- `list --ids` prints just the matching snapshot ids, one per line, so a filtered set pipes straight
+  into `drop`, `restore` or `export`. Pair it with `--unpinned --before 30d` to drop old autosaves,
+  and `-z`/`--null` for `xargs -0`. `find` already had `--ids`, but `list` is where you filter by age,
+  pin or name, so it was the obvious gap.
 - `status -p/--patch` prints a line-by-line unified diff of everything changed since a snapshot, the
   same output as `diff <ref> wt -p`, with `--git` for an apply-friendly stream. `status` already had
   every other diff format (`--name-status`, `--numstat`, `--shortstat`), so the patch view was the

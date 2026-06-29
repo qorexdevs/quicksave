@@ -123,6 +123,16 @@ def cmd_list(args):
     if getattr(args, "count", False):
         print(len(snaps))
         return
+    if getattr(args, "ids", False):
+        ids = snaps
+        if args.limit and args.limit < len(ids):
+            ids = ids[-args.limit:]
+        if getattr(args, "reverse", False):
+            ids = ids[::-1]
+        end = "\0" if getattr(args, "null", False) else "\n"
+        for s in ids:
+            print(s["id"], end=end)
+        return
     if args.json:
         print(json.dumps(snaps))
         return
@@ -1514,6 +1524,10 @@ def build_parser():
     pl.add_argument("--reverse", action="store_true", help="show newest first instead of oldest first")
     pl.add_argument("--count", action="store_true",
                     help="print only the number of matching snapshots, nothing else")
+    pl.add_argument("--ids", action="store_true",
+                    help="print only the matching snapshot ids, one per line, to pipe into restore or drop")
+    pl.add_argument("-z", "--null", action="store_true",
+                    help="terminate --ids entries with NUL instead of newline, for xargs -0")
     pl.set_defaults(func=cmd_list)
 
     pnm = sub.add_parser("names", help="list named snapshots, newest first", parents=[common])

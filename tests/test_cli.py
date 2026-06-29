@@ -1291,6 +1291,20 @@ def test_log_name_only_lists_paths(tmp_path, monkeypatch, capsys):
     assert "(" not in out and "Snapshot" not in out
 
 
+def test_log_name_only_null_separates_paths(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("hello")
+    (tmp_path / "b.txt").write_text("world")
+    main(["init"])
+    main(["save", "-n", "v1"])
+    capsys.readouterr()
+
+    main(["log", "v1", "--name-only", "-z"])
+    out = capsys.readouterr().out
+    assert sorted(out.split("\0")) == ["", "a.txt", "b.txt"]
+    assert "\n" not in out
+
+
 def test_log_missing_snapshot_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     main(["init"])

@@ -11,6 +11,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   last gap.
 - `list --unpinned` shows only unpinned snapshots, the inverse of `--pinned`. These are the ones gc
   can reclaim, so it pairs with `--before` to find old autosaves safe to drop.
+- `log -z`/`--null` ends each `--name-only` path with a NUL byte instead of a newline, so paths with
+  spaces or newlines survive a pipe into `xargs -0`. `find`, `status`, `diff` and `grep` already had
+  it, so `log` was the last name-only mode without a script-safe separator.
 
 ## [0.16.0] - 2026-06-29
 

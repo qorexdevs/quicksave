@@ -1216,8 +1216,9 @@ def cmd_log(args):
         print(json.dumps(s))
         return
     if args.name_only:
+        end = "\0" if args.null else "\n"
         for h in s["files"]:
-            print(h["path"])
+            print(h["path"], end=end)
         return
 
     when = "-"
@@ -1737,6 +1738,8 @@ def build_parser():
     plog.add_argument("ref", nargs="?", default=None, help="snapshot id, number or name, defaults to latest")
     plog.add_argument("--json", action="store_true", help="print the snapshot details as json")
     plog.add_argument("--name-only", action="store_true", help="print only the file paths, one per line")
+    plog.add_argument("-z", "--null", action="store_true",
+                      help="with --name-only, end each path with a NUL byte instead of a newline (for xargs -0)")
     plog.set_defaults(func=cmd_log)
 
     pn = sub.add_parser("name", help="label a snapshot, or clear its name with an empty value", parents=[common])

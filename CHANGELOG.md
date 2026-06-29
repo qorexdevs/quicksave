@@ -4,6 +4,8 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+
+## [0.17.0] - 2026-06-30
 ### Added
 - `list --ids` prints just the matching snapshot ids, one per line, so a filtered set pipes straight
   into `drop`, `restore` or `export`. Pair it with `--unpinned --before 30d` to drop old autosaves,

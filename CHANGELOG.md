@@ -5,6 +5,8 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-06-29
+
 ### Added
 - `list --unnamed` shows only snapshots with no name, the inverse of `--named`. Pair it with
   `--before` to spot the old autosaves worth dropping.

@@ -181,6 +181,7 @@ Show what changed in the working tree since a snapshot (latest by default).
 - `--stat` - only the summary line (`N added, N removed, N modified`), or `clean`.
 - `--name-only` - just the changed paths, one per line, no markers and no summary.
 - `--name-status` - each path prefixed with `A`/`D`/`M` and a tab, like `git diff --name-status`.
+- `-z`, `--null` - with `--name-only`/`--name-status`, end each record with a NUL byte instead of a newline, like `git diff -z`, so paths with spaces or newlines survive a pipe into `xargs -0`. With `--name-status` the status and path are also NUL-separated.
 - `--numstat` - added/removed line counts per file as `added<tab>removed<tab>path`, like `git diff --numstat` (binary files show `-`).
 - `--shortstat` - one summary line of files changed and total insertions/deletions, like `git diff --shortstat`.
 - `-p`, `--patch` - a line-by-line unified diff of every change since the snapshot, the same as `diff <ref> wt -p`. Binary files are noted, not dumped. Prints nothing when the tree is clean.
@@ -195,6 +196,7 @@ quicksave status --short
 quicksave status --stat
 quicksave status --name-only
 quicksave status --name-status
+quicksave status --name-only -z | xargs -0 ls -l
 quicksave status --numstat
 quicksave status --shortstat
 quicksave status -p                  # line-by-line diff of everything since the snapshot

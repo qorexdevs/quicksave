@@ -1989,6 +1989,38 @@ def test_status_name_status(tmp_path, monkeypatch, capsys):
     assert set(lines) == {"A\tb.txt", "D\tgone.txt", "M\ta.txt"}
 
 
+def test_status_name_only_null_terminates_paths(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("v2")
+    (tmp_path / "b.txt").write_text("new")
+    capsys.readouterr()
+    main(["status", "--name-only", "-z"])
+    out = capsys.readouterr().out
+    assert "\n" not in out
+    assert set(out.split("\0")) == {"a.txt", "b.txt", ""}
+
+
+def test_status_name_status_null_terminates_records(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "gone.txt").write_text("bye")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("v2")
+    (tmp_path / "b.txt").write_text("new")
+    (tmp_path / "gone.txt").unlink()
+    capsys.readouterr()
+    main(["status", "--name-status", "-z"])
+    out = capsys.readouterr().out
+    assert "\t" not in out and "\n" not in out
+    records = [r for r in out.split("\0") if r]
+    pairs = set(zip(records[0::2], records[1::2]))
+    assert pairs == {("A", "b.txt"), ("D", "gone.txt"), ("M", "a.txt")}
+
+
 def test_status_numstat(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\ntwo\n")

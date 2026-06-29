@@ -672,22 +672,12 @@ def cmd_status(args):
             raise SystemExit(1)
         return
     if args.name_only:
-        for path in s["added"]:
-            print(path)
-        for path in s["removed"]:
-            print(path)
-        for path in s["modified"]:
-            print(path)
+        _emit_name_only(s["added"], s["removed"], s["modified"], args.null)
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
     if args.name_status:
-        for path in s["added"]:
-            print(f"A\t{path}")
-        for path in s["removed"]:
-            print(f"D\t{path}")
-        for path in s["modified"]:
-            print(f"M\t{path}")
+        _emit_name_status(s["added"], s["removed"], s["modified"], args.null)
         if args.exit_code and dirty:
             raise SystemExit(1)
         return
@@ -1623,6 +1613,8 @@ def build_parser():
                     help="print just the changed paths, one per line, no markers and no summary")
     pt.add_argument("--name-status", action="store_true",
                     help="print each path prefixed with A/D/M and a tab, like 'git diff --name-status'")
+    pt.add_argument("-z", "--null", action="store_true",
+                    help="with --name-only/--name-status, end each record with a NUL byte instead of a newline, like 'git diff -z' (for xargs -0)")
     pt.add_argument("--numstat", action="store_true",
                     help="print added/removed line counts per file as 'added<tab>removed<tab>path', like 'git diff --numstat' (binary files show '-')")
     pt.add_argument("--shortstat", action="store_true",

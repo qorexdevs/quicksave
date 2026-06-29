@@ -4,6 +4,10 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+### Added
+- `status -z`/`--null` ends each `--name-only`/`--name-status` record with a NUL byte instead of a
+  newline, like `git diff -z`, so paths with spaces or newlines survive a pipe into `xargs -0`.
+  `diff` and `log` already had it; `status` was the gap.
 
 ## [0.17.0] - 2026-06-30
 ### Added

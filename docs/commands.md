@@ -47,6 +47,7 @@ List snapshots, oldest first, with file count, size and relative time.
 - `--limit N` - only the N most recent.
 - `--absolute` - full timestamps instead of "2h ago".
 - `--pinned` - only pinned snapshots.
+- `--unpinned` - only unpinned snapshots, the inverse of `--pinned`.
 - `--named` - only snapshots that have a name.
 - `--unnamed` - only snapshots with no name, the inverse of `--named`.
 - `--since DUR`, `--before DUR` - only snapshots newer / older than a duration (`1h`, `7d`) or date.

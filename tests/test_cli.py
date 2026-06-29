@@ -1431,6 +1431,23 @@ def test_list_pinned_empty(tmp_path, monkeypatch, capsys):
     assert "no pinned snapshots" in capsys.readouterr().out
 
 
+def test_list_unpinned_filters(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "keep me"])
+    (tmp_path / "a.txt").write_text("v2")
+    main(["save", "-m", "throwaway"])
+    main(["pin", "0"])
+    capsys.readouterr()
+
+    main(["list", "--unpinned", "--json"])
+    snaps = json.loads(capsys.readouterr().out)
+    assert len(snaps) == 1
+    assert snaps[0]["message"] == "throwaway"
+    assert not snaps[0]["pinned"]
+
+
 def test_list_named_filters(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("v1")

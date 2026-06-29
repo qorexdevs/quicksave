@@ -4,6 +4,9 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+### Added
+- `list --unpinned` shows only unpinned snapshots, the inverse of `--pinned`. These are the ones gc
+  can reclaim, so it pairs with `--before` to find old autosaves safe to drop.
 
 ## [0.16.0] - 2026-06-29
 

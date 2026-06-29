@@ -98,6 +98,9 @@ def cmd_list(args):
     pinned_only = getattr(args, "pinned", False)
     if pinned_only:
         snaps = [s for s in snaps if s.get("pinned")]
+    unpinned_only = getattr(args, "unpinned", False)
+    if unpinned_only:
+        snaps = [s for s in snaps if not s.get("pinned")]
     named_only = getattr(args, "named", False)
     if named_only:
         snaps = [s for s in snaps if s.get("name")]
@@ -126,6 +129,8 @@ def cmd_list(args):
     if not snaps:
         if pinned_only:
             console.print("[dim]no pinned snapshots, pin one with 'quicksave pin <ref>'[/]")
+        elif unpinned_only:
+            console.print("[dim]no unpinned snapshots, every snapshot is pinned[/]")
         elif named_only:
             console.print("[dim]no named snapshots, label one with 'quicksave name <ref> <name>'[/]")
         elif unnamed_only:
@@ -1483,6 +1488,7 @@ def build_parser():
     pl.add_argument("--limit", type=int, help="show only the n most recent snapshots")
     pl.add_argument("--absolute", action="store_true", help="show full timestamps instead of relative time")
     pl.add_argument("--pinned", action="store_true", help="show only pinned snapshots")
+    pl.add_argument("--unpinned", action="store_true", help="show only unpinned snapshots")
     pl.add_argument("--named", action="store_true", help="show only named snapshots")
     pl.add_argument("--unnamed", action="store_true", help="show only snapshots with no name")
     pl.add_argument("--since", default=None, metavar="DUR",

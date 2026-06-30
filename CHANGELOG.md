@@ -5,6 +5,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- the auto-save hook now flags `git checkout .` (and `git checkout ./path`), which discards every
+  uncommitted change just like the already-caught `git restore .`. branch switches like
+  `git checkout main` stay safe, so this only fires on the pathspec form.
 - `status -z`/`--null` ends each `--name-only`/`--name-status` record with a NUL byte instead of a
   newline, like `git diff -z`, so paths with spaces or newlines survive a pipe into `xargs -0`.
   `diff` and `log` already had it; `status` was the gap.

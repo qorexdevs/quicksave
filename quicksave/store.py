@@ -1069,6 +1069,7 @@ _RISKY = [
     r"\bsed\b[^|]*\s-i",
     r"\bgit\s+reset\b",
     r"\bgit\s+checkout\s+--",
+    r"\bgit\s+checkout\s+\.",
     r"\bgit\s+clean\b",
     r"\bgit\s+restore\b",
     r"\bgit\s+rm\b",

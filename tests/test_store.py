@@ -23,6 +23,7 @@ def test_looks_risky():
     risky = ["rm -rf build", "mv a b", "git reset --hard", "sed -i 's/a/b/' f",
              "echo x > config.yml", "git clean -fd", "find . -name '*.tmp' -delete",
              "git rm cached.txt", "git stash", "rsync -a --delete src/ dst/",
+             "git checkout .", "git checkout ./src", "git checkout -- file.py",
              "echo x >| config.yml", "echo x | tee config.yml", "git switch -f main",
              "git switch --discard-changes -", "unlink config.yml",
              "git worktree remove ../wt", "python a.py 2>err.log",
@@ -32,6 +33,7 @@ def test_looks_risky():
             "python -m pytest", "echo hi", "rsync -a src/ dst/", "git stashed",
             "echo x | tee -a log.txt", "git switch feature", "committee notes",
             "git worktree list", "git worktree add ../wt", "python a.py 2>&1",
+            "git checkout main", "git checkout feature-branch",
             "python a.py 2>>err.log", "cat a>>b", "wc -l<in"]
     for c in risky:
         assert store.looks_risky(c), c

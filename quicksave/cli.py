@@ -454,28 +454,31 @@ def cmd_recover(args):
         label = f"#{m['seq']} [cyan]{m['id']}[/]"
         when = _relative_time(m["created_at"])
         if into:
-            n, _, _ = store.restore(root, m["id"], paths, dest=into)
+            n, _, _ = store.restore(root, m["id"], paths, dest=into,
+                                    skip_existing=args.only_missing)
             results.append({"path": q, "snapshot": snap, "recovered": n, "files": paths, "into": into})
             if not as_json:
                 console.print(f"recovered [cyan]{n}[/] files matching '{q}' from {label} "
                               f"[dim]{when}[/] into [cyan]{into}[/]")
         elif args.dry_run:
-            p = store.restore_plan(root, m["id"], paths)
+            p = store.restore_plan(root, m["id"], paths, skip_existing=args.only_missing)
             total = len(p["created"]) + len(p["overwritten"])
             results.append({"path": q, "snapshot": snap, "dry_run": True, "would_recover": total,
                             "created": p["created"], "overwritten": p["overwritten"],
-                            "missing": p["missing"]})
+                            "missing": p["missing"], "skipped": p["skipped"]})
             if not as_json:
                 for path in p["created"]:
                     console.print(f"[green]+ {path}[/]")
                 for path in p["overwritten"]:
                     console.print(f"[yellow]~ {path}[/]")
+                for path in p["skipped"]:
+                    console.print(f"[dim]= {path} (exists, kept)[/]")
                 for path in p["missing"]:
                     console.print(f"[red]! {path} (blob missing)[/]")
                 console.print(f"[dim]would recover {total} matching '{q}' from {label} {when}"
                               f" - dry run, nothing touched[/]")
         else:
-            n, _, _ = store.restore(root, m["id"], paths)
+            n, _, _ = store.restore(root, m["id"], paths, skip_existing=args.only_missing)
             results.append({"path": q, "snapshot": snap, "recovered": n, "files": paths})
             if not as_json:
                 console.print(f"recovered [cyan]{n}[/] files matching '{q}' from {label} [dim]{when}[/]")
@@ -503,7 +506,8 @@ def cmd_restore(args):
             cmd_restore_preview(args, root, dest=into)
             return
         target = store.resolve_id(root, args.ref)
-        n, _, _ = store.restore(root, target, args.paths, dest=into)
+        n, _, _ = store.restore(root, target, args.paths, dest=into,
+                                skip_existing=args.only_missing)
         if as_json:
             print(json.dumps({"ref": ref, "restored": n, "into": into, "paths": args.paths}))
             return
@@ -524,7 +528,8 @@ def cmd_restore(args):
             backup = bid
             if not as_json:
                 console.print(f"[dim]backed up current tree as {bid}[/]")
-    n, removed, manifest = store.restore(root, target, args.paths, clean=args.clean)
+    n, removed, manifest = store.restore(root, target, args.paths, clean=args.clean,
+                                         skip_existing=args.only_missing)
     if as_json:
         print(json.dumps({"ref": ref, "restored": n, "removed": removed,
                           "backup": backup, "paths": args.paths}))
@@ -536,19 +541,21 @@ def cmd_restore(args):
 
 
 def cmd_restore_preview(args, root, dest=None):
-    p = store.restore_plan(root, args.ref, args.paths, clean=args.clean, dest=dest)
+    skip_existing = getattr(args, "only_missing", False)
+    p = store.restore_plan(root, args.ref, args.paths, clean=args.clean, dest=dest,
+                           skip_existing=skip_existing)
     ref = args.ref or "latest"
     total = len(p["created"]) + len(p["overwritten"])
     if getattr(args, "json", False):
         out = {"ref": ref, "dry_run": True, "would_write": total,
                "created": p["created"], "overwritten": p["overwritten"],
-               "removed": p["removed"], "missing": p["missing"]}
+               "removed": p["removed"], "missing": p["missing"], "skipped": p["skipped"]}
         if dest:
             out["into"] = dest
         print(json.dumps(out))
         return
     where = f" into {dest}" if dest else ""
-    if not total and not p["removed"] and not p["missing"]:
+    if not total and not p["removed"] and not p["missing"] and not p["skipped"]:
         console.print(f"[dim]nothing to restore from {ref}{where}[/]")
         return
     for path in p["created"]:
@@ -557,11 +564,15 @@ def cmd_restore_preview(args, root, dest=None):
         console.print(f"[yellow]~ {path}[/]")
     for path in p["removed"]:
         console.print(f"[red]- {path}[/]")
+    for path in p["skipped"]:
+        console.print(f"[dim]= {path} (exists, kept)[/]")
     for path in p["missing"]:
         console.print(f"[red]! {path} (blob missing)[/]")
     summary = f"would write {total} ({len(p['created'])} new, {len(p['overwritten'])} overwritten)"
     if p["removed"]:
         summary += f", remove {len(p['removed'])}"
+    if p["skipped"]:
+        summary += f", keep {len(p['skipped'])}"
     console.print(f"[dim]{summary} - dry run, nothing touched[/]")
 
 
@@ -1576,6 +1587,8 @@ def build_parser():
                      help="don't snapshot the current tree before recovering")
     prc.add_argument("--into", metavar="DIR",
                      help="write the matches into DIR instead of overwriting the tree")
+    prc.add_argument("--only-missing", action="store_true",
+                     help="only bring back files that are gone from the tree, leave ones still present untouched")
     prc.add_argument("--json", action="store_true",
                      help="print which snapshot was used and the recovered files as json")
     prc.set_defaults(func=cmd_recover)
@@ -1593,6 +1606,8 @@ def build_parser():
                     help="don't snapshot the current tree before restoring")
     pr.add_argument("--into", metavar="DIR",
                     help="write the snapshot into DIR instead of overwriting the tree")
+    pr.add_argument("--only-missing", action="store_true",
+                    help="only restore files that are gone from the tree, leave ones still present untouched")
     pr.add_argument("--json", action="store_true", help="print the result as json")
     pr.set_defaults(func=cmd_restore)
 

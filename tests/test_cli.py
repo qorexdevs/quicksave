@@ -533,6 +533,54 @@ def test_restore_json_reports_result(tmp_path, monkeypatch, capsys):
     assert (tmp_path / "note.md").read_text() == "v1"
 
 
+def test_restore_only_missing_keeps_edited_files(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "keep.md").write_text("v1")
+    (tmp_path / "gone.md").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    (tmp_path / "keep.md").write_text("edited")
+    (tmp_path / "gone.md").unlink()
+    main(["restore", "0", "--only-missing"])
+    # the deleted file comes back, the one i edited since stays as i left it
+    assert (tmp_path / "gone.md").read_text() == "v1"
+    assert (tmp_path / "keep.md").read_text() == "edited"
+
+
+def test_restore_only_missing_dry_run_reports_skipped(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "keep.md").write_text("v1")
+    (tmp_path / "gone.md").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    (tmp_path / "gone.md").unlink()
+    main(["restore", "0", "--only-missing", "--dry-run", "--json"])
+    res = json.loads(capsys.readouterr().out)
+    assert res["created"] == ["gone.md"]
+    assert res["skipped"] == ["keep.md"]
+    assert res["overwritten"] == []
+    assert (tmp_path / "gone.md").exists() is False
+
+
+def test_recover_only_missing_keeps_present(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("v1")
+    (tmp_path / "b.txt").write_text("v1")
+    main(["init"])
+    main(["save", "-m", "base"])
+    capsys.readouterr()
+
+    (tmp_path / "a.txt").write_text("edited")
+    (tmp_path / "b.txt").unlink()
+    main(["recover", ".txt", "--only-missing", "--no-backup"])
+    assert (tmp_path / "b.txt").read_text() == "v1"
+    assert (tmp_path / "a.txt").read_text() == "edited"
+
+
 def test_restore_dry_run_json_writes_nothing(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "note.md").write_text("draft")

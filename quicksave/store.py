@@ -1246,9 +1246,12 @@ def _selected_files(manifest, paths, ref):
     return files, wanted
 
 
-def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest=None):
+def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest=None,
+                 skip_existing=False):
     # what restore would do, without touching disk. dest mirrors restore(): the
     # plan is measured against DIR instead of the live tree, and clean is off.
+    # skip_existing leaves files that already exist alone, so they land in
+    # 'skipped' instead of 'overwritten' (mirrors restore --only-missing).
     root = Path(root)
     store = store_path(root)
     base = Path(dest) if dest else root
@@ -1256,13 +1259,13 @@ def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE,
     manifest = json.loads(f.read_text())
     files, wanted = _selected_files(manifest, paths, ref)
 
-    created, overwritten, missing = [], [], []
+    created, overwritten, missing, skipped = [], [], [], []
     for relpath, meta in files.items():
         obj = store / "objects" / meta["sha256"][:2] / meta["sha256"][2:]
         if not obj.exists():
             missing.append(relpath)
         elif (base / relpath).exists():
-            overwritten.append(relpath)
+            (skipped if skip_existing else overwritten).append(relpath)
         else:
             created.append(relpath)
 
@@ -1284,10 +1287,12 @@ def restore_plan(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE,
         "overwritten": sorted(overwritten),
         "removed": sorted(removed),
         "missing": sorted(missing),
+        "skipped": sorted(skipped),
     }
 
 
-def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest=None):
+def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest=None,
+            skip_existing=False):
     root = Path(root)
     store = store_path(root)
     # dest pulls a snapshot aside into another directory without touching the
@@ -1304,6 +1309,10 @@ def restore(root, ref=None, paths=None, clean=False, ignore=DEFAULT_IGNORE, dest
         if not obj.exists():
             raise QuicksaveError(f"missing blob {digest} for {relpath}")
         target = base / relpath
+        # --only-missing brings back just what's gone, leaving files you've
+        # edited since the snapshot untouched
+        if skip_existing and target.exists():
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(obj.read_bytes())
         try:

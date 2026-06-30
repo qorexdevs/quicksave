@@ -4,6 +4,11 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+### Added
+- `restore --only-missing` (and `recover --only-missing`) brings back only files that are gone from
+  the tree and leaves the ones still present untouched, so after an agent deletes a few files you can
+  restore them without clobbering edits you've made to others since the snapshot. Dry-run lists the
+  kept files under a `= path (exists, kept)` line and `skipped` in `--json`.
 
 ## [0.18.0] - 2026-06-30
 ### Added

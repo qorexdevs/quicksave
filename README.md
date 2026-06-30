@@ -103,6 +103,7 @@ quicksave restore 3 --clean    # exact rewind: also delete files added after the
 quicksave restore 3 --dry-run  # preview what restore would write or delete, no changes
 quicksave restore 3 --no-backup # skip the safety snapshot of the current tree
 quicksave restore 3 --into /tmp/old # pull the snapshot aside, leave the live tree alone
+quicksave restore 3 --only-missing # bring back only files gone from the tree, keep ones you've edited
 quicksave restore 3 --json     # report the files restored and the safety backup id, for a hook
 quicksave undo                 # revert the last restore, back to the pre-restore tree
 quicksave name 3 good-build    # tag an existing snapshot after the fact (empty name clears it)
@@ -118,6 +119,7 @@ quicksave find app.py --ids --limit 1 | xargs -I{} quicksave restore {} app.py  
 quicksave recover app.py       # just bring it back from the newest snapshot that has it
 quicksave recover app.py util.py config.json # several at once, each from its own newest snapshot
 quicksave recover app.py --from 3 # pull it from snapshot 3 if the newest copy is already broken
+quicksave recover '*.py' --only-missing # bring back the deleted ones, leave files still on disk alone
 quicksave recover app.py --json # report which snapshot it pulled from and the recovered files
 quicksave stats                # store size and how much dedup is saving you
 quicksave stats --markdown     # same numbers as a markdown table for a readme or tweet
@@ -169,6 +171,9 @@ under it). By default it is additive: it won't touch new files you created after
 dirs that held them), so the tree matches the checkpoint byte for byte. Not sure what a restore will
 do? Add `--dry-run` to see the files it
 would write (new vs overwritten) and, with `--clean`, the ones it would delete, without touching disk.
+`--only-missing` flips the default the other way: it writes only the files that are gone from the tree
+and keeps the ones still there, so when an agent deletes a handful of files you can pull just those
+back without overwriting edits you've made to the rest since the snapshot.
 
 Restore snapshots the current tree first, so a restore you didn't mean is itself reversible: pick the
 wrong checkpoint and `quicksave undo` puts you back to how the tree looked before. Add `--clean` to

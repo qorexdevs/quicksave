@@ -1583,7 +1583,8 @@ def build_parser():
     pr = sub.add_parser("restore", help="restore files from a snapshot (default latest)", parents=[common])
     pr.add_argument("ref", nargs="?", default=None,
                     help="snapshot id, number or name from 'quicksave list', defaults to latest")
-    pr.add_argument("paths", nargs="*", help="only restore these files or directories")
+    pr.add_argument("paths", nargs="*",
+                    help="only restore these files or directories, or globs like '*.py'")
     pr.add_argument("--clean", action="store_true",
                     help="delete files not in the snapshot (exact rewind)")
     pr.add_argument("--dry-run", action="store_true",

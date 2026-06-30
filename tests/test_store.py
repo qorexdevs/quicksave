@@ -236,6 +236,24 @@ def test_restore_directory_prefix(tmp_path):
     assert not (tmp_path / "top.txt").exists()
 
 
+def test_restore_glob(tmp_path):
+    store.init(tmp_path)
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "x.py").write_text("x")
+    (tmp_path / "a.py").write_text("a")
+    (tmp_path / "notes.txt").write_text("t")
+    snap_id, _, _ = store.save(tmp_path)
+    os.remove(tmp_path / "src" / "x.py")
+    os.remove(tmp_path / "a.py")
+    os.remove(tmp_path / "notes.txt")
+
+    n, _, _ = store.restore(tmp_path, snap_id, ["*.py"])
+    assert n == 2
+    assert (tmp_path / "a.py").read_text() == "a"
+    assert (tmp_path / "src" / "x.py").read_text() == "x"
+    assert not (tmp_path / "notes.txt").exists()
+
+
 def test_restore_no_match_raises(tmp_path):
     store.init(tmp_path)
     (tmp_path / "a.txt").write_text("a")

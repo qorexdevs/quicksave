@@ -98,6 +98,7 @@ quicksave restore 3            # restore by number from the list
 quicksave restore a1b2c3       # or by id
 quicksave restore pre-deploy   # or by the name you gave it
 quicksave restore 3 src/app.py # only pull back one file or directory
+quicksave restore 3 '*.py'     # or a glob: pull back just the python files
 quicksave restore 3 --clean    # exact rewind: also delete files added after the snapshot
 quicksave restore 3 --dry-run  # preview what restore would write or delete, no changes
 quicksave restore 3 --no-backup # skip the safety snapshot of the current tree

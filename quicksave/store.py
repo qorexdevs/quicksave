@@ -1196,6 +1196,13 @@ def _path_selected(relpath, paths):
     for p in paths:
         if relpath == p or relpath.startswith(p.rstrip("/") + "/"):
             return True
+        # a glob like "*.py" or "src/*.ts" matches the full path or the
+        # basename, so a restore can pull just the files of one kind
+        if any(c in p for c in "*?[") and (
+            fnmatch.fnmatch(relpath, p)
+            or fnmatch.fnmatch(relpath.rsplit("/", 1)[-1], p)
+        ):
+            return True
     return False
 
 

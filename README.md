@@ -9,7 +9,9 @@ own session, so an agent's `rm`, `mv`, or a stray script can wipe files that not
 quicksave snapshots the whole working tree into a local content-addressed store, so you can roll
 back to any checkpoint - including files that were never committed.
 
-<p align="center"><img src="assets/demo.svg" alt="quicksave demo: an agent runs rm -rf, one restore brings the files back" width="660"></p>
+<p align="center"><img src="assets/demo.gif" alt="quicksave demo: an agent runs rm -rf, one restore brings the files back" width="720"></p>
+
+Point it at Claude Code or Codex and it [checkpoints automatically before every risky command](#auto-save-before-an-agents-risky-commands), so when an agent runs `rm -rf` or an overwriting `>` you can always roll back. Works as a plain CLI too.
 
 ## Quick tour
 
@@ -54,7 +56,25 @@ Needs Python 3.10+.
 
 ## Usage
 
-Full per-command reference with every flag in [docs/commands.md](docs/commands.md). The common ones:
+The ones you reach for every day:
+
+```
+quicksave init                 # start tracking this directory
+quicksave save -n pre-deploy   # checkpoint, tagged with a name
+quicksave list                 # what you can fall back to
+quicksave restore pre-deploy   # roll back to a checkpoint
+quicksave restore 3 --clean    # exact rewind to snapshot 3
+quicksave undo                 # take back a restore you didn't mean
+quicksave status               # what changed since the last snapshot
+quicksave recover app.py       # bring back one deleted file
+quicksave diff 3 wt            # what an agent touched since snapshot 3
+```
+
+There are a lot more (per-snapshot grep, find, export/import, gc, pin, completion...). Full
+per-command reference with every flag in [docs/commands.md](docs/commands.md).
+
+<details>
+<summary>Every command at a glance</summary>
 
 ```
 quicksave init                 # start tracking this directory
@@ -126,6 +146,8 @@ quicksave verify               # check the store for corrupt or missing blobs
 quicksave verify --repair      # drop snapshots that point at corrupt or missing blobs
 quicksave save -q -m wip       # -q/--quiet: silence output for scripts and hooks
 ```
+
+</details>
 
 `-q`/`--quiet` works before or after the command and drops the normal output, keeping
 only errors (on stderr) and `--json`, so quicksave is quiet when it runs from a script.

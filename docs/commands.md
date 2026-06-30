@@ -130,6 +130,7 @@ and each resolves to its own newest snapshot under one pre-restore backup.
 - `--from REF` - recover from this snapshot instead of the newest match (for when the newest copy is
   itself broken).
 - `--into DIR` - write the matches into DIR instead of overwriting the tree.
+- `--only-missing` - only bring back files that are gone from the tree, leave the ones still present untouched.
 - `--dry-run` - show which files would come back, and from which snapshot, without writing.
 - `--no-backup` - don't snapshot the current tree first.
 - `--json` - print which snapshot was used and the recovered files.
@@ -147,8 +148,9 @@ Restore files from a snapshot (latest by default). Additive: it won't touch new 
 after the snapshot. Snapshots the current tree first, so a wrong restore is itself undoable.
 
 - `ref` - snapshot id, number or name (default latest).
-- `paths...` - only restore these files or directories.
+- `paths...` - only restore these files or directories, or globs like `*.py` (`src/*.ts` for one dir).
 - `--clean` - exact rewind: also delete files the snapshot didn't have.
+- `--only-missing` - only restore files that are gone from the tree, leave the ones still present untouched, so you can bring back what an agent deleted without clobbering edits you've made since.
 - `--dry-run` - preview what would be written or deleted, no changes. With `--into` it previews against DIR.
 - `--into DIR` - write the snapshot into DIR, leave the live tree alone.
 - `--no-backup` - skip the safety snapshot of the current tree.
@@ -158,6 +160,8 @@ after the snapshot. Snapshots the current tree first, so a wrong restore is itse
 quicksave restore
 quicksave restore pre-deploy --clean
 quicksave restore 3 src/app.py
+quicksave restore 3 '*.py'              # just the python files
+quicksave restore pre-agent --only-missing   # bring back only what's gone
 quicksave restore @10m
 ```
 

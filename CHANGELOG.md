@@ -5,6 +5,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- `diff --exit-code` exits 1 when the two sides differ and 0 when they match, like `git diff
+  --exit-code` and the existing `status --exit-code`. works for snapshot-vs-snapshot,
+  snapshot-vs-tree and single-file diffs, so a script can branch on whether two snapshots are equal.
 - the auto-save hook now flags `perl -i` in-place edits (`perl -pi -e`, `perl -ni -e`, `perl -i.bak`),
   the same footgun as the already-caught `sed -i`. read-only perl runs like `perl -ne`, `perl -pe`
   and include paths like `perl -Ilib` stay quiet.

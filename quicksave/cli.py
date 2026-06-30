@@ -881,6 +881,8 @@ def cmd_diff(args):
             text = "".join(lines)
             print(json.dumps({"path": args.path, "a": args.a, "b": args.b,
                               "diff": text or None}))
+            if args.exit_code and lines:
+                raise SystemExit(1)
             return
         printed = False
         for line in lines:
@@ -896,6 +898,8 @@ def cmd_diff(args):
                 console.print(line)
         if not printed:
             console.print(f"[dim]{args.path} is identical in {args.a} and {args.b}[/]")
+        if args.exit_code and lines:
+            raise SystemExit(1)
         return
     if args.a == "wt" or args.b == "wt":
         # one side is the live working tree, reuse status (snapshot vs tree)
@@ -912,33 +916,46 @@ def cmd_diff(args):
                 removed = []
             if "M" not in keep:
                 s["modified"] = []
+        dirty = bool(added or removed or s["modified"])
         if args.numstat:
             _emit_numstat(root, args.a, args.b,
                           added + removed + s["modified"], args.json)
+            if args.exit_code and dirty:
+                raise SystemExit(1)
             return
         if args.shortstat:
             _emit_shortstat(root, args.a, args.b,
                             added + removed + s["modified"], args.json)
+            if args.exit_code and dirty:
+                raise SystemExit(1)
             return
         if args.json:
             if args.patch:
                 _patch_json(root, args.a, args.b, added + removed + s["modified"])
-                return
-            print(json.dumps({"a": args.a, "b": args.b, "added": added,
-                              "removed": removed, "modified": s["modified"]}))
+            else:
+                print(json.dumps({"a": args.a, "b": args.b, "added": added,
+                                  "removed": removed, "modified": s["modified"]}))
+            if args.exit_code and dirty:
+                raise SystemExit(1)
             return
-        if not (added or removed or s["modified"]):
+        if not dirty:
             console.print(f"[dim]working tree matches {snap}[/]")
             return
         if args.patch:
             _emit_patch(root, args.a, args.b, added + removed + s["modified"],
                         git=args.git)
+            if args.exit_code:
+                raise SystemExit(1)
             return
         if args.name_only:
             _emit_name_only(added, removed, s["modified"], args.null)
+            if args.exit_code:
+                raise SystemExit(1)
             return
         if args.name_status:
             _emit_name_status(added, removed, s["modified"], args.null)
+            if args.exit_code:
+                raise SystemExit(1)
             return
         if not args.stat:
             for path in added:
@@ -951,6 +968,8 @@ def cmd_diff(args):
             f"[dim]{len(added)} added, {len(removed)} removed, "
             f"{len(s['modified'])} modified[/]"
         )
+        if args.exit_code:
+            raise SystemExit(1)
         return
     d = store.diff(root, args.a, args.b)
     if args.diff_filter:
@@ -961,34 +980,47 @@ def cmd_diff(args):
             d["removed"] = []
         if "M" not in keep:
             d["modified"] = []
+    dirty = any(d.values())
     if args.numstat:
         _emit_numstat(root, args.a, args.b,
                       d["added"] + d["removed"] + d["modified"], args.json)
+        if args.exit_code and dirty:
+            raise SystemExit(1)
         return
     if args.shortstat:
         _emit_shortstat(root, args.a, args.b,
                         d["added"] + d["removed"] + d["modified"], args.json)
+        if args.exit_code and dirty:
+            raise SystemExit(1)
         return
     if args.json:
         if args.patch:
             _patch_json(root, args.a, args.b,
                         d["added"] + d["removed"] + d["modified"])
-            return
-        print(json.dumps({"a": args.a, "b": args.b, "added": d["added"],
-                          "removed": d["removed"], "modified": d["modified"]}))
+        else:
+            print(json.dumps({"a": args.a, "b": args.b, "added": d["added"],
+                              "removed": d["removed"], "modified": d["modified"]}))
+        if args.exit_code and dirty:
+            raise SystemExit(1)
         return
-    if not any(d.values()):
+    if not dirty:
         console.print(f"[dim]no changes between {args.a} and {args.b}[/]")
         return
     if args.patch:
         _emit_patch(root, args.a, args.b, d["added"] + d["removed"] + d["modified"],
                     git=args.git)
+        if args.exit_code:
+            raise SystemExit(1)
         return
     if args.name_only:
         _emit_name_only(d["added"], d["removed"], d["modified"], args.null)
+        if args.exit_code:
+            raise SystemExit(1)
         return
     if args.name_status:
         _emit_name_status(d["added"], d["removed"], d["modified"], args.null)
+        if args.exit_code:
+            raise SystemExit(1)
         return
     if not args.stat:
         for path in d["added"]:
@@ -1001,6 +1033,8 @@ def cmd_diff(args):
         f"[dim]{len(d['added'])} added, {len(d['removed'])} removed, "
         f"{len(d['modified'])} modified[/]"
     )
+    if args.exit_code:
+        raise SystemExit(1)
 
 
 def _parse_line_range(spec, total):
@@ -1677,6 +1711,8 @@ def build_parser():
                     help="with -p, emit a 'git apply'/'patch -p1' compatible diff (a/ b/ headers, no color)")
     pd.add_argument("--diff-filter", default=None, metavar="LETTERS",
                     help="keep only the listed change types: A added, D deleted, M modified (e.g. --diff-filter=AM)")
+    pd.add_argument("--exit-code", action="store_true",
+                    help="exit 1 if the two sides differ, 0 if identical, like 'git diff --exit-code'")
     pd.set_defaults(func=cmd_diff)
 
     ph = sub.add_parser("show", help="print a file's contents to stdout, from a snapshot or the newest one that has it", parents=[common])

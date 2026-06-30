@@ -1884,6 +1884,46 @@ def test_diff_shortstat_json(tmp_path, monkeypatch, capsys):
     assert data["deletions"] == 0
 
 
+def test_diff_exit_code(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.txt").write_text("one\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.txt").write_text("two\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+
+    # identical snapshots exit 0
+    main(["diff", "0", "0", "--exit-code"])
+
+    # differing snapshots exit 1
+    try:
+        main(["diff", "0", "1", "--exit-code"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("changed snapshots should exit 1")
+    capsys.readouterr()
+
+    # working-tree side and a single-file diff honour it too
+    (tmp_path / "a.txt").write_text("three\n")
+    try:
+        main(["diff", "1", "wt", "--exit-code"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("dirty working tree should exit 1")
+    capsys.readouterr()
+    try:
+        main(["diff", "0", "1", "a.txt", "--exit-code"])
+    except SystemExit as e:
+        assert e.code == 1
+    else:
+        raise AssertionError("changed file should exit 1")
+    capsys.readouterr()
+    main(["diff", "0", "0", "a.txt", "--exit-code"])
+
+
 def test_status_shortstat(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "a.txt").write_text("one\ntwo\n")

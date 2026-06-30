@@ -5,6 +5,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- the auto-save hook now flags `perl -i` in-place edits (`perl -pi -e`, `perl -ni -e`, `perl -i.bak`),
+  the same footgun as the already-caught `sed -i`. read-only perl runs like `perl -ne`, `perl -pe`
+  and include paths like `perl -Ilib` stay quiet.
 - `restore --only-missing` (and `recover --only-missing`) brings back only files that are gone from
   the tree and leaves the ones still present untouched, so after an agent deletes a few files you can
   restore them without clobbering edits you've made to others since the snapshot. Dry-run lists the

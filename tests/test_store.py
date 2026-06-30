@@ -21,6 +21,7 @@ def test_init_creates_layout(tmp_path):
 
 def test_looks_risky():
     risky = ["rm -rf build", "mv a b", "git reset --hard", "sed -i 's/a/b/' f",
+             "perl -i -pe 's/a/b/' f", "perl -pi.bak -e 's/x/y/g' f", "perl -ni -e '...' f",
              "echo x > config.yml", "git clean -fd", "find . -name '*.tmp' -delete",
              "git rm cached.txt", "git stash", "rsync -a --delete src/ dst/",
              "git checkout .", "git checkout ./src", "git checkout -- file.py",
@@ -31,6 +32,7 @@ def test_looks_risky():
              "make &>build.log", "cmd 1>out.txt", "echo a>b", "ls>out.txt",
              "grep x f>results"]
     safe = ["ls -la", "git status", "cat file >> log.txt", "grep -r foo .",
+            "perl -ne 'print' f", "perl -pe 's/a/b/' f", "perl -Ilib script.pl",
             "python -m pytest", "echo hi", "rsync -a src/ dst/", "git stashed",
             "echo x | tee -a log.txt", "git switch feature", "committee notes",
             "git worktree list", "git worktree add ../wt", "python a.py 2>&1",

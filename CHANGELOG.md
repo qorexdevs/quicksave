@@ -4,7 +4,12 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+
+## [0.18.0] - 2026-06-30
 ### Added
+- `restore` path filters now accept globs, so `restore 3 '*.py'` pulls back just the python files and
+  `restore 3 'src/*.ts'` just that directory's typescript. a pattern matches the full path or the bare
+  name; plain paths and directory prefixes work exactly as before.
 - the auto-save hook now flags `git checkout .` (and `git checkout ./path`), which discards every
   uncommitted change just like the already-caught `git restore .`. branch switches like
   `git checkout main` stay safe, so this only fires on the pathspec form.

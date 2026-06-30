@@ -9,6 +9,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   the tree and leaves the ones still present untouched, so after an agent deletes a few files you can
   restore them without clobbering edits you've made to others since the snapshot. Dry-run lists the
   kept files under a `= path (exists, kept)` line and `skipped` in `--json`.
+- the auto-save hook now flags `git checkout <ref> -- <path>` (e.g. `git checkout HEAD -- app.py`),
+  which overwrites the named files from a commit and was slipping past the `git checkout --` and
+  `git checkout .` patterns because of the ref in between. branch switches like `git checkout main`
+  and `git checkout -b feature` stay safe.
 
 ## [0.18.0] - 2026-06-30
 ### Added

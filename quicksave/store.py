@@ -1068,6 +1068,7 @@ _RISKY = [
     r"\bmkfs\.\w+",
     r"\bsed\b[^|]*\s-i",
     r"\bperl\b[^|]*\s-[pnlw]*i(?![a-zA-Z])",
+    r"\bln\b[^|]*\s(?:-[a-zA-Z]*f|--force)",
     r"\bgit\s+reset\b",
     r"\bgit\s+checkout\s+--",
     r"\bgit\s+checkout\b[^|]*\s--\s",

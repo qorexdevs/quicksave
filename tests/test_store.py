@@ -29,6 +29,7 @@ def test_looks_risky():
              "echo x >| config.yml", "echo x | tee config.yml", "git switch -f main",
              "git switch --discard-changes -", "unlink config.yml",
              "git worktree remove ../wt", "python a.py 2>err.log",
+             "ln -sf new existing", "ln -f a b", "ln -fs a b", "ln --force a b",
              "make &>build.log", "cmd 1>out.txt", "echo a>b", "ls>out.txt",
              "grep x f>results"]
     safe = ["ls -la", "git status", "cat file >> log.txt", "grep -r foo .",
@@ -37,7 +38,8 @@ def test_looks_risky():
             "echo x | tee -a log.txt", "git switch feature", "committee notes",
             "git worktree list", "git worktree add ../wt", "python a.py 2>&1",
             "git checkout main", "git checkout feature-branch", "git checkout -b feature",
-            "python a.py 2>>err.log", "cat a>>b", "wc -l<in"]
+            "python a.py 2>>err.log", "cat a>>b", "wc -l<in",
+            "ln -s target link", "ln a b", "align columns"]
     for c in risky:
         assert store.looks_risky(c), c
     for c in safe:

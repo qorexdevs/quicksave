@@ -31,6 +31,7 @@ def test_looks_risky():
              "git switch --discard-changes -", "unlink config.yml",
              "git worktree remove ../wt", "python a.py 2>err.log",
              "ln -sf new existing", "ln -f a b", "ln -fs a b", "ln --force a b",
+             "cp -f src dst", "cp -rf a b", "cp -fr a b", "cp --force a b",
              "make &>build.log", "cmd 1>out.txt", "echo a>b", "ls>out.txt",
              "grep x f>results"]
     safe = ["ls -la", "git status", "cat file >> log.txt", "grep -r foo .",
@@ -41,7 +42,8 @@ def test_looks_risky():
             "git checkout main", "git checkout feature-branch", "git checkout -b feature",
             "git checkout -q main", "git checkout release-final",
             "python a.py 2>>err.log", "cat a>>b", "wc -l<in",
-            "ln -s target link", "ln a b", "align columns"]
+            "ln -s target link", "ln a b", "align columns",
+            "cp a b", "cp -r src dst", "scp -f host:f ."]
     for c in risky:
         assert store.looks_risky(c), c
     for c in safe:

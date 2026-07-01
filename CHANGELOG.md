@@ -5,6 +5,9 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- the auto-save hook now flags `cp -f` / `cp --force` (and `cp -rf`, `cp -fr`), which overwrite an
+  existing file without asking - the same clobber footgun as the already-caught `ln -sf`. plain
+  `cp a b`, `cp -r src dst` and `scp -f host:f .` stay quiet.
 - the auto-save hook now flags `git checkout -f` / `git checkout --force`, which force-switches
   branches and throws away uncommitted changes in the tree - the same footgun as the already-caught
   `git switch -f` but on the older command. plain `git checkout main`, `git checkout -b feature` and

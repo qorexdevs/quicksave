@@ -5,6 +5,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- the auto-save hook now flags gawk in-place edits (`awk -i inplace`, `gawk --include inplace`,
+  `awk -iinplace`), which rewrite the file the same way the already-caught `sed -i` and `perl -i`
+  do. read-only awk like `awk '{print $1}' f`, `awk -F, ...` and a filename that just happens to
+  contain `inplace` stay quiet.
 - the auto-save hook now flags `cp -f` / `cp --force` (and `cp -rf`, `cp -fr`), which overwrite an
   existing file without asking - the same clobber footgun as the already-caught `ln -sf`. plain
   `cp a b`, `cp -r src dst` and `scp -f host:f .` stay quiet.

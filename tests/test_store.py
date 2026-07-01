@@ -26,6 +26,7 @@ def test_looks_risky():
              "git rm cached.txt", "git stash", "rsync -a --delete src/ dst/",
              "git checkout .", "git checkout ./src", "git checkout -- file.py",
              "git checkout HEAD -- app.py", "git checkout abc123 -- src/",
+             "git checkout -f main", "git checkout --force feature",
              "echo x >| config.yml", "echo x | tee config.yml", "git switch -f main",
              "git switch --discard-changes -", "unlink config.yml",
              "git worktree remove ../wt", "python a.py 2>err.log",
@@ -38,6 +39,7 @@ def test_looks_risky():
             "echo x | tee -a log.txt", "git switch feature", "committee notes",
             "git worktree list", "git worktree add ../wt", "python a.py 2>&1",
             "git checkout main", "git checkout feature-branch", "git checkout -b feature",
+            "git checkout -q main", "git checkout release-final",
             "python a.py 2>>err.log", "cat a>>b", "wc -l<in",
             "ln -s target link", "ln a b", "align columns"]
     for c in risky:

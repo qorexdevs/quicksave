@@ -4,6 +4,11 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+### Added
+- the auto-save hook now flags `git checkout -f` / `git checkout --force`, which force-switches
+  branches and throws away uncommitted changes in the tree - the same footgun as the already-caught
+  `git switch -f` but on the older command. plain `git checkout main`, `git checkout -b feature` and
+  branch names that happen to contain a dash (`git checkout release-final`) stay quiet.
 
 ## [0.19.0] - 2026-07-01
 ### Added

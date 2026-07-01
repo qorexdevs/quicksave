@@ -1073,6 +1073,7 @@ _RISKY = [
     r"\bgit\s+checkout\s+--",
     r"\bgit\s+checkout\b[^|]*\s--\s",
     r"\bgit\s+checkout\s+\.",
+    r"\bgit\s+checkout\b[^|]*\s(?:--force|-f)\b",
     r"\bgit\s+clean\b",
     r"\bgit\s+restore\b",
     r"\bgit\s+rm\b",

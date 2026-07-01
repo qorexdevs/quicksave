@@ -13,6 +13,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   `git switch -f` but on the older command. plain `git checkout main`, `git checkout -b feature` and
   branch names that happen to contain a dash (`git checkout release-final`) stay quiet.
 
+### Changed
+- the pypi distribution name is `quicksave-fs` (plain `quicksave` was already taken). the installed
+  command is still `quicksave`, so nothing changes at the shell once it's published.
+
 ## [0.19.0] - 2026-07-01
 ### Added
 - the auto-save hook now flags `ln -sf` (and `ln -f`, `ln --force`) which silently replace an

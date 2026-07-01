@@ -4,7 +4,12 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+
+## [0.19.0] - 2026-07-01
 ### Added
+- the auto-save hook now flags `ln -sf` (and `ln -f`, `ln --force`) which silently replace an
+  existing file with a symlink. plain `ln -s target link` and `ln a b`, which fail instead of
+  clobbering, stay quiet.
 - `diff --exit-code` exits 1 when the two sides differ and 0 when they match, like `git diff
   --exit-code` and the existing `status --exit-code`. works for snapshot-vs-snapshot,
   snapshot-vs-tree and single-file diffs, so a script can branch on whether two snapshots are equal.

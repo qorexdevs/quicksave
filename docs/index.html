@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>quicksave - F5 for your filesystem</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%233fb950'/%3E%3C/svg%3E">
+<meta name="description" content="Checkpoint before every risky command, restore even after rm -rf. A local, content-addressed snapshot tool for the era of coding agents.">
+<meta property="og:title" content="quicksave - F5 for your filesystem">
+<meta property="og:description" content="Checkpoint before every risky command, restore even after rm -rf.">
+<meta property="og:image" content="https://raw.githubusercontent.com/qorexdevs/quicksave/main/assets/social-preview.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#0b0f14; --border:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --green:#3fb950; --green-dim:#238636;
+  --red:#f85149; --link:#58a6ff;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+code,pre{font-family:var(--mono)}
+
+header.nav{border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(13,17,23,.85);backdrop-filter:blur(8px);z-index:10}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:16px}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+.nav-links{display:flex;gap:20px;align-items:center;font-size:14px;color:var(--muted)}
+.nav-links a{color:var(--muted)}
+.nav-links a:hover{color:var(--text);text-decoration:none}
+
+.hero{text-align:center;padding:84px 0 40px}
+.badge{display:inline-block;font-size:12.5px;color:var(--green);border:1px solid rgba(63,185,80,.35);background:rgba(63,185,80,.08);border-radius:999px;padding:4px 12px;margin-bottom:22px}
+.hero h1{font-size:54px;line-height:1.05;margin:0 0 14px;letter-spacing:-1.5px}
+.hero h1 .k{color:var(--green)}
+.hero .sub{font-size:20px;color:var(--muted);max-width:640px;margin:0 auto 30px}
+.hero .sub b{color:var(--text);font-weight:600}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:8px;font-size:15px;font-weight:600;border:1px solid var(--border);cursor:pointer;transition:.15s}
+.btn.primary{background:var(--green-dim);border-color:var(--green-dim);color:#fff}
+.btn.primary:hover{background:#2ea043;text-decoration:none}
+.btn.ghost{background:var(--panel);color:var(--text)}
+.btn.ghost:hover{border-color:#8b949e;text-decoration:none}
+.installline{margin:8px auto 0;display:inline-flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-family:var(--mono);font-size:14px;color:var(--text)}
+.installline .pfx{color:var(--muted)}
+.installline button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:5px}
+.installline button:hover{color:var(--text);background:#21262d}
+
+.term{background:var(--panel2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:36px 0;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.term .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--panel)}
+.term .bar i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.term .bar .r{background:#ff5f56}.term .bar .y{background:#ffbd2e}.term .bar .g{background:#27c93f}
+.term .bar span{margin-left:8px;color:var(--muted);font-size:12.5px;font-family:var(--mono)}
+.term pre{margin:0;padding:20px 22px;font-size:13.5px;line-height:1.75;overflow-x:auto}
+.term .p{color:var(--green)}
+.term .c{color:var(--muted)}
+.term .o{color:var(--text)}
+.term .warn{color:var(--red)}
+.term .ok{color:var(--green)}
+
+section{padding:52px 0}
+h2{font-size:28px;margin:0 0 8px;letter-spacing:-.5px}
+.lead{color:var(--muted);margin:0 0 30px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:22px}
+.card h3{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:9px}
+.card h3 .ic{color:var(--green);font-family:var(--mono);font-size:15px}
+.card p{margin:0;color:var(--muted);font-size:14.5px}
+.card code{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:1px 5px;font-size:13px;color:var(--text)}
+
+.why{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:26px 28px}
+.why p{margin:0 0 14px;color:var(--muted)}
+.why p:last-child{margin:0}
+.why b{color:var(--text)}
+
+.steps pre{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:13.5px;line-height:1.8;overflow-x:auto;margin:0}
+.steps .c{color:var(--muted)}
+.steps .p{color:var(--green)}
+
+footer{border-top:1px solid var(--border);padding:30px 0;text-align:center;color:var(--muted);font-size:13px}
+.credit{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;margin-top:10px}
+.credit a{display:inline-flex;color:var(--muted)}
+.credit a:hover{color:var(--text)}
+.credit svg{width:16px;height:16px;fill:currentColor}
+
+@media(max-width:640px){
+  .hero h1{font-size:38px}
+  .hero .sub{font-size:17px}
+  .grid{grid-template-columns:1fr}
+  .nav-links a:not(.gh){display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> quicksave</div>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="https://github.com/qorexdevs/quicksave/blob/main/docs/commands.md">Docs</a>
+      <a class="gh" href="https://github.com/qorexdevs/quicksave">GitHub &rarr;</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <span class="badge">built for the age of coding agents</span>
+    <h1><span class="k">F5</span> for your filesystem</h1>
+    <p class="sub">Checkpoint before every risky command and restore even after <b>rm -rf</b>. quicksave snapshots your whole working tree into a local, content-addressed store, so you can roll back files that git never tracked.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/qorexdevs/quicksave">Star on GitHub</a>
+      <a class="btn ghost" href="#how">See it work</a>
+    </div>
+    <div class="installline">
+      <span class="pfx">$</span><span id="inst">pip install git+https://github.com/qorexdevs/quicksave</span>
+      <button onclick="copyInstall()" id="copybtn">copy</button>
+    </div>
+  </section>
+
+  <div class="term" id="how">
+    <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>agent wipes your files, one restore brings them back</span></div>
+<pre><span class="p">$</span> <span class="o">quicksave init</span>
+<span class="c">initialized quicksave in /tmp/demo</span>
+<span class="p">$</span> <span class="o">quicksave save -n pre-agent -m "before the agent runs"</span>
+<span class="c">saved 98c66e6a3d2e pre-agent (3 files) before the agent runs</span>
+
+<span class="p">$</span> <span class="o">rm -rf src .env</span>        <span class="c"># the agent wipes files git never tracked</span>
+<span class="p">$</span> <span class="o">ls -A</span>
+<span class="warn">.quicksave  README.md</span>
+
+<span class="p">$</span> <span class="o">quicksave restore pre-agent --clean</span>
+<span class="ok">backed up current tree as c8aca5f9b067</span>
+<span class="ok">restored 3 files from pre-agent before the agent runs</span>
+<span class="p">$</span> <span class="o">ls -A</span>
+<span class="ok">.env  .quicksave  README.md  src</span></pre>
+  </div>
+
+  <section id="features">
+    <h2>What it gives you</h2>
+    <p class="lead">Not another git wrapper. A safety net for everything git isn't watching.</p>
+    <div class="grid">
+      <div class="card">
+        <h3><span class="ic">[+]</span> The whole tree, tracked or not</h3>
+        <p>Snapshots every file in the directory, including the ones git ignores. Your <code>.env</code>, build output and untracked scripts come back too.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">[&larr;]</span> Reversible restores</h3>
+        <p>A restore snapshots the current tree first, so <code>quicksave undo</code> puts you back if you picked the wrong checkpoint. Nothing is a one-way door.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">[&gt;]</span> Auto-save for agents</h3>
+        <p>Point it at Claude Code or Codex and it checkpoints automatically before every risky command, so an agent's <code>rm -rf</code> or overwriting <code>&gt;</code> is always recoverable.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">[#]</span> Content-addressed, deduped</h3>
+        <p>Unchanged files are stored once. Hundreds of snapshots cost little disk; <code>quicksave stats</code> shows how much the dedup is saving you.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">[?]</span> Find a lost file</h3>
+        <p><code>quicksave recover app.py</code> pulls a file from the newest snapshot that still has it, even if it was deleted several commands ago.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">[=]</span> Scriptable</h3>
+        <p>Every command speaks <code>--json</code> and <code>-q</code>, so quicksave drops cleanly into hooks, prompts and CI. No daemon, no config file.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why not just git?</h2>
+    <div class="why">
+      <p>Git tracks what you tell it to and stops at <code>.gitignore</code>. When an agent deletes an untracked file, an overwriting redirect clobbers your <b>.env</b>, or a stray script runs <code>rm -rf</code> in the wrong directory, git has nothing to give back.</p>
+      <p>quicksave watches the <b>whole working tree</b> and leaves git alone. It never stages, commits or touches your history. Use both: git for the project, quicksave for the blast radius around a command you didn't read.</p>
+    </div>
+  </section>
+
+  <section class="steps">
+    <h2>Start in 30 seconds</h2>
+    <p class="lead">Python 3.10+. No daemon, no account, nothing leaves your machine.</p>
+<pre><span class="c"># install</span>
+<span class="p">$</span> pip install git+https://github.com/qorexdevs/quicksave
+
+<span class="c"># in the directory you want a safety net for</span>
+<span class="p">$</span> quicksave init
+<span class="p">$</span> quicksave save -m "pre-agent"
+
+<span class="c"># let the agent run wild, then</span>
+<span class="p">$</span> quicksave list         <span class="c"># see what you can fall back to</span>
+<span class="p">$</span> quicksave restore 0    <span class="c"># roll back if it broke something</span></pre>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/qorexdevs/quicksave">github.com/qorexdevs/quicksave</a> &middot; MIT
+    <br>
+    <span class="credit">developed by qorex
+      <a href="https://github.com/qorexdevs" aria-label="GitHub"><svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+      <a href="https://t.me/qorexdev" aria-label="Telegram"><svg viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.7 5.46-1.24 5.85c-.09.41-.34.51-.69.32l-1.9-1.4-.92.88c-.1.1-.19.19-.38.19l.14-1.94 3.53-3.19c.15-.14-.03-.21-.24-.08L5.98 9.02l-1.88-.59c-.41-.13-.42-.41.09-.61l7.34-2.83c.34-.12.64.08.53.61z"/></svg></a>
+    </span>
+  </div>
+</footer>
+
+<script>
+function copyInstall(){
+  var t=document.getElementById('inst').textContent;
+  navigator.clipboard.writeText(t).then(function(){
+    var b=document.getElementById('copybtn');b.textContent='copied';setTimeout(function(){b.textContent='copy'},1500);
+  });
+}
+</script>
+</body>
+</html>

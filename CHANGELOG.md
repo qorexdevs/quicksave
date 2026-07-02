@@ -21,6 +21,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 - the pypi distribution name is `quicksave-fs` (plain `quicksave` was already taken). the installed
   command is still `quicksave`, so nothing changes at the shell once it's published.
 
+### Fixed
+- `diff --numstat` / `--shortstat` no longer undercount when a removed line is a markdown rule
+  (`---`) or an added line starts with `++`. those looked like diff headers and got skipped; the
+  count now only reads lines inside a hunk.
+
 ## [0.19.0] - 2026-07-01
 ### Added
 - the auto-save hook now flags `ln -sf` (and `ln -f`, `ln --force`) which silently replace an

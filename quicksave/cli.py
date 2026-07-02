@@ -799,10 +799,15 @@ def _numstat(root, a, b, path):
     if ta is None and tb is None:
         return None
     added = removed = 0
+    in_hunk = False
     for line in difflib.unified_diff(ta or [], tb or []):
-        if line.startswith("+") and not line.startswith("+++"):
+        # only start counting inside a hunk, so a content line that itself
+        # starts with --- (a markdown rule) or +++ isn't mistaken for a header
+        if line.startswith("@@"):
+            in_hunk = True
+        elif in_hunk and line.startswith("+"):
             added += 1
-        elif line.startswith("-") and not line.startswith("---"):
+        elif in_hunk and line.startswith("-"):
             removed += 1
     return added, removed
 

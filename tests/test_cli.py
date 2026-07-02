@@ -1820,6 +1820,20 @@ def test_diff_numstat_between_snapshots(tmp_path, monkeypatch, capsys):
     assert set(lines) == {"2\t1\ta.txt", "0\t1\tdrop.txt", "1\t0\tnew.txt"}
 
 
+def test_diff_numstat_counts_dash_and_plus_lines(tmp_path, monkeypatch, capsys):
+    # a removed line that is a markdown rule (---) and an added line starting
+    # with ++ used to be swallowed as diff headers, so the counts came up short
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.md").write_text("keep\n---\nold\n")
+    main(["init"])
+    main(["save", "-m", "base"])
+    (tmp_path / "a.md").write_text("keep\n++new\n")
+    main(["save", "-m", "edit"])
+    capsys.readouterr()
+    main(["diff", "0", "1", "--numstat"])
+    assert capsys.readouterr().out.strip() == "1\t2\ta.md"
+
+
 def test_diff_numstat_binary_shows_dash(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "bin").write_bytes(b"\xff\xfe\x00")

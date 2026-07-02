@@ -1,7 +1,7 @@
 # pypi name is quicksave-fs because plain "quicksave" is taken; the command stays `quicksave`
 [project]
 name = "quicksave-fs"
-version = "0.19.0"
+version = "0.20.0"
 description = "F5 for your filesystem: checkpoint before every agent command, restore even after rm -rf"
 readme = "README.md"
 license = { text = "MIT" }

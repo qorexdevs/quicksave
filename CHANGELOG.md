@@ -4,6 +4,8 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+
+## [0.20.0] - 2026-07-02
 ### Added
 - the auto-save hook now flags gawk in-place edits (`awk -i inplace`, `gawk --include inplace`,
   `awk -iinplace`), which rewrite the file the same way the already-caught `sed -i` and `perl -i`

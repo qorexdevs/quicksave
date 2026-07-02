@@ -102,6 +102,15 @@ def check_ignore(root, relpath, ignore=DEFAULT_IGNORE):
 
 
 def _pat_hits(relpath, parts, base, pat):
+    # a leading slash anchors the rule to the project root, like gitignore:
+    # '/dist' ignores top-level dist but not a nested a/dist, and '/*.log' only
+    # the log files sitting at the root. without it the rule matched nothing.
+    if pat.startswith("/"):
+        anchored = pat[1:]
+        if "/" in anchored:
+            return (relpath == anchored or relpath.startswith(anchored + "/")
+                    or fnmatch.fnmatch(relpath, anchored))
+        return fnmatch.fnmatch(parts[0], anchored)
     if fnmatch.fnmatch(relpath, pat) or fnmatch.fnmatch(base, pat):
         return True
     # a bare name like "logs" ignores it at any depth

@@ -22,6 +22,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
   command is still `quicksave`, so nothing changes at the shell once it's published.
 
 ### Fixed
+- a `.gitignore` / `.quicksaveignore` rule with a leading slash (`/dist`, `/coverage`, `/*.log`)
+  is now honored instead of silently matching nothing, so files you anchored to the project root
+  stay out of a snapshot. the slash still anchors to the root, so a nested `src/coverage` keeps
+  being captured.
 - `diff --numstat` / `--shortstat` no longer undercount when a removed line is a markdown rule
   (`---`) or an added line starts with `++`. those looked like diff headers and got skipped; the
   count now only reads lines inside a hunk.

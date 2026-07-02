@@ -44,7 +44,13 @@ def main():
 
 ## Install
 
-Latest from git:
+It's a CLI, so pipx keeps it in its own environment:
+
+```
+pipx install git+https://github.com/qorexdevs/quicksave
+```
+
+Plain pip works too:
 
 ```
 pip install git+https://github.com/qorexdevs/quicksave
@@ -52,6 +58,9 @@ pip install git+https://github.com/qorexdevs/quicksave
 
 Or grab a wheel from the [releases page](https://github.com/qorexdevs/quicksave/releases). For local
 hacking, clone and `pip install -e .`.
+
+PyPI is on the way (see [#93](https://github.com/qorexdevs/quicksave/issues/93)); the package name
+there is `quicksave-fs`, the command stays `quicksave`.
 
 Needs Python 3.10+.
 

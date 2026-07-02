@@ -3,6 +3,7 @@
 [![ci](https://github.com/qorexdevs/quicksave/actions/workflows/ci.yml/badge.svg)](https://github.com/qorexdevs/quicksave/actions/workflows/ci.yml)
 
 F5 for your filesystem. Checkpoint before every risky command, restore even after `rm -rf`.
+[**qorexdevs.github.io/quicksave**](https://qorexdevs.github.io/quicksave/) has the quick pitch and demo.
 
 Coding agents run shell commands you didn't read. Most undo tools only track git or the editor's
 own session, so an agent's `rm`, `mv`, or a stray script can wipe files that nothing was watching.

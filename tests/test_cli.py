@@ -2594,6 +2594,9 @@ def test_completion_bash_lists_subcommands(capsys):
     assert "completion" in out
     # past the subcommand it offers the shared flags before file completion
     assert "--dry-run" in out
+    assert "quicksave __complete-refs" in out
+    assert "restore:1" in out
+    assert "__complete-refs" not in out.split('cmds="', 1)[1].split('"', 1)[0].split()
 
 
 def test_completion_zsh_wires_compdef(capsys):
@@ -2603,6 +2606,8 @@ def test_completion_zsh_wires_compdef(capsys):
     assert "compdef _quicksave quicksave" in out
     assert "restore" in out
     assert "--dry-run" in out
+    assert "quicksave __complete-refs" in out
+    assert "diff:2" in out
 
 def test_completion_fish_lists_subcommands(capsys):
     main(["completion", "fish"])
@@ -2611,6 +2616,8 @@ def test_completion_fish_lists_subcommands(capsys):
     assert "__fish_use_subcommand" in out
     assert "restore" in out
     assert "-l dry-run" in out
+    assert "__quicksave_ref_position" in out
+    assert "quicksave __complete-refs" in out
 
 
 def test_completion_powershell_registers_completer(capsys):
@@ -2619,6 +2626,35 @@ def test_completion_powershell_registers_completer(capsys):
     assert "Register-ArgumentCompleter -Native -CommandName quicksave" in out
     assert "restore" in out
     assert "--dry-run" in out
+    assert "Test-QuicksaveRefPosition" in out
+    assert "quicksave __complete-refs" in out
+
+
+def test_complete_refs_prints_snapshot_numbers_ids_and_names(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["init"])
+    (tmp_path / "a.txt").write_text("one")
+    main(["save", "-m", "first", "-n", "good"])
+    (tmp_path / "a.txt").write_text("two")
+    main(["save", "-m", "second"])
+    capsys.readouterr()
+
+    main(["__complete-refs"])
+    refs = capsys.readouterr().out.splitlines()
+    snaps = store.list_snapshots(tmp_path)
+
+    assert str(snaps[0]["seq"]) in refs
+    assert snaps[0]["id"] in refs
+    assert "good" in refs
+    assert str(snaps[1]["seq"]) in refs
+    assert snaps[1]["id"] in refs
+    assert "" not in refs
+
+
+def test_complete_refs_outside_project_is_quiet(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["__complete-refs"])
+    assert capsys.readouterr().out == ""
 
 # ---------------------------------------------------------------------------
 # find --changes --diff

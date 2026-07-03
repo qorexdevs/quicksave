@@ -1428,18 +1428,34 @@ def cmd_hook(args):
         store.gc(root, keep=keep)
 
 
+_REF_COMPLETION_CASES = (
+    "restore:1", "log:1", "diff:1", "diff:2", "show:1",
+    "name:1", "pin:1", "unpin:1", "status:1", "drop:*",
+)
+
 _BASH_COMPLETION = """\
 _quicksave() {
-    local cur cmds
+    local cur cmds sub pos refs
     cur="${COMP_WORDS[COMP_CWORD]}"
     cmds="__CMDS__"
+    sub="${COMP_WORDS[1]}"
+    pos=$((COMP_CWORD - 1))
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
     elif [[ "$cur" == -* ]]; then
         COMPREPLY=( $(compgen -W "-q --quiet --json --dry-run --help" -- "$cur") )
+    elif _quicksave_ref_position "$sub" "$pos"; then
+        refs="$(quicksave __complete-refs 2>/dev/null)"
+        COMPREPLY=( $(compgen -W "$refs" -- "$cur") )
     else
         COMPREPLY=( $(compgen -f -- "$cur") )
     fi
+}
+_quicksave_ref_position() {
+    case "$1:$2" in
+        __REF_CASES__) return 0 ;;
+    esac
+    return 1
 }
 complete -F _quicksave quicksave
 """
@@ -1447,29 +1463,72 @@ complete -F _quicksave quicksave
 _ZSH_COMPLETION = """\
 #compdef quicksave
 _quicksave() {
-    local -a cmds
+    local -a cmds refs
+    local sub pos
     cmds=(__CMDS__)
+    sub=$words[2]
+    pos=$(( CURRENT - 2 ))
     if (( CURRENT == 2 )); then
         compadd -- $cmds
     elif [[ $words[CURRENT] == -* ]]; then
         compadd -- -q --quiet --json --dry-run --help
+    elif _quicksave_ref_position "$sub" "$pos"; then
+        refs=("${(@f)$(quicksave __complete-refs 2>/dev/null)}")
+        compadd -- $refs
     else
         _files
     fi
 }
+_quicksave_ref_position() {
+    case "$1:$2" in
+        __REF_CASES__) return 0 ;;
+    esac
+    return 1
+}
 compdef _quicksave quicksave
 """
 _FISH_COMPLETION = """\
+function __quicksave_ref_position
+    set -l cur (commandline -ct)
+    if string match -q -- '-*' $cur
+        return 1
+    end
+    set -l tokens (commandline -opc)
+    set -l sub $tokens[2]
+    set -l pos (math (count $tokens) - 1)
+    if test -n "$cur"
+        set pos (math $pos - 1)
+    end
+    switch "$sub:$pos"
+        case __REF_CASES_FISH__
+            return 0
+    end
+    return 1
+end
 complete -c quicksave -f -n __fish_use_subcommand -a "__CMDS__"
 complete -c quicksave -l help -l json -l dry-run -l quiet -s q
-complete -c quicksave -n 'not __fish_use_subcommand' -F
+complete -c quicksave -f -n '__quicksave_ref_position' -a '(quicksave __complete-refs 2>/dev/null)'
+complete -c quicksave -n 'not __fish_use_subcommand; and not __quicksave_ref_position' -F
 """
 _PWSH_COMPLETION = """\
 Register-ArgumentCompleter -Native -CommandName quicksave -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $cmds = '__CMDS__'.Split(' ')
-    # element 0 is 'quicksave' itself, so <= 2 elements means we're on the subcommand
-    if ($commandAst.CommandElements.Count -le 2) {
+    function Test-QuicksaveRefPosition($Sub, $Pos) {
+        $refCases = @(
+            __REF_CASES_PWSH__
+        )
+        foreach ($Pattern in $refCases) {
+            if ("${Sub}:${Pos}" -like $Pattern) {
+                return $true
+            }
+        }
+        return $false
+    }
+    # element 0 is 'quicksave' itself. With a trailing space after the
+    # subcommand, PowerShell still reports two elements, so an empty word there
+    # belongs to the first positional argument.
+    if ($commandAst.CommandElements.Count -lt 2 -or ($commandAst.CommandElements.Count -eq 2 -and $wordToComplete)) {
         $cmds | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
@@ -1481,6 +1540,15 @@ Register-ArgumentCompleter -Native -CommandName quicksave -ScriptBlock {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $_)
         }
     }
+    else {
+        $sub = $commandAst.CommandElements[1].Extent.Text
+        $pos = [Math]::Max(1, $commandAst.CommandElements.Count - 2)
+        if (Test-QuicksaveRefPosition $sub $pos) {
+            & quicksave __complete-refs 2>$null | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
+        }
+    }
 }
 """
 
@@ -1488,16 +1556,36 @@ def _subcommands():
     parser = build_parser()
     for action in parser._actions:
         if isinstance(action, argparse._SubParsersAction):
-            return sorted(action.choices)
+            return sorted(name for name in action.choices if not name.startswith("__"))
     return []
 
 
 def cmd_completion(args):
     cmds = " ".join(_subcommands())
+    ref_cases = "|".join(_REF_COMPLETION_CASES)
+    ref_cases_fish = " ".join(_REF_COMPLETION_CASES)
+    ref_cases_pwsh = ",\n            ".join(f"'{case}'" for case in _REF_COMPLETION_CASES)
     scripts = {"bash": _BASH_COMPLETION, "zsh": _ZSH_COMPLETION, "fish": _FISH_COMPLETION,
                "powershell": _PWSH_COMPLETION}
     # plain print so 'eval "$(quicksave completion bash)"' gets a clean script
-    print(scripts[args.shell].replace("__CMDS__", cmds), end="")
+    script = scripts[args.shell].replace("__CMDS__", cmds)
+    script = script.replace("__REF_CASES__", ref_cases)
+    script = script.replace("__REF_CASES_FISH__", ref_cases_fish)
+    script = script.replace("__REF_CASES_PWSH__", ref_cases_pwsh)
+    print(script, end="")
+
+
+def cmd_complete_refs(args):
+    root = store.find_root()
+    if root is None:
+        return
+    seen = set()
+    for snap in store.list_snapshots(root):
+        refs = (str(snap["seq"]), snap["id"], snap.get("name") or "")
+        for ref in refs:
+            if ref and ref not in seen:
+                seen.add(ref)
+                print(ref)
 
 
 def cmd_hook_install(args):
@@ -1855,6 +1943,9 @@ def build_parser():
     pcomp.add_argument("shell", choices=("bash", "zsh", "fish", "powershell"),
                        help="which shell to emit a completion script for")
     pcomp.set_defaults(func=cmd_completion)
+
+    pref = sub.add_parser("__complete-refs", help=argparse.SUPPRESS, parents=[common])
+    pref.set_defaults(func=cmd_complete_refs)
 
     phook = sub.add_parser("hook", help="PreToolUse hook: auto-save before a risky bash command", parents=[common])
     phook.add_argument("--check", metavar="CMD",

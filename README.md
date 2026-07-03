@@ -267,6 +267,7 @@ Claude Code can fire a hook before it runs a tool. Point its `PreToolUse` Bash h
 `quicksave hook` and it will checkpoint the tree right before the agent runs anything destructive
 (`rm`, `unlink`, `mv`, `git reset`, `git rm`, `git stash`, `git worktree remove`, `git switch -f`,
 `git checkout -f`, `rsync --delete`, an in-place edit (`sed -i`, `perl -i`, `awk -i inplace`),
+a diff applied over the tree (`patch`, `git apply`),
 `ln -sf` or `cp -f` over an existing file, an overwriting `>` or `tee`, and
 friends). Safe commands like `ls` or `git status` are ignored, and it stays quiet if the directory isn't a quicksave project, so it never
 blocks the agent.

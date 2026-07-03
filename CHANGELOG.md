@@ -4,6 +4,12 @@ All notable changes are listed here. Versions follow [semver](https://semver.org
 loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
+### Added
+- the auto-save hook now flags `patch` and `git apply`, which write a diff straight into the tree
+  and can mangle a file when the patch is fuzzy or lands in the wrong place - the same in-place
+  footgun as the already-caught `sed -i` and `perl -i`. read-only forms stay quiet: `patch
+  --dry-run`, `git apply --check`/`--stat`/`--numstat`/`--summary`, and `git format-patch`, which
+  writes a new patch file rather than touching the tree.
 
 ## [0.20.0] - 2026-07-02
 ### Added

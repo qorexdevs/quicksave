@@ -34,6 +34,8 @@ def test_looks_risky():
              "git worktree remove ../wt", "python a.py 2>err.log",
              "ln -sf new existing", "ln -f a b", "ln -fs a b", "ln --force a b",
              "cp -f src dst", "cp -rf a b", "cp -fr a b", "cp --force a b",
+             "patch -p1 < fix.diff", "patch < d", "patch -Np0 -i f.diff",
+             "git apply fix.diff", "git apply -3 f.patch", "git apply --reject f",
              "make &>build.log", "cmd 1>out.txt", "echo a>b", "ls>out.txt",
              "grep x f>results"]
     safe = ["ls -la", "git status", "cat file >> log.txt", "grep -r foo .",
@@ -47,7 +49,10 @@ def test_looks_risky():
             "git checkout -q main", "git checkout release-final",
             "python a.py 2>>err.log", "cat a>>b", "wc -l<in",
             "ln -s target link", "ln a b", "align columns",
-            "cp a b", "cp -r src dst", "scp -f host:f ."]
+            "cp a b", "cp -r src dst", "scp -f host:f .",
+            "patch --dry-run -p1 < f", "python patch.py", "git format-patch -1",
+            "git apply --check f", "git apply --stat f", "git apply --numstat f",
+            "dispatch a job"]
     for c in risky:
         assert store.looks_risky(c), c
     for c in safe:

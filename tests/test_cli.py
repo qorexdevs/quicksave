@@ -2663,6 +2663,70 @@ def test_complete_refs_outside_store_is_quiet(tmp_path, monkeypatch, capsys):
     main(["__complete-refs"])
     assert capsys.readouterr().out == ""
 
+
+def test_completion_bash_includes_per_command_flags(capsys):
+    main(["completion", "bash"])
+    out = capsys.readouterr().out
+    # case statement with per-command flags
+    assert 'case "$cmd"' in out
+    # restore has --clean
+    assert 'restore) flags="--clean' in out
+    # save has -n and -m
+    assert 'save) flags="--dry-run --force --json --message --name' in out
+    # list has --grep
+    assert 'list) flags="--absolute --before --count --grep' in out
+
+
+def test_completion_zsh_includes_per_command_flags(capsys):
+    main(["completion", "zsh"])
+    out = capsys.readouterr().out
+    # case statement with per-command flags
+    assert 'case $words[2]' in out
+    # restore has --clean
+    assert 'restore) flags="--clean' in out
+    # save has -n and -m
+    assert 'save) flags="--dry-run --force --json --message --name' in out
+
+
+def test_completion_fish_includes_per_command_flags(capsys):
+    main(["completion", "fish"])
+    out = capsys.readouterr().out
+    # restore has --clean
+    assert "__fish_seen_subcommand_from restore" in out
+    assert "-l clean" in out
+    # save has -n and -m
+    assert "__fish_seen_subcommand_from save" in out
+    assert "-l message" in out
+    assert "-l name" in out
+
+
+def test_completion_powershell_includes_per_command_flags(capsys):
+    main(["completion", "powershell"])
+    out = capsys.readouterr().out
+    # switch statement with per-command flags
+    assert "switch ($cmd)" in out
+    # restore has --clean
+    assert "'restore'" in out
+    assert "'--clean'" in out
+    # save has -n and -m
+    assert "'save'" in out
+    assert "'--message'" in out
+    assert "'--name'" in out
+
+
+def test_command_flags_excludes_parent_common_flags():
+    from quicksave.cli import _command_flags
+    flags_by_cmd = _command_flags()
+    # all commands should have their flags extracted
+    assert "restore" in flags_by_cmd
+    assert "save" in flags_by_cmd
+    assert "list" in flags_by_cmd
+    # parent -q/--quiet should not appear in per-command flags (we add them later)
+    # but command-specific flags should be there
+    assert "--clean" in flags_by_cmd["restore"]
+    assert "--name" in flags_by_cmd["save"]
+    assert "--grep" in flags_by_cmd["list"]
+
 # ---------------------------------------------------------------------------
 # find --changes --diff
 # ---------------------------------------------------------------------------

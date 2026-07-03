@@ -1430,15 +1430,21 @@ def cmd_hook(args):
 
 _BASH_COMPLETION = """\
 _quicksave() {
-    local cur cmds refcmds
+    local cur cmds refcmds cmd
     cur="${COMP_WORDS[COMP_CWORD]}"
     cmds="__CMDS__"
     refcmds=" __REFCMDS__ "
+    cmd="${COMP_WORDS[1]}"
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
     elif [[ "$cur" == -* ]]; then
-        COMPREPLY=( $(compgen -W "-q --quiet --json --dry-run --help" -- "$cur") )
-    elif [[ "$refcmds" == *" ${COMP_WORDS[1]} "* ]]; then
+        local flags
+        case "$cmd" in
+            __FLAGSCASE__
+            *) flags="-q --quiet --json --dry-run --help" ;;
+        esac
+        COMPREPLY=( $(compgen -W "$flags" -- "$cur") )
+    elif [[ "$refcmds" == *" $cmd "* ]]; then
         local refs
         refs="$(quicksave __complete-refs 2>/dev/null)"
         COMPREPLY=( $(compgen -W "$refs" -- "$cur") $(compgen -f -- "$cur") )
@@ -1452,13 +1458,17 @@ complete -F _quicksave quicksave
 _ZSH_COMPLETION = """\
 #compdef quicksave
 _quicksave() {
-    local -a cmds refcmds
+    local -a cmds refcmds flags
     cmds=(__CMDS__)
     refcmds=(__REFCMDS__)
     if (( CURRENT == 2 )); then
         compadd -- $cmds
     elif [[ $words[CURRENT] == -* ]]; then
-        compadd -- -q --quiet --json --dry-run --help
+        case $words[2] in
+            __FLAGSCASE__
+            *) flags=(-q --quiet --json --dry-run --help) ;;
+        esac
+        compadd -- $flags
     elif (( ${refcmds[(Ie)$words[2]]} )); then
         compadd -- ${(f)"$(quicksave __complete-refs 2>/dev/null)"}
         _files
@@ -1470,7 +1480,7 @@ compdef _quicksave quicksave
 """
 _FISH_COMPLETION = """\
 complete -c quicksave -f -n __fish_use_subcommand -a "__CMDS__"
-complete -c quicksave -l help -l json -l dry-run -l quiet -s q
+__FISHFLAGS__
 complete -c quicksave -n '__fish_seen_subcommand_from __REFCMDS__' -a '(quicksave __complete-refs 2>/dev/null)'
 complete -c quicksave -n 'not __fish_use_subcommand' -F
 """
@@ -1485,9 +1495,14 @@ Register-ArgumentCompleter -Native -CommandName quicksave -ScriptBlock {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
-    # past the subcommand, offer the common flags when a dash is typed
+    # past the subcommand, offer command-specific flags when a dash is typed
     elseif ($wordToComplete -like '-*') {
-        '-q', '--quiet', '--json', '--dry-run', '--help' | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+        $cmd = $commandAst.CommandElements[1].Value
+        $flags = switch ($cmd) {
+            __PWSHFLAGS__
+            default { '-q', '--quiet', '--json', '--dry-run', '--help' }
+        }
+        $flags | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $_)
         }
     }
@@ -1511,8 +1526,35 @@ def _subcommands():
     for action in parser._actions:
         if isinstance(action, argparse._SubParsersAction):
             # drop the __-prefixed helpers like __complete-refs, they're internal
-            return sorted(c for c in action.choices if not c.startswith("_"))
+            return sorted(c for c in action.choices if not c.startswith("__"))
     return []
+
+
+def _command_flags():
+    """Extract flags for each subcommand from the argparse parser.
+
+    Returns a dict mapping command name to a space-separated string of its flags
+    (both short and long options), excluding the parent parser's common flags.
+    """
+    parser = build_parser()
+    flags_by_cmd = {}
+    common_flags = {"-q", "--quiet", "--help"}
+
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            for cmd_name, subparser in action.choices.items():
+                if cmd_name.startswith("__"):
+                    continue
+                cmd_flags = []
+                for sub_action in subparser._actions:
+                    if isinstance(sub_action, argparse._SubParsersAction):
+                        continue
+                    # Collect both short and long option strings
+                    for opt_str in sub_action.option_strings:
+                        if opt_str not in common_flags:
+                            cmd_flags.append(opt_str)
+                flags_by_cmd[cmd_name] = " ".join(sorted(cmd_flags))
+    return flags_by_cmd
 
 
 def cmd_complete_refs(args):
@@ -1531,10 +1573,44 @@ def cmd_complete_refs(args):
 def cmd_completion(args):
     cmds = " ".join(_subcommands())
     refcmds = " ".join(_REF_COMMANDS)
-    scripts = {"bash": _BASH_COMPLETION, "zsh": _ZSH_COMPLETION, "fish": _FISH_COMPLETION,
-               "powershell": _PWSH_COMPLETION}
-    # plain print so 'eval "$(quicksave completion bash)"' gets a clean script
-    print(scripts[args.shell].replace("__CMDS__", cmds).replace("__REFCMDS__", refcmds), end="")
+    flags_by_cmd = _command_flags()
+
+    # Build bash/zsh case statement for per-command flags
+    flag_cases = []
+    for cmd, flags in sorted(flags_by_cmd.items()):
+        flag_cases.append(f"{cmd}) flags=\"{flags} -q --quiet --json --dry-run --help\" ;;")
+    flag_case_str = "\n            ".join(flag_cases)
+
+    # Build fish per-command completion lines
+    fish_flag_lines = []
+    for cmd, flags in sorted(flags_by_cmd.items()):
+        opts = []
+        for f in flags.split():
+            if f.startswith("--"):
+                opts.append(f"-l {f[2:]}")
+            elif f.startswith("-") and len(f) == 2:
+                opts.append(f"-s {f[1:]}")
+        if opts:
+            fish_flag_lines.append(f"complete -c quicksave -n '__fish_seen_subcommand_from {cmd}' {' '.join(opts)}")
+    fish_flags_str = "\n".join(fish_flag_lines) if fish_flag_lines else "# no per-command flags"
+
+    # Build PowerShell switch statement for per-command flags
+    pwhash_entries = []
+    for cmd, flags in sorted(flags_by_cmd.items()):
+        flag_list = ", ".join(f"'{f}'" if f.startswith("-") else f"'{f}'" for f in flags.split())
+        common = "'-q', '--quiet', '--json', '--dry-run', '--help'"
+        pwhash_entries.append(f"'{cmd}' {{ {flag_list}, {common} }}")
+    pw_flags_str = " ".join(pwhash_entries) if pwhash_entries else ""
+
+    templates = {
+        "bash": _BASH_COMPLETION.replace("__FLAGSCASE__", flag_case_str),
+        "zsh": _ZSH_COMPLETION.replace("__FLAGSCASE__", flag_case_str),
+        "fish": _FISH_COMPLETION.replace("__FISHFLAGS__", fish_flags_str),
+        "powershell": _PWSH_COMPLETION.replace("__PWSHFLAGS__", pw_flags_str),
+    }
+
+    script = templates[args.shell].replace("__CMDS__", cmds).replace("__REFCMDS__", refcmds)
+    print(script, end="")
 
 
 def cmd_hook_install(args):

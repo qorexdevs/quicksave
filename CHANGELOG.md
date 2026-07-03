@@ -5,6 +5,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- tab-completion now offers each command's own flags once you type a `-`, instead of just the five
+  shared ones. so `restore --<TAB>` offers `--clean`/`--only-missing`/..., `gc --<TAB>` offers
+  `--keep`/`--keep-named`/..., and `find --<TAB>` offers `--ids`. the flag map is walked off the
+  argparse parser, so it stays in sync as flags are added. works in bash, zsh, fish, and powershell.
 - tab-completion now offers snapshot refs, not just files, once you're past a ref-taking subcommand
   (`restore`, `log`, `diff`, `show`, `name`, `pin`, `status`). the scripts call a new hidden
   `quicksave __complete-refs`, which prints the seqs, ids, and names one per line straight from the

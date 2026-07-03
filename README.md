@@ -350,8 +350,10 @@ quicksave completion fish | source
 quicksave completion powershell | Out-String | Invoke-Expression
 ```
 
-It completes subcommands at the first word and falls back to file completion after that. The
-command list is read from the parser, so it stays in sync as commands are added.
+It completes subcommands at the first word. After a command that takes a snapshot ref (`restore`,
+`log`, `diff`, `show`, `name`, `pin`, `status`) it offers the snapshot seqs, ids, and names so you
+don't have to paste an id; other commands fall back to file completion. The command list is read
+from the parser, so it stays in sync as commands are added.
 
 Set `NO_COLOR` to any value and quicksave prints plain text without styling, following the
 [NO_COLOR](https://no-color.org) convention.

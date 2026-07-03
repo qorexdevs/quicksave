@@ -2620,6 +2620,49 @@ def test_completion_powershell_registers_completer(capsys):
     assert "restore" in out
     assert "--dry-run" in out
 
+
+def test_completion_hides_internal_helpers(capsys):
+    # the __complete-refs helper is real and gets called from the script, but it
+    # must not show up in the completable subcommand list
+    main(["completion", "bash"])
+    out = capsys.readouterr().out
+    cmds = out.split('cmds="', 1)[1].split('"', 1)[0]
+    assert "__complete-refs" not in cmds
+    assert "restore" in cmds
+
+
+def test_completion_wires_refs_for_ref_commands(capsys):
+    main(["completion", "bash"])
+    out = capsys.readouterr().out
+    # ref-taking commands are listed and the helper is called for them
+    assert "refcmds=\" restore log diff show name pin status \"" in out
+    assert "quicksave __complete-refs" in out
+
+
+def test_complete_refs_lists_seqs_ids_and_names(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    f = tmp_path / "notes.txt"
+    main(["init"])
+    f.write_text("one\n")
+    main(["save", "-n", "first", "-m", "v1"])
+    f.write_text("two\n")
+    main(["save", "-m", "v2"])
+    capsys.readouterr()
+
+    main(["__complete-refs"])
+    lines = capsys.readouterr().out.split()
+    # seqs of both snapshots (0-based), the name, and nothing rich or table-shaped
+    assert "0" in lines
+    assert "1" in lines
+    assert "first" in lines
+    assert "\x1b[" not in "".join(lines)
+
+
+def test_complete_refs_outside_store_is_quiet(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    main(["__complete-refs"])
+    assert capsys.readouterr().out == ""
+
 # ---------------------------------------------------------------------------
 # find --changes --diff
 # ---------------------------------------------------------------------------

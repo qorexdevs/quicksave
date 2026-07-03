@@ -1430,13 +1430,18 @@ def cmd_hook(args):
 
 _BASH_COMPLETION = """\
 _quicksave() {
-    local cur cmds
+    local cur cmds refcmds
     cur="${COMP_WORDS[COMP_CWORD]}"
     cmds="__CMDS__"
+    refcmds=" __REFCMDS__ "
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
     elif [[ "$cur" == -* ]]; then
         COMPREPLY=( $(compgen -W "-q --quiet --json --dry-run --help" -- "$cur") )
+    elif [[ "$refcmds" == *" ${COMP_WORDS[1]} "* ]]; then
+        local refs
+        refs="$(quicksave __complete-refs 2>/dev/null)"
+        COMPREPLY=( $(compgen -W "$refs" -- "$cur") $(compgen -f -- "$cur") )
     else
         COMPREPLY=( $(compgen -f -- "$cur") )
     fi
@@ -1447,12 +1452,16 @@ complete -F _quicksave quicksave
 _ZSH_COMPLETION = """\
 #compdef quicksave
 _quicksave() {
-    local -a cmds
+    local -a cmds refcmds
     cmds=(__CMDS__)
+    refcmds=(__REFCMDS__)
     if (( CURRENT == 2 )); then
         compadd -- $cmds
     elif [[ $words[CURRENT] == -* ]]; then
         compadd -- -q --quiet --json --dry-run --help
+    elif (( ${refcmds[(Ie)$words[2]]} )); then
+        compadd -- ${(f)"$(quicksave __complete-refs 2>/dev/null)"}
+        _files
     else
         _files
     fi
@@ -1462,42 +1471,70 @@ compdef _quicksave quicksave
 _FISH_COMPLETION = """\
 complete -c quicksave -f -n __fish_use_subcommand -a "__CMDS__"
 complete -c quicksave -l help -l json -l dry-run -l quiet -s q
+complete -c quicksave -n '__fish_seen_subcommand_from __REFCMDS__' -a '(quicksave __complete-refs 2>/dev/null)'
 complete -c quicksave -n 'not __fish_use_subcommand' -F
 """
 _PWSH_COMPLETION = """\
 Register-ArgumentCompleter -Native -CommandName quicksave -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $cmds = '__CMDS__'.Split(' ')
+    $refcmds = '__REFCMDS__'.Split(' ')
     # element 0 is 'quicksave' itself, so <= 2 elements means we're on the subcommand
     if ($commandAst.CommandElements.Count -le 2) {
         $cmds | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
-    # past the subcommand, offer the common flags when a dash is typed,
-    # otherwise return nothing so PowerShell falls back to file paths
+    # past the subcommand, offer the common flags when a dash is typed
     elseif ($wordToComplete -like '-*') {
         '-q', '--quiet', '--json', '--dry-run', '--help' | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $_)
         }
     }
+    # for ref-taking subcommands, offer snapshot refs; otherwise nothing, so
+    # PowerShell falls back to file paths
+    elseif ($refcmds -contains $commandAst.CommandElements[1].Value) {
+        quicksave __complete-refs 2>$null | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
+    }
 }
 """
+
+# subcommands that take a snapshot ref as their first positional, so the
+# completion scripts can offer refs there instead of only files
+_REF_COMMANDS = ["restore", "log", "diff", "show", "name", "pin", "status"]
+
 
 def _subcommands():
     parser = build_parser()
     for action in parser._actions:
         if isinstance(action, argparse._SubParsersAction):
-            return sorted(action.choices)
+            # drop the __-prefixed helpers like __complete-refs, they're internal
+            return sorted(c for c in action.choices if not c.startswith("_"))
     return []
+
+
+def cmd_complete_refs(args):
+    # called by the completion scripts, so keep it fast and plain: just the
+    # seqs, ids, and names one per line, no store validation or rich output
+    root = store.find_root()
+    if root is None:
+        return
+    for s in store.list_snapshots(root):
+        print(s["seq"])
+        print(s["id"])
+        if s.get("name"):
+            print(s["name"])
 
 
 def cmd_completion(args):
     cmds = " ".join(_subcommands())
+    refcmds = " ".join(_REF_COMMANDS)
     scripts = {"bash": _BASH_COMPLETION, "zsh": _ZSH_COMPLETION, "fish": _FISH_COMPLETION,
                "powershell": _PWSH_COMPLETION}
     # plain print so 'eval "$(quicksave completion bash)"' gets a clean script
-    print(scripts[args.shell].replace("__CMDS__", cmds), end="")
+    print(scripts[args.shell].replace("__CMDS__", cmds).replace("__REFCMDS__", refcmds), end="")
 
 
 def cmd_hook_install(args):
@@ -1855,6 +1892,10 @@ def build_parser():
     pcomp.add_argument("shell", choices=("bash", "zsh", "fish", "powershell"),
                        help="which shell to emit a completion script for")
     pcomp.set_defaults(func=cmd_completion)
+
+    # hidden helper the completion scripts call to list snapshot refs
+    pcrefs = sub.add_parser("__complete-refs", parents=[common])
+    pcrefs.set_defaults(func=cmd_complete_refs)
 
     phook = sub.add_parser("hook", help="PreToolUse hook: auto-save before a risky bash command", parents=[common])
     phook.add_argument("--check", metavar="CMD",

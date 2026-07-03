@@ -5,6 +5,11 @@ loosely follows [Keep a Changelog](https://keepachangelog.com).
 
 ## [Unreleased]
 ### Added
+- tab-completion now offers snapshot refs, not just files, once you're past a ref-taking subcommand
+  (`restore`, `log`, `diff`, `show`, `name`, `pin`, `status`). the scripts call a new hidden
+  `quicksave __complete-refs`, which prints the seqs, ids, and names one per line straight from the
+  store index, so completing an id or name no longer means typing it out by hand. works in bash,
+  zsh, fish, and powershell.
 - the auto-save hook now flags `patch` and `git apply`, which write a diff straight into the tree
   and can mangle a file when the patch is fuzzy or lands in the wrong place - the same in-place
   footgun as the already-caught `sed -i` and `perl -i`. read-only forms stay quiet: `patch

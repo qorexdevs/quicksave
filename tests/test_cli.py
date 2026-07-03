@@ -2639,6 +2639,64 @@ def test_completion_wires_refs_for_ref_commands(capsys):
     assert "quicksave __complete-refs" in out
 
 
+def test_completion_bash_offers_per_command_flags(capsys):
+    main(["completion", "bash"])
+    out = capsys.readouterr().out
+    # each command's own flags land in the _qs_flags map, indexed by name
+    assert '_qs_flags[restore]=' in out
+    restore_flags = out.split('_qs_flags[restore]="', 1)[1].split('"', 1)[0]
+    assert "--clean" in restore_flags
+    assert "--only-missing" in restore_flags
+    # a flag unique to another command doesn't leak into restore's list
+    assert "--keep" not in restore_flags
+    # gc keeps its own flags
+    gc_flags = out.split('_qs_flags[gc]="', 1)[1].split('"', 1)[0]
+    assert "--keep" in gc_flags
+    # the dash branch reads from the map instead of a hard-coded five
+    assert "${_qs_flags[${COMP_WORDS[1]}]" in out
+
+
+def test_completion_zsh_offers_per_command_flags(capsys):
+    main(["completion", "zsh"])
+    out = capsys.readouterr().out
+    assert '_qs_flags[restore]=' in out
+    restore_flags = out.split('_qs_flags[restore]="', 1)[1].split('"', 1)[0]
+    assert "--clean" in restore_flags
+    assert "_qs_flags[$words[2]]" in out
+
+
+def test_completion_fish_offers_per_command_flags(capsys):
+    main(["completion", "fish"])
+    out = capsys.readouterr().out
+    # per-command flags are guarded by the seen-subcommand test
+    assert "__fish_seen_subcommand_from restore" in out
+    assert "-l clean" in out
+    assert "__fish_seen_subcommand_from gc" in out
+    assert "-l keep" in out
+
+
+def test_completion_fish_offers_root_flags_before_subcommand(capsys):
+    main(["completion", "fish"])
+    out = capsys.readouterr().out
+    # top-level flags still complete before a subcommand is chosen
+    root_line = next(
+        ln for ln in out.splitlines()
+        if ln.startswith("complete -c quicksave -n __fish_use_subcommand ")
+        and "-a " not in ln
+    )
+    assert "-l version" in root_line
+    assert "-l help" in root_line
+
+
+def test_completion_powershell_offers_per_command_flags(capsys):
+    main(["completion", "powershell"])
+    out = capsys.readouterr().out
+    # the hashtable literal carries each command's flags
+    assert "'restore' = @(" in out
+    assert "'--clean'" in out
+    assert "$qs_flags.ContainsKey($sub)" in out
+
+
 def test_complete_refs_lists_seqs_ids_and_names(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     f = tmp_path / "notes.txt"

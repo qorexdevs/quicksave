@@ -1431,13 +1431,15 @@ def cmd_hook(args):
 _BASH_COMPLETION = """\
 _quicksave() {
     local cur cmds refcmds
+    __FLAGMAP__
     cur="${COMP_WORDS[COMP_CWORD]}"
     cmds="__CMDS__"
     refcmds=" __REFCMDS__ "
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
     elif [[ "$cur" == -* ]]; then
-        COMPREPLY=( $(compgen -W "-q --quiet --json --dry-run --help" -- "$cur") )
+        local flags="${_qs_flags[${COMP_WORDS[1]}]:-}"
+        COMPREPLY=( $(compgen -W "$flags" -- "$cur") )
     elif [[ "$refcmds" == *" ${COMP_WORDS[1]} "* ]]; then
         local refs
         refs="$(quicksave __complete-refs 2>/dev/null)"
@@ -1453,12 +1455,13 @@ _ZSH_COMPLETION = """\
 #compdef quicksave
 _quicksave() {
     local -a cmds refcmds
+    __FLAGMAP__
     cmds=(__CMDS__)
     refcmds=(__REFCMDS__)
     if (( CURRENT == 2 )); then
         compadd -- $cmds
     elif [[ $words[CURRENT] == -* ]]; then
-        compadd -- -q --quiet --json --dry-run --help
+        compadd -- ${(s: :)_qs_flags[$words[2]]}
     elif (( ${refcmds[(Ie)$words[2]]} )); then
         compadd -- ${(f)"$(quicksave __complete-refs 2>/dev/null)"}
         _files
@@ -1470,7 +1473,7 @@ compdef _quicksave quicksave
 """
 _FISH_COMPLETION = """\
 complete -c quicksave -f -n __fish_use_subcommand -a "__CMDS__"
-complete -c quicksave -l help -l json -l dry-run -l quiet -s q
+__FLAGMAP__
 complete -c quicksave -n '__fish_seen_subcommand_from __REFCMDS__' -a '(quicksave __complete-refs 2>/dev/null)'
 complete -c quicksave -n 'not __fish_use_subcommand' -F
 """
@@ -1479,15 +1482,18 @@ Register-ArgumentCompleter -Native -CommandName quicksave -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $cmds = '__CMDS__'.Split(' ')
     $refcmds = '__REFCMDS__'.Split(' ')
+    $qs_flags = __FLAGMAP__
     # element 0 is 'quicksave' itself, so <= 2 elements means we're on the subcommand
     if ($commandAst.CommandElements.Count -le 2) {
         $cmds | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
-    # past the subcommand, offer the common flags when a dash is typed
+    # past the subcommand, offer the command's flags when a dash is typed
     elseif ($wordToComplete -like '-*') {
-        '-q', '--quiet', '--json', '--dry-run', '--help' | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+        $sub = $commandAst.CommandElements[1].Value
+        $flags = if ($qs_flags.ContainsKey($sub)) { $qs_flags[$sub] } else { @('-q', '--quiet', '--help') }
+        $flags | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $_)
         }
     }
@@ -1515,6 +1521,92 @@ def _subcommands():
     return []
 
 
+def _flags_for_commands():
+    """Map each public subcommand to its option strings, walked off the parser.
+
+    Like _subcommands(), but a step deeper: each subparser's _actions carry the
+    flags (--clean, --stat, -n, ...), so the completion scripts can offer a
+    command's own flags instead of just the shared five.
+    """
+    parser = build_parser()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            result = {}
+            for cmd, subparser in action.choices.items():
+                if cmd.startswith("_"):
+                    continue
+                flags = []
+                for a in subparser._actions:
+                    flags.extend(a.option_strings)
+                result[cmd] = flags
+            return result
+    return {}
+
+
+def _root_flags():
+    """Top-level flags that work before any subcommand (--version, --help, -q)."""
+    parser = build_parser()
+    flags = []
+    for a in parser._actions:
+        if isinstance(a, argparse._SubParsersAction):
+            continue
+        flags.extend(a.option_strings)
+    return flags
+
+
+def _bash_flagmap(flag_map):
+    # emit an associative array the bash script indexes by subcommand name
+    lines = ["declare -A _qs_flags"]
+    for cmd, flags in sorted(flag_map.items()):
+        if flags:
+            lines.append('_qs_flags[{}]="{}"'.format(cmd, " ".join(flags)))
+    return "\n    ".join(lines)
+
+
+def _zsh_flagmap(flag_map):
+    lines = ["typeset -A _qs_flags"]
+    for cmd, flags in sorted(flag_map.items()):
+        if flags:
+            lines.append('_qs_flags[{}]="{}"'.format(cmd, " ".join(flags)))
+    return "\n    ".join(lines)
+
+
+def _fish_parts(flags):
+    # fish wants long flags as -l NAME and short ones as -s C, no leading dashes
+    parts = []
+    for f in flags:
+        if f.startswith("--"):
+            parts.append("-l {}".format(f[2:]))
+        elif len(f) == 2:
+            parts.append("-s {}".format(f[1:]))
+    return parts
+
+
+def _fish_flagmap(flag_map):
+    # root flags (--version, --help, -q) before a subcommand is chosen, then one
+    # completion line per command guarded by the seen-subcommand test
+    lines = []
+    root = _fish_parts(_root_flags())
+    if root:
+        lines.append("complete -c quicksave -n __fish_use_subcommand {}".format(" ".join(root)))
+    for cmd, flags in sorted(flag_map.items()):
+        parts = _fish_parts(flags)
+        if parts:
+            lines.append("complete -c quicksave -n '__fish_seen_subcommand_from {}' {}".format(
+                cmd, " ".join(parts)))
+    return "\n".join(lines)
+
+
+def _pwsh_flagmap(flag_map):
+    # a PowerShell hashtable literal the script indexes by subcommand name
+    entries = []
+    for cmd, flags in sorted(flag_map.items()):
+        if flags:
+            flags_str = ", ".join("'{}'".format(f) for f in flags)
+            entries.append("        '{}' = @({})".format(cmd, flags_str))
+    return "@{{\n{}\n    }}".format("\n".join(entries))
+
+
 def cmd_complete_refs(args):
     # called by the completion scripts, so keep it fast and plain: just the
     # seqs, ids, and names one per line, no store validation or rich output
@@ -1531,10 +1623,15 @@ def cmd_complete_refs(args):
 def cmd_completion(args):
     cmds = " ".join(_subcommands())
     refcmds = " ".join(_REF_COMMANDS)
+    flag_map = _flags_for_commands()
     scripts = {"bash": _BASH_COMPLETION, "zsh": _ZSH_COMPLETION, "fish": _FISH_COMPLETION,
                "powershell": _PWSH_COMPLETION}
+    flagmaps = {"bash": _bash_flagmap, "zsh": _zsh_flagmap, "fish": _fish_flagmap,
+                "powershell": _pwsh_flagmap}
+    flagmap = flagmaps[args.shell](flag_map)
     # plain print so 'eval "$(quicksave completion bash)"' gets a clean script
-    print(scripts[args.shell].replace("__CMDS__", cmds).replace("__REFCMDS__", refcmds), end="")
+    print(scripts[args.shell].replace("__CMDS__", cmds).replace("__REFCMDS__", refcmds)
+          .replace("__FLAGMAP__", flagmap), end="")
 
 
 def cmd_hook_install(args):

@@ -449,6 +449,12 @@ quicksave completion fish | source             # fish
 quicksave completion powershell | Out-String | Invoke-Expression   # powershell
 ```
 
+The script completes subcommands at the first word, then each command's own flags when the current
+word starts with `-` (so `restore --<TAB>` offers `--clean`, `--only-missing`, ... and `gc --<TAB>`
+offers `--keep`, `--keep-named`, ...). After a ref-taking command it offers snapshot seqs, ids and
+names; other commands fall back to file completion. The whole map is read from the parser, so it
+stays in sync as commands and flags are added.
+
 ## hook / hook install / hook uninstall
 
 `quicksave hook` reads a `PreToolUse` payload on stdin and snapshots before a risky bash command,
